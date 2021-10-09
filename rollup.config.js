@@ -2,7 +2,11 @@ import resolve from "@rollup/plugin-node-resolve";
 import commonjs from "@rollup/plugin-commonjs";
 import typescript from "@rollup/plugin-typescript";
 import json from "@rollup/plugin-json";
+import alias from "@rollup/plugin-alias";
+import { terser } from "rollup-plugin-terser";
+import babel from "@rollup/plugin-babel";
 import { preserveShebangs } from "rollup-plugin-preserve-shebangs";
+import nodePolyfills from "rollup-plugin-polyfill-node";
 import pkg from "./package.json";
 
 export default [
@@ -16,10 +20,20 @@ export default [
       sourcemap: true,
     },
     plugins: [
-      resolve(),
+      alias({ debug: "node_modules/debug/dist/debug.js" }),
+      resolve({
+        browser: true,
+        preferBuiltins: false,
+        crypto: true,
+      }),
       json(),
-      commonjs(),
       typescript({ tsconfig: "./tsconfig.json", sourceMap: true }),
+      commonjs(),
+      nodePolyfills(),
+      babel({
+        babelHelpers: "bundled",
+      }),
+      terser(),
     ],
   },
 
@@ -35,12 +49,20 @@ export default [
       { file: pkg.main, format: "cjs" },
       { file: pkg.module, format: "es" },
     ],
-    plugins: [typescript({ tsconfig: "./tsconfig.json" })],
+    plugins: [
+      commonjs({
+        include: ["node_modules/debug/src/index.js"],
+      }),
+      typescript({ tsconfig: "./tsconfig.json" }),
+    ],
   },
   {
     input: "src/monitor.ts",
     output: [{ file: pkg.bin["moonbeam-monitor"], format: "cjs" }],
     plugins: [
+      commonjs({
+        include: ["node_modules/debug/src/index.js"],
+      }),
       preserveShebangs(),
       typescript({ tsconfig: "./tsconfig.json" }),
     ],

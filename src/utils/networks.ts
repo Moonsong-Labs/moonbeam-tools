@@ -4,7 +4,6 @@ import { ApiPromise } from "@polkadot/api";
 import { typesBundle } from "moonbeam-types-bundle";
 import { listenBlocks, printBlockDetails, RealtimeBlockDetails } from "./monitoring";
 import { Options } from "yargs";
-import Web3 from "web3";
 
 export type NETWORK_NAME = "stagenet" | "alphanet" | "moonsama" | "moonsilver" | "moonriver";
 
@@ -120,11 +119,4 @@ export const getMonitoredApiFor = async (argv: Argv) => {
     previousBlockDetails = blockDetails;
   });
   return api;
-};
-
-export const getWeb3For = async (argv) => {
-  if (isKnownNetwork(argv.network)) {
-    return new Web3(NETWORK_WS_URLS[argv.network]);
-  }
-  return new Web3(argv.url);
 };

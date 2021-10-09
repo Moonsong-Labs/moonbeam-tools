@@ -3,7 +3,8 @@ import { Extrinsic, BlockHash, EventRecord } from "@polkadot/types/interfaces";
 import { Block } from "@polkadot/types/interfaces/runtime/types";
 import { mapExtrinsics, TxWithEventAndFee } from "./types";
 import chalk from "chalk";
-const debug = require("debug")("monitoring");
+import Debug from "debug";
+const debug = Debug("monitoring");
 
 export interface BlockDetails {
   block: Block;
