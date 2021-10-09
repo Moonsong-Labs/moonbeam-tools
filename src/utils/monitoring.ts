@@ -116,7 +116,7 @@ export const listenFinalizedBlocks = async (
   listenBlocks(api, true, callBack);
 };
 
-export function printBlockDetails(
+export function generateBlockDetailsLog(
   blockDetails: BlockDetails | RealtimeBlockDetails,
   options?: { prefix?: string; suffix?: string },
   previousBlockDetails?: BlockDetails | RealtimeBlockDetails
@@ -240,21 +240,22 @@ export function printBlockDetails(
     .args[0].toString();
 
   const hash = blockDetails.block.header.hash.toString();
-  console.log(
-    `${options?.prefix ? `${options.prefix} ` : ""}Block ${blockDetails.block.header.number
-      .toString()
-      .padEnd(
-        7,
-        " "
-      )} [${weightText}%, ${feesText}💰][Ext:${extText}(Eth:${evmText})(Z:${extZoom})]${
-      txPoolText
-        ? `[Pool:${txPoolText}${poolIncText ? `(+${poolIncText})` : ""}(Z ${zoomPool})]`
-        : ``
-    }${secondText ? `[${secondText}s]` : ""}(hash: ${hash.substring(0, 7)}..${hash.substring(
-      hash.length - 4
-    )})${options?.suffix ? ` ${options.suffix}` : ""} by ${authorId.substring(
-      0,
-      7
-    )}..${authorId.substring(authorId.length - 4)}`
-  );
+  return `${options?.prefix ? `${options.prefix} ` : ""}Block ${blockDetails.block.header.number
+    .toString()
+    .padEnd(7, " ")} [${weightText}%, ${feesText}💰][Ext:${extText}(Eth:${evmText})(Z:${extZoom})]${
+    txPoolText ? `[Pool:${txPoolText}${poolIncText ? `(+${poolIncText})` : ""}(Z ${zoomPool})]` : ``
+  }${secondText ? `[${secondText}s]` : ""}(hash: ${hash.substring(0, 7)}..${hash.substring(
+    hash.length - 4
+  )})${options?.suffix ? ` ${options.suffix}` : ""} by ${authorId.substring(
+    0,
+    7
+  )}..${authorId.substring(authorId.length - 4)}`;
+}
+
+export function printBlockDetails(
+  blockDetails: BlockDetails | RealtimeBlockDetails,
+  options?: { prefix?: string; suffix?: string },
+  previousBlockDetails?: BlockDetails | RealtimeBlockDetails
+) {
+  console.log(generateBlockDetailsLog(blockDetails, options, previousBlockDetails));
 }
