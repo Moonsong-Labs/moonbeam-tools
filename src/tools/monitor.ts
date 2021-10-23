@@ -3,7 +3,7 @@
 // This script is expected to run against a moonbeam blockchain
 import yargs from "yargs";
 
-import { getMonitoredApiFor, NETWORK_NAMES } from ".";
+import { getMonitoredApiFor, NETWORK_NAMES } from "..";
 
 const argv = yargs(process.argv.slice(2))
   .usage("Usage: $0")

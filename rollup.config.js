@@ -1,13 +1,16 @@
 import resolve from "@rollup/plugin-node-resolve";
 import commonjs from "@rollup/plugin-commonjs";
-import typescript from "@rollup/plugin-typescript";
 import json from "@rollup/plugin-json";
-import alias from "@rollup/plugin-alias";
-import { terser } from "rollup-plugin-terser";
-import babel from "@rollup/plugin-babel";
+import esbuild from "rollup-plugin-esbuild";
 import { preserveShebangs } from "rollup-plugin-preserve-shebangs";
-import nodePolyfills from "rollup-plugin-polyfill-node";
 import pkg from "./package.json";
+
+const optimizer = (server) =>
+  esbuild({
+    include: /\.[jt]sx?$/,
+    minify: true,
+    target: "es2020",
+  });
 
 export default [
   // browser-friendly UMD build
@@ -20,20 +23,14 @@ export default [
       sourcemap: true,
     },
     plugins: [
-      alias({ debug: "node_modules/debug/dist/debug.js" }),
       resolve({
         browser: true,
         preferBuiltins: false,
         crypto: true,
       }),
       json(),
-      typescript({ tsconfig: "./tsconfig.json", sourceMap: true }),
       commonjs(),
-      nodePolyfills(),
-      babel({
-        babelHelpers: "bundled",
-      }),
-      terser(),
+      optimizer(),
     ],
   },
 
@@ -53,18 +50,18 @@ export default [
       commonjs({
         include: ["node_modules/debug/src/index.js"],
       }),
-      typescript({ tsconfig: "./tsconfig.json" }),
+      optimizer(),
     ],
   },
   {
-    input: "src/monitor.ts",
+    input: "src/tools/monitor.ts",
     output: [{ file: pkg.bin["moonbeam-monitor"], format: "cjs" }],
     plugins: [
       commonjs({
         include: ["node_modules/debug/src/index.js"],
       }),
       preserveShebangs(),
-      typescript({ tsconfig: "./tsconfig.json" }),
+      optimizer(),
     ],
   },
 ];
