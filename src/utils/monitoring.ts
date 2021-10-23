@@ -145,7 +145,6 @@ export function generateBlockDetailsLog(
 
   let txPoolText = null;
   let poolIncText = null;
-  let zoomPool = null;
   if ("pendingTxs" in blockDetails) {
     const txPool = blockDetails.pendingTxs.length.toString().padStart(4, " ");
     txPoolText =
@@ -164,18 +163,6 @@ export function generateBlockDetailsLog(
       poolIncText =
         txPoolDiff > 80 ? chalk.red(poolInc) : txPoolDiff > 30 ? chalk.yellow(poolInc) : poolInc;
     }
-    zoomPool = blockDetails.pendingTxs
-      .filter((tx) => {
-        return (
-          tx.method.section == "ethereum" &&
-          tx.method.method == "transact" &&
-          (tx.method.args[0] as any).action.isCall &&
-          (tx.method.args[0] as any).action.asCall.toString().toLowerCase() ==
-            "0x08716e418e68564c96b68192e985762740728018".toLowerCase()
-        );
-      })
-      .length.toString()
-      .padStart(3, " ");
   }
 
   const ext = blockDetails.block.extrinsics.length.toString().padStart(3, " ");
@@ -224,26 +211,38 @@ export function generateBlockDetailsLog(
       ? chalk.green(feesTokenTxt)
       : feesTokenTxt;
 
-  const extZoom = blockDetails.block.extrinsics
-    .filter(
-      (tx) =>
-        tx.method.section == "ethereum" &&
-        tx.method.method == "transact" &&
-        (tx.method.args[0] as any).action.isCall &&
-        (tx.method.args[0] as any).action.asCall.toString().toLowerCase() ==
-          "0x08716e418e68564c96b68192e985762740728018".toLowerCase()
-    )
-    .length.toString()
-    .padStart(3, " ");
+  const transferred = blockDetails.txWithEvents
+    .map((tx) => {
+      if (tx.extrinsic.method.section == "ethereum" && tx.extrinsic.method.method == "transact") {
+        return (tx.extrinsic.method.args[0] as any).value.toBigInt();
+      }
+      return tx.events.reduce((total, event) => {
+        if (event.section == "balances" && event.method == "Transfer") {
+          return total + (event.data[2] as any).toBigInt();
+        }
+        return total;
+      }, 0n);
+    })
+    .reduce((p, v) => p + v, 0n)
+  const transferredTokens = (Number(transferred / 10n ** 18n));
+  const transferredText = transferredTokens.toString().padStart(5, " ");
+    const coloredTransferred =
+      transferredTokens >= 100
+        ? chalk.red(transferredText)
+        : transferredTokens >= 50
+        ? chalk.yellow(transferredText)
+        : transferredTokens > 15
+        ? chalk.green(transferredText)
+        : transferredText;
   const authorId = blockDetails.block.extrinsics
     .find((tx) => tx.method.section == "authorInherent" && tx.method.method == "setAuthor")
     .args[0].toString();
 
   const hash = blockDetails.block.header.hash.toString();
-  return `${options?.prefix ? `${options.prefix} ` : ""}Block ${blockDetails.block.header.number
+  return `${options?.prefix ? `${options.prefix} ` : ""}#${blockDetails.block.header.number
     .toString()
-    .padEnd(7, " ")} [${weightText}%, ${feesText}💰][Ext:${extText}(Eth:${evmText})(Z:${extZoom})]${
-    txPoolText ? `[Pool:${txPoolText}${poolIncText ? `(+${poolIncText})` : ""}(Z ${zoomPool})]` : ``
+    .padEnd(7, " ")} [${weightText}%, ${feesText}T, ${extText}☰(${evmText}♢)(↝${coloredTransferred}T)]${
+    txPoolText ? `[Pool:${txPoolText}${poolIncText ? `(+${poolIncText})` : ""}]` : ``
   }${secondText ? `[${secondText}s]` : ""}(hash: ${hash.substring(0, 7)}..${hash.substring(
     hash.length - 4
   )})${options?.suffix ? ` ${options.suffix}` : ""} by ${authorId.substring(
