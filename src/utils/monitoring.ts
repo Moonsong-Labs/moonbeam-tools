@@ -24,7 +24,7 @@ const getBlockDetails = async (api: ApiPromise, blockHash: BlockHash) => {
   ]);
 
   const fees = await Promise.all(
-    block.extrinsics.map((ext) => api.rpc.payment.queryInfo(ext.toHex(), blockHash))
+    block.extrinsics.map((ext) => api.rpc.payment.queryInfo(ext.toHex(), block.header.parentHash))
   );
 
   const txWithEvents = mapExtrinsics(block.extrinsics, records, fees);
@@ -241,7 +241,7 @@ export function generateBlockDetailsLog(
   const hash = blockDetails.block.header.hash.toString();
   return `${options?.prefix ? `${options.prefix} ` : ""}#${blockDetails.block.header.number
     .toString()
-    .padEnd(7, " ")} [${weightText}%, ${feesText}T, ${extText}☰(${evmText}♢)(↝${coloredTransferred}T)]${
+    .padEnd(7, " ")} [${weightText}%, ${feesText} fees, ${extText} Txs (${evmText} Eth)(<->${coloredTransferred})]${
     txPoolText ? `[Pool:${txPoolText}${poolIncText ? `(+${poolIncText})` : ""}]` : ``
   }${secondText ? `[${secondText}s]` : ""}(hash: ${hash.substring(0, 7)}..${hash.substring(
     hash.length - 4
