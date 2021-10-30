@@ -115,7 +115,7 @@ const main = async () => {
                   }${origin.toString()}: ${txFees.toString().padStart(19, " ")} (${printMOVRs(
                     txFees,
                     5
-                  )})} `
+                  )})} (Balance: ${(toBalance.data.free.toBigInt() - fromBalance.data.free.toBigInt()).toString().padStart(20, " ")})`
                 );
               }
             }
@@ -134,7 +134,7 @@ const main = async () => {
       sumBlockFees += blockFees;
       sumBlockBurnt += blockBurnt;
       console.log(
-        `\n#${blockDetails.block.header.number} Fees : ${printMOVRs(blockFees, 4)} MOVRs`
+        `#${blockDetails.block.header.number} Fees : ${printMOVRs(blockFees, 4)} MOVRs`
       );
       previusBlockHash = blockDetails.block.hash.toString();
     }
