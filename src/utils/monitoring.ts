@@ -1,6 +1,9 @@
 import { ApiPromise } from "@polkadot/api";
-import { Extrinsic, BlockHash, EventRecord } from "@polkadot/types/interfaces";
-import { Block } from "@polkadot/types/interfaces/runtime/types";
+import type { Extrinsic, BlockHash, EventRecord } from "@polkadot/types/interfaces";
+import type { PalletIdentityRegistration } from "@polkadot/types/lookup";
+import type { Block } from "@polkadot/types/interfaces/runtime/types";
+import type { Option } from "@polkadot/types";
+import { u8aToString } from "@polkadot/util";
 import { mapExtrinsics, TxWithEventAndFee } from "./types";
 import chalk from "chalk";
 import Debug from "debug";
@@ -8,11 +11,54 @@ const debug = Debug("monitoring");
 
 export interface BlockDetails {
   block: Block;
+  authorName: string;
   blockTime: number;
   records: EventRecord[];
   txWithEvents: TxWithEventAndFee[];
   weightPercentage: number;
 }
+
+// TODO: Improve with cache and eviction
+const authorMappingCache: {
+  [author: string]: {
+    account?: string;
+    lastUpdate: number;
+  };
+} = {};
+
+const identityCache: {
+  [author: string]: {
+    identity: Option<PalletIdentityRegistration>;
+    lastUpdate: number;
+  };
+} = {};
+
+export const getAuthorIdentity = async (api: ApiPromise, author: string): Promise<string> => {
+  if (
+    !authorMappingCache[author] ||
+    authorMappingCache[author].lastUpdate < Date.now() - 3600 * 1000
+  ) {
+    const mappingData = (await api.query.authorMapping.mappingWithDeposit(author)) as Option<any>;
+    authorMappingCache[author] = {
+      lastUpdate: Date.now(),
+      account: mappingData.isEmpty ? null : mappingData.unwrap().account.toString(),
+    };
+  }
+  const { account } = authorMappingCache[author];
+
+  if (!identityCache[account] || identityCache[account].lastUpdate < Date.now() - 3600 * 1000) {
+    const identityData = await api.query.identity.identityOf(account.toString());
+    identityCache[account] = {
+      lastUpdate: Date.now(),
+      identity: identityData,
+    };
+  }
+
+  const { identity } = identityCache[account];
+  return identity.isSome
+    ? u8aToString(identity.unwrap().info.display.asRaw.toU8a(true))
+    : account?.toString();
+};
 
 const getBlockDetails = async (api: ApiPromise, blockHash: BlockHash) => {
   debug(`Querying ${blockHash}`);
@@ -23,9 +69,16 @@ const getBlockDetails = async (api: ApiPromise, blockHash: BlockHash) => {
     api.query.timestamp.now.at(blockHash),
   ]);
 
-  const fees = await Promise.all(
-    block.extrinsics.map((ext) => api.rpc.payment.queryInfo(ext.toHex(), block.header.parentHash))
-  );
+  const authorId = block.extrinsics
+    .find((tx) => tx.method.section == "authorInherent" && tx.method.method == "setAuthor")
+    .args[0].toString();
+
+  const [fees, authorName] = await Promise.all([
+    Promise.all(
+      block.extrinsics.map((ext) => api.rpc.payment.queryInfo(ext.toHex(), block.header.parentHash))
+    ),
+    getAuthorIdentity(api, authorId),
+  ]);
 
   const txWithEvents = mapExtrinsics(block.extrinsics, records, fees);
   const blockWeight = txWithEvents.reduce((totalWeight, tx, index) => {
@@ -33,6 +86,7 @@ const getBlockDetails = async (api: ApiPromise, blockHash: BlockHash) => {
   }, 0n);
   return {
     block,
+    authorName,
     blockTime: blockTime.toNumber(),
     weightPercentage: Number((blockWeight * 10000n) / maxBlockWeight) / 100,
     txWithEvents,
@@ -223,32 +277,35 @@ export function generateBlockDetailsLog(
         return total;
       }, 0n);
     })
-    .reduce((p, v) => p + v, 0n)
-  const transferredTokens = (Number(transferred / 10n ** 18n));
+    .reduce((p, v) => p + v, 0n);
+  const transferredTokens = Number(transferred / 10n ** 18n);
   const transferredText = transferredTokens.toString().padStart(5, " ");
-    const coloredTransferred =
-      transferredTokens >= 100
-        ? chalk.red(transferredText)
-        : transferredTokens >= 50
-        ? chalk.yellow(transferredText)
-        : transferredTokens > 15
-        ? chalk.green(transferredText)
-        : transferredText;
-  const authorId = blockDetails.block.extrinsics
-    .find((tx) => tx.method.section == "authorInherent" && tx.method.method == "setAuthor")
-    .args[0].toString();
+  const coloredTransferred =
+    transferredTokens >= 100
+      ? chalk.red(transferredText)
+      : transferredTokens >= 50
+      ? chalk.yellow(transferredText)
+      : transferredTokens > 15
+      ? chalk.green(transferredText)
+      : transferredText;
+
+  const authorId = blockDetails.authorName.length > 20 ? 
+  `${blockDetails.authorName.substring(
+    0,
+    7
+  )}..${blockDetails.authorName.substring(blockDetails.authorName.length - 4)}` : blockDetails.authorName;
 
   const hash = blockDetails.block.header.hash.toString();
   return `${options?.prefix ? `${options.prefix} ` : ""}#${blockDetails.block.header.number
     .toString()
-    .padEnd(7, " ")} [${weightText}%, ${feesText} fees, ${extText} Txs (${evmText} Eth)(<->${coloredTransferred})]${
+    .padEnd(
+      7,
+      " "
+    )} [${weightText}%, ${feesText} fees, ${extText} Txs (${evmText} Eth)(<->${coloredTransferred})]${
     txPoolText ? `[Pool:${txPoolText}${poolIncText ? `(+${poolIncText})` : ""}]` : ``
   }${secondText ? `[${secondText}s]` : ""}(hash: ${hash.substring(0, 7)}..${hash.substring(
     hash.length - 4
-  )})${options?.suffix ? ` ${options.suffix}` : ""} by ${authorId.substring(
-    0,
-    7
-  )}..${authorId.substring(authorId.length - 4)}`;
+  )})${options?.suffix ? ` ${options.suffix}` : ""} by ${authorId}`;
 }
 
 export function printBlockDetails(
