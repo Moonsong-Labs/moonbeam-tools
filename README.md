@@ -14,23 +14,26 @@ Tools related to Moonbeam blockchains
 sudo npm install -g moonbeam-tools@latest
 ```
 
-## moonbeam-monitor
+## Running moonbeam-monitor
 
-Allows to monitor a moonbeam network. Ex:  
-`moonbeam-network --network moonriver`
+Allows to monitor a Moonbeam network. To do so, run the following command:
+
+```  
+moonbeam-monitor --networks moonriver
+```
 
 ```
 Options:
   --help       Show help                                               [boolean]
   --version    Show version number                                     [boolean]
-  --url        Websocket url                                            [string]
+  --url        WebSocket url                                            [string]
   --networks   Known networks
              [array] [choices: "stagenet", "alphanet", "moonsama", "moonsilver",
                                                                     "moonriver"]
   --finalized  listen to finalized only               [boolean] [default: false]
   ```
 
-# Exemple in html page
+# Example in HTML page
 
 ```
 <!DOCTYPE html>
