@@ -14,7 +14,7 @@ export interface TxWithEventAndFee extends TxWithEvent {
 export function mapExtrinsics(
   extrinsics: Extrinsic[],
   records: EventRecord[],
-  fees: RuntimeDispatchInfo[]
+  fees?: RuntimeDispatchInfo[]
 ): TxWithEventAndFee[] {
   return extrinsics.map((extrinsic, index): TxWithEventAndFee => {
     let dispatchError: DispatchError | undefined;
@@ -35,6 +35,6 @@ export function mapExtrinsics(
         return event;
       });
 
-    return { dispatchError, dispatchInfo, events, extrinsic, fee: fees[index] };
+    return { dispatchError, dispatchInfo, events, extrinsic, fee: fees ? fees[index] : undefined };
   });
 }

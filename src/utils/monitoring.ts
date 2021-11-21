@@ -4,6 +4,7 @@ import type { PalletIdentityRegistration } from "@polkadot/types/lookup";
 import type { Block } from "@polkadot/types/interfaces/runtime/types";
 import type { Option } from "@polkadot/types";
 import { u8aToString } from "@polkadot/util";
+import { ethereumEncode } from "@polkadot/util-crypto";
 import { mapExtrinsics, TxWithEventAndFee } from "./types";
 import chalk from "chalk";
 import Debug from "debug";
@@ -41,7 +42,7 @@ export const getAuthorIdentity = async (api: ApiPromise, author: string): Promis
     const mappingData = (await api.query.authorMapping.mappingWithDeposit(author)) as Option<any>;
     authorMappingCache[author] = {
       lastUpdate: Date.now(),
-      account: mappingData.isEmpty ? null : mappingData.unwrap().account.toString(),
+      account: mappingData.isEmpty ? null : ethereumEncode(mappingData.unwrap().account.toString()),
     };
   }
   const { account } = authorMappingCache[author];
@@ -296,7 +297,9 @@ export function generateBlockDetailsLog(
   )}..${blockDetails.authorName.substring(blockDetails.authorName.length - 4)}` : blockDetails.authorName;
 
   const hash = blockDetails.block.header.hash.toString();
-  return `${options?.prefix ? `${options.prefix} ` : ""}#${blockDetails.block.header.number
+  const time = new Date().toLocaleTimeString("fr-FR", {hour: '2-digit', minute:'2-digit', second:'2-digit'});
+
+  return `${time} ${options?.prefix ? `${options.prefix} ` : ""}#${blockDetails.block.header.number
     .toString()
     .padEnd(
       7,
