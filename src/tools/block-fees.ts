@@ -148,6 +148,7 @@ const main = async () => {
           }
         }
         // Then search for Deposit event from treasury
+        // This is for bug detection when the fees are not matching the expected value
         for (const event of events) {
           if (event.section == "treasury" && event.method == "Deposit") {
             const deposit = (event.data[0] as any).toBigInt();
