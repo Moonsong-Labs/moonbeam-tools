@@ -5,6 +5,9 @@ import { DispatchInfo } from "@polkadot/types/interfaces";
 
 import { exploreBlockRange, getApiFor, NETWORK_YARGS_OPTIONS } from "..";
 
+const WEIGHT_PER_GAS=1_000_000_000_000n /  40_000_000n
+
+
 const argv = yargs(process.argv.slice(2))
   .usage("Usage: $0")
   .version("1.0.0")
@@ -35,8 +38,10 @@ const printMOVRs = (value: bigint, decimals = 4) => {
 };
 
 const main = async () => {
+  // Instantiate Api
   const api = await getApiFor(argv);
 
+  // Set to and from block numbers
   const toBlockNumber = argv.to || (await api.rpc.chain.getBlock()).block.header.number.toNumber();
   const fromBlockNumber = argv.from || toBlockNumber;
 
@@ -45,9 +50,16 @@ const main = async () => {
   let sumBlockBurnt = 0n;
   let blockCount = 0;
 
+  // Get from block hash and totalSupply
   const fromPreBlockHash = (await api.rpc.chain.getBlockHash(fromBlockNumber - 1)).toString();
   const fromPreSupply = await (await api.at(fromPreBlockHash)).query.balances.totalIssuance();
-  let previusBlockHash = fromPreBlockHash;
+  let previousBlockHash = fromPreBlockHash;
+
+  // Get to block hash and totalSupply
+  const toBlockHash = (await api.rpc.chain.getBlockHash(toBlockNumber)).toString();
+  const toSupply = await (await api.at(toBlockHash)).query.balances.totalIssuance();
+
+  // fetch block information for all blocks in the range
   await exploreBlockRange(
     api,
     { from: fromBlockNumber, to: toBlockNumber, concurrency: 5 },
@@ -56,6 +68,7 @@ const main = async () => {
       let blockFees = 0n;
       let blockBurnt = 0n;
 
+      // iterate over every extrinsic
       for (const { events, extrinsic, fee } of blockDetails.txWithEvents) {
         // This hash will only exist if the transaction was executed through ethereum.
         let ethereumAddress = "";
@@ -71,6 +84,8 @@ const main = async () => {
 
         let txFees = 0n;
         let txBurnt = 0n;
+
+        // For every extrinsic, iterate over every event and search for ExtrinsicSuccess or ExtrinsicFailed
         for (const event of events) {
           if (
             event.section == "system" &&
@@ -80,16 +95,22 @@ const main = async () => {
               event.method == "ExtrinsicSuccess"
                 ? (event.data[0] as DispatchInfo)
                 : (event.data[1] as DispatchInfo);
+
+            // We are only interested in fee paying extrinsics:
+            // Either ethereum transactions or signed extrinsics with fees (substrate tx)
             if (
               dispatchInfo.paysFee.isYes &&
               (!extrinsic.signer.isEmpty || extrinsic.method.section == "ethereum")
             ) {
               if (extrinsic.method.section == "ethereum") {
+                // For Ethereum tx we caluculate fee by first converting weight to gas
+                const gasFee=dispatchInfo.weight.toBigInt() / WEIGHT_PER_GAS;
+                // And then multiplying by gasPrice
                 txFees =
-                  (dispatchInfo.weight.toBigInt() *
-                    (extrinsic.method.args[0] as any).gasPrice.toBigInt()) /
-                  25000n;
+                  (gasFee *
+                    (extrinsic.method.args[0] as any).gasPrice.toBigInt())
               } else {
+                // For a regular substrate tx, we use the partialFee
                 txFees = fee.partialFee.toBigInt();
               }
               txBurnt += (txFees * 80n) / 100n; // 20% goes to treasury
@@ -101,13 +122,15 @@ const main = async () => {
                 ? ethereumAddress
                 : extrinsic.signer.toString();
 
+              // Get balance of the origin account both before and after extrinsic execution
               const fromBalance = await (
-                await api.at(previusBlockHash)
+                await api.at(previousBlockHash)
               ).query.system.account(origin);
               const toBalance = await (
                 await api.at(blockDetails.block.hash)
               ).query.system.account(origin);
 
+              // Verbose option will display tx fee and balance change for each extrinsic
               if (argv.verbose) {
                 console.log(
                   ` ${extrinsic.method.section == "ethereum" ? "[Eth]" : "[Sub]"}${
@@ -115,18 +138,24 @@ const main = async () => {
                   }${origin.toString()}: ${txFees.toString().padStart(19, " ")} (${printMOVRs(
                     txFees,
                     5
-                  )})} (Balance: ${(toBalance.data.free.toBigInt() - fromBalance.data.free.toBigInt()).toString().padStart(20, " ")})`
+                  )} MOVR) (Balance diff: ${(toBalance.data.free.toBigInt() - fromBalance.data.free.toBigInt()).toString().padStart(20, " ")})(${printMOVRs(
+                    (toBalance.data.free.toBigInt() - fromBalance.data.free.toBigInt()),
+                    5
+                  )} MOVR)`
                 );
               }
             }
           }
         }
+        // Then search for Deposit event from treasury
         for (const event of events) {
           if (event.section == "treasury" && event.method == "Deposit") {
             const deposit = (event.data[0] as any).toBigInt();
+            // Compare deposit event amont to what should have been sent to deposit (if they don't match, which is not a desired behavior)
             if (txFees - txBurnt !== deposit) {
-              console.log(`  burnt: ${(txFees - txBurnt).toString().padStart(30, " ")}`);
-              console.log(`deposit: ${deposit.toString().padStart(30, " ")}`);
+              console.log("Desposit Amount Discrepancy!")
+              console.log(`fees not burnt : ${(txFees - txBurnt).toString().padStart(30, " ")}`);
+              console.log(`       deposit : ${deposit.toString().padStart(30, " ")}`);
             }
           }
         }
@@ -136,9 +165,10 @@ const main = async () => {
       console.log(
         `#${blockDetails.block.header.number} Fees : ${printMOVRs(blockFees, 4)} MOVRs`
       );
-      previusBlockHash = blockDetails.block.hash.toString();
+      previousBlockHash = blockDetails.block.hash.toString();
     }
   );
+  // Print total and average for the block range
   console.log(
     `Total blocks : ${blockCount}, ${printMOVRs(
       sumBlockFees / BigInt(blockCount),
@@ -146,16 +176,15 @@ const main = async () => {
     )}/block, ${printMOVRs(sumBlockFees, 4)} Total`
   );
 
-  const toBlockHash = (await api.rpc.chain.getBlockHash(toBlockNumber)).toString();
-  const toSupply = await (await api.at(toBlockHash)).query.balances.totalIssuance();
 
+  // Log difference in supply, we should be equal to the burnt fees
   console.log(
     `  supply diff: ${(fromPreSupply.toBigInt() - toSupply.toBigInt())
       .toString()
       .padStart(30, " ")}`
   );
-  console.log(`        burnt: ${sumBlockBurnt.toString().padStart(30, " ")}`);
-  console.log(`         fees: ${sumBlockFees.toString().padStart(30, " ")}`);
+  console.log(`  burnt fees : ${sumBlockBurnt.toString().padStart(30, " ")}`);
+  console.log(`  total fees : ${sumBlockFees.toString().padStart(30, " ")}`);
 
   await api.disconnect();
 };
