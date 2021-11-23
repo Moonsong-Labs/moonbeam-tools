@@ -100,7 +100,8 @@ export interface BlockRangeOption {
   to: number;
   concurrency?: number;
 }
-// Explore all blocks for the given range
+
+// Explore all blocks for the given range adn return block information for each one 
 // fromBlockNumber and toBlockNumber included
 export const exploreBlockRange = async (
   api: ApiPromise,
