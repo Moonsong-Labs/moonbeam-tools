@@ -121,12 +121,13 @@ const main = async () => {
             }
           }
         }
+        // This is for bug detection when the fees are not matching the expected value
         for (const event of events) {
           if (event.section == "treasury" && event.method == "Deposit") {
             const deposit = (event.data[0] as any).toBigInt();
             if (txFees - txBurnt !== deposit) {
-              console.log(`  burnt: ${(txFees - txBurnt).toString().padStart(30, " ")}`);
-              console.log(`deposit: ${deposit.toString().padStart(30, " ")}`);
+              console.log(`treasury: ${(txFees - txBurnt).toString().padStart(30, " ")}`);
+              console.log(` deposit: ${deposit.toString().padStart(30, " ")}`);
             }
           }
         }
