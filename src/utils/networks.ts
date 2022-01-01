@@ -5,14 +5,15 @@ import { typesBundlePre900 } from "moonbeam-types-bundle";
 import { listenBlocks, printBlockDetails, RealtimeBlockDetails } from "./monitoring";
 import { Options } from "yargs";
 
-export type NETWORK_NAME = "stagenet" | "alphanet" | "moonsama" | "moonsilver" | "moonriver";
+export type NETWORK_NAME = "stagenet" | "alphanet" | "moonsama" | "moonsilver" | "moonriver" | "moonbeam";
 
 export const NETWORK_WS_URLS: { [name in NETWORK_NAME]: string } = {
   stagenet: "wss://wss.stagenet.moonbeam.gcp.purestake.run",
   alphanet: "wss://wss.testnet.moonbeam.network",
   moonsama: "wss://wss.moonsama.gcp.purestake.run",
   moonsilver: "wss://wss.moonsilver.moonbeam.network",
-  moonriver: "wss://wss.moonriver.moonbeam.network",
+  moonriver: "wss://moonriver.api.onfinality.io/public-ws",
+  moonbeam: "wss://moonbeam.api.onfinality.io/public-ws",
 };
 export const NETWORK_HTTP_URLS: { [name in NETWORK_NAME]: string } = {
   stagenet: "https://rpc.stagenet.moonbeam.gcp.purestake.run",
@@ -20,6 +21,7 @@ export const NETWORK_HTTP_URLS: { [name in NETWORK_NAME]: string } = {
   moonsama: "https://rpc.moonsama.gcp.purestake.run",
   moonsilver: "https://rpc.moonsilver.moonbeam.network",
   moonriver: "https://rpc.moonriver.moonbeam.network",
+  moonbeam: "https://rpc.moonriver.moonbeam.network",
 };
 export const NETWORK_NAMES = Object.keys(NETWORK_WS_URLS) as NETWORK_NAME[];
 
@@ -29,6 +31,7 @@ export const NETWORK_CHAIN_MAPPING: { [name: string]: NETWORK_NAME } = {
   Moonsama: "moonsama",
   Moonsilver: "moonsilver",
   Moonriver: "moonriver",
+  Moonbeam: "moonbeam",
 };
 
 export const NETWORK_COLORS: { [name in NETWORK_NAME]: chalk.ChalkFunction } = {
@@ -37,6 +40,7 @@ export const NETWORK_COLORS: { [name in NETWORK_NAME]: chalk.ChalkFunction } = {
   moonsama: chalk.magentaBright,
   moonsilver: chalk.yellowBright,
   moonriver: chalk.redBright,
+  moonbeam: chalk.magentaBright,
 };
 
 export type NetworkOptions = {

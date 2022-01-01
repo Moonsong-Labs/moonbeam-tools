@@ -1,6 +1,5 @@
 import { ApiPromise } from "@polkadot/api";
 import type { Extrinsic, BlockHash, EventRecord } from "@polkadot/types/interfaces";
-import type { PalletIdentityRegistration } from "@polkadot/types/lookup";
 import type { Block } from "@polkadot/types/interfaces/runtime/types";
 import type { Option } from "@polkadot/types";
 import { u8aToString } from "@polkadot/util";
@@ -8,6 +7,7 @@ import { ethereumEncode } from "@polkadot/util-crypto";
 import { mapExtrinsics, TxWithEventAndFee } from "./types";
 import chalk from "chalk";
 import Debug from "debug";
+import { PalletIdentityRegistration } from "@polkadot/types/lookup";
 const debug = Debug("monitoring");
 
 export interface BlockDetails {
@@ -61,7 +61,7 @@ export const getAuthorIdentity = async (api: ApiPromise, author: string): Promis
     : account?.toString();
 };
 
-const getBlockDetails = async (api: ApiPromise, blockHash: BlockHash) => {
+export const getBlockDetails = async (api: ApiPromise, blockHash: BlockHash) => {
   debug(`Querying ${blockHash}`);
   const maxBlockWeight = api.consts.system.blockWeights.maxBlock.toBigInt();
   const [{ block }, records, blockTime] = await Promise.all([
@@ -72,13 +72,13 @@ const getBlockDetails = async (api: ApiPromise, blockHash: BlockHash) => {
 
   const authorId = block.extrinsics
     .find((tx) => tx.method.section == "authorInherent" && tx.method.method == "setAuthor")
-    .args[0].toString();
+    ?.args[0]?.toString() || block.header.digest.logs.find(l => l.isPreRuntime && l.asPreRuntime.length > 0 && l.asPreRuntime[0].toString() == "nmbs")?.asPreRuntime[1]?.toString();
 
   const [fees, authorName] = await Promise.all([
     Promise.all(
       block.extrinsics.map((ext) => api.rpc.payment.queryInfo(ext.toHex(), block.header.parentHash))
     ),
-    getAuthorIdentity(api, authorId),
+    authorId ? getAuthorIdentity(api, authorId) : "0x0000000000000000000000000000000000000000000000000000000000000000",
   ]);
 
   const txWithEvents = mapExtrinsics(block.extrinsics, records, fees);

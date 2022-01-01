@@ -29,7 +29,7 @@ const argv = yargs(process.argv.slice(2))
   })
   .check(function (argv) {
     if (!argv.url && !argv.networks) {
-      throw new Error("Error: must provide --url or --network");
+      throw new Error("Error: must provide --url or --networks");
     }
     return true;
   }).argv;

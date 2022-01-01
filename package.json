@@ -1,13 +1,13 @@
 {
   "name": "moonbeam-tools",
-  "version": "0.0.17",
+  "version": "0.0.18",
   "description": "Set of tools for Moonbeam blockchain",
   "main": "dist/index.cjs.js",
   "module": "dist/index.esm.js",
   "browser": "dist/index.umd.js",
   "types": "dist/index.d.ts",
   "dependencies": {
-    "@polkadot/api": "^6.9.1",
+    "@polkadot/api": "^7.1.1",
     "chalk": "^4.1.2",
     "esbuild": "^0.13.8",
     "moonbeam-types-bundle": "^2.0.1",

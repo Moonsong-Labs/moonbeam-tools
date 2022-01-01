@@ -1,3 +1,4 @@
+import { ApiPromise } from "@polkadot/api";
 import { SubmittableExtrinsic } from "@polkadot/api/promise/types";
 
 export const sendAllAndWaitLast = async (extrinsics: SubmittableExtrinsic[]) => {
@@ -24,4 +25,39 @@ export const sendAllAndWaitLast = async (extrinsics: SubmittableExtrinsic[]) => 
     }
     console.log(`Waiting for last extrinsic...`);
   });
+};
+
+export const sendAllStreamAndWaitLast = async (
+  api: ApiPromise,
+  extrinsics: SubmittableExtrinsic[],
+  { threshold = 500, batch = 200 } = {threshold: 500, batch : 200}
+) => {
+  let promises = [];
+  while (extrinsics.length > 0) {
+    const pending = await api.rpc.author.pendingExtrinsics();
+    if (pending.length < threshold) {
+      const chunk = extrinsics.splice(0, Math.min(threshold - pending.length, batch));
+      console.log(`Sending ${chunk.length}tx (${extrinsics.length} left)`)
+      promises.push(
+        Promise.all(
+          chunk.map((tx) => {
+            return new Promise(async (resolve, reject) => {
+              const unsub = await tx.send((result) => {
+                if (result.isError) {
+                  console.log(result.toHuman());
+                  reject(result.toHuman());
+                }
+                if (result.isInBlock) {
+                  unsub();
+                  resolve(null);
+                }
+              });
+            }).catch((e) => {});
+          })
+        )
+      );
+    }
+    await new Promise((resolve) => setTimeout(resolve, 2000));
+  }
+  await Promise.all(promises);
 };
