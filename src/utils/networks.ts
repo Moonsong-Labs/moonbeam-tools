@@ -9,7 +9,7 @@ export type NETWORK_NAME = "stagenet" | "alphanet" | "moonsama" | "moonsilver" |
 
 export const NETWORK_WS_URLS: { [name in NETWORK_NAME]: string } = {
   stagenet: "wss://wss.stagenet.moonbeam.gcp.purestake.run",
-  alphanet: "wss://wss.testnet.moonbeam.network",
+  alphanet: "wss://wss.api.moonbase.moonbeam.network",
   moonsama: "wss://wss.moonsama.gcp.purestake.run",
   moonsilver: "wss://wss.moonsilver.moonbeam.network",
   moonriver: "wss://moonriver.api.onfinality.io/public-ws",
@@ -17,7 +17,7 @@ export const NETWORK_WS_URLS: { [name in NETWORK_NAME]: string } = {
 };
 export const NETWORK_HTTP_URLS: { [name in NETWORK_NAME]: string } = {
   stagenet: "https://rpc.stagenet.moonbeam.gcp.purestake.run",
-  alphanet: "https://rpc.testnet.moonbeam.network",
+  alphanet: "https://rpc.api.moonbase.moonbeam.network",
   moonsama: "https://rpc.moonsama.gcp.purestake.run",
   moonsilver: "https://rpc.moonsilver.moonbeam.network",
   moonriver: "https://rpc.moonriver.moonbeam.network",
