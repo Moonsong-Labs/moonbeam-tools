@@ -27,36 +27,46 @@ const main = async () => {
 
   const delegatorState = await api.query.parachainStaking.delegatorState.entries();
 
-  const requests = [];
+  let totalDelegations = 0;
+  const requests: { id: any; request: any }[] = [];
   for (const state of delegatorState) {
     const stateData = (state[1] as any).unwrap();
+    totalDelegations += stateData.delegations.length;
     if (stateData.requests.revocationsCount > 0) {
       // console.log(stateData.toJSON());
       if (stateData.requests.requests.toJSON()[formattedCollator]) {
-        requests.push(stateData.requests.requests.toJSON()[formattedCollator]);
+        requests.push({
+          id: stateData.id,
+          request: stateData.requests.requests.toJSON()[formattedCollator]
+        });
       }
     }
   }
 
-  for (const req of requests.sort((a, b) => a.whenExecutable - b.whenExecutable)) {
-    const tokens = BigInt(req.amount) / 10n ** 18n;
+  let totalRevoked = 0n;
+
+  for (const req of requests.sort((a, b) => a.request.whenExecutable - b.request.whenExecutable)) {
+    totalRevoked += req.request.action == "Revoke" ? BigInt(req.request.amount) : 0n;
+    const tokens = BigInt(req.request.amount) / 10n ** 18n;
     const tokenString =
       tokens > 20000n
         ? chalk.red(tokens.toString().padStart(6))
         : tokens > 2000n
-        ? chalk.yellow(tokens.toString().padStart(6))
-        : tokens.toString().padStart(6);
+          ? chalk.yellow(tokens.toString().padStart(6))
+          : tokens.toString().padStart(6);
 
     const blockLefts =
-      (req.whenExecutable - roundInfo.current.toNumber() - 1) * roundInfo.length.toNumber() +
+      (req.request.whenExecutable - roundInfo.current.toNumber() - 1) * roundInfo.length.toNumber() +
       roundBlockLefts;
     const timeLeft = blockLefts * 12;
     console.log(
-      `#${req.whenExecutable} (${Math.floor(timeLeft / 60 / 60)
+      `#${req.request.whenExecutable} (${Math.floor(timeLeft / 60 / 60)
         .toString()
-        .padStart(5)}h): ${req.action} ${tokenString}`
+        .padStart(5)}h): ${req.request.action.toString().padStart(10)} ${tokenString} by ${req.id.toHex()}`
     );
   }
+  console.log(`Pending revoke: ${totalRevoked / 10n ** 18n}`);
+  console.log(`All collators delegations: ${totalDelegations}`);
 
   await api.disconnect();
 };

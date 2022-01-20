@@ -7,7 +7,7 @@
   "browser": "dist/index.umd.js",
   "types": "dist/index.d.ts",
   "dependencies": {
-    "@polkadot/api": "^7.1.1",
+    "@polkadot/api": "^7.4.1",
     "chalk": "^4.1.2",
     "esbuild": "^0.13.8",
     "moonbeam-types-bundle": "^2.0.1",
@@ -15,6 +15,7 @@
     "rollup-plugin-esbuild": "^4.6.0",
     "rollup-plugin-preserve-shebangs": "^0.2.0",
     "solc": "^0.8.10",
+    "table": "^6.8.0",
     "ts-node": "^10.4.0",
     "web3": "^1.6.0",
     "yargs": "^17.2.1"
@@ -28,7 +29,7 @@
     "eslint": "^7.32.0",
     "rollup": "^2.58.0",
     "tslib": "^2.3.1",
-    "typescript": "^4.5.4"
+    "typescript": "^4.4.4"
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",

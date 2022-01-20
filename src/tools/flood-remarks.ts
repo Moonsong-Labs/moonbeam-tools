@@ -93,24 +93,22 @@ const main = async () => {
   const keyring = new Keyring({ type: "ethereum" });
 
   const fromAccount = await keyring.addFromUri(argv.from);
-  const deployer = web3.eth.accounts.privateKeyToAccount(argv.from);
 
   let fromNonce = (await polkadotApi.rpc.system.accountNextIndex(fromAccount.address)).toNumber();
   console.log(`Sending from nonce ${fromNonce}`);
-  // We need to multiple the float first to then convert to BigInt,
-  // 1000000 should be enough
-  
+
   console.log(`Starting to send transactions...`);
   while (true) {
     const pending = await polkadotApi.rpc.author.pendingExtrinsics();
     if (pending.length < argv.threshold) {
       new Array(argv.count).fill(0).map(() => {
-        return sendTransfer(web3, deployer, fromNonce++).catch((e) => {console.log(e)});
+        return polkadotApi.tx.system
+          .remark("ok")
+          .signAndSend(fromAccount, { nonce: fromNonce++ }).catch((e) => { console.log(e) });
       })
     }
     await new Promise((resolve) => setTimeout(resolve, 2000));
   }
-
 
   await polkadotApi.disconnect();
   await (web3.currentProvider as any).disconnect();
