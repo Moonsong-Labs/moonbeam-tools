@@ -1,10 +1,13 @@
-import { ApiPromise } from "@polkadot/api";
+import type { ApiPromise } from "@polkadot/api";
 import type { Extrinsic, BlockHash, EventRecord } from "@polkadot/types/interfaces";
 import type { Block } from "@polkadot/types/interfaces/runtime/types";
 import type { Option } from "@polkadot/types";
 import { u8aToString } from "@polkadot/util";
 import { ethereumEncode } from "@polkadot/util-crypto";
 import { mapExtrinsics, TxWithEventAndFee } from "./types";
+
+import '@polkadot/api-augment';
+
 import chalk from "chalk";
 import Debug from "debug";
 import { PalletIdentityRegistration } from "@polkadot/types/lookup";
@@ -34,19 +37,7 @@ const identityCache: {
   };
 } = {};
 
-export const getAuthorIdentity = async (api: ApiPromise, author: string): Promise<string> => {
-  if (
-    !authorMappingCache[author] ||
-    authorMappingCache[author].lastUpdate < Date.now() - 3600 * 1000
-  ) {
-    const mappingData = (await api.query.authorMapping.mappingWithDeposit(author)) as Option<any>;
-    authorMappingCache[author] = {
-      lastUpdate: Date.now(),
-      account: mappingData.isEmpty ? null : ethereumEncode(mappingData.unwrap().account.toString()),
-    };
-  }
-  const { account } = authorMappingCache[author];
-
+export const getAccountIdentity = async (api: ApiPromise, account: string): Promise<string> => {
   if (!identityCache[account] || identityCache[account].lastUpdate < Date.now() - 3600 * 1000) {
     const identityData = await api.query.identity.identityOf(account.toString());
     identityCache[account] = {
@@ -61,24 +52,49 @@ export const getAuthorIdentity = async (api: ApiPromise, author: string): Promis
     : account?.toString();
 };
 
+export const getAuthorIdentity = async (api: ApiPromise, author: string): Promise<string> => {
+  if (
+    !authorMappingCache[author] ||
+    authorMappingCache[author].lastUpdate < Date.now() - 3600 * 1000
+  ) {
+    const mappingData = (await api.query.authorMapping.mappingWithDeposit(author)) as Option<any>;
+    authorMappingCache[author] = {
+      lastUpdate: Date.now(),
+      account: mappingData.isEmpty ? null : ethereumEncode(mappingData.unwrap().account.toString()),
+    };
+  }
+  const { account } = authorMappingCache[author];
+
+  return getAccountIdentity(api, account);
+};
+
 export const getBlockDetails = async (api: ApiPromise, blockHash: BlockHash) => {
   debug(`Querying ${blockHash}`);
   const maxBlockWeight = api.consts.system.blockWeights.maxBlock.toBigInt();
+  const apiAt = await api.at(blockHash);
   const [{ block }, records, blockTime] = await Promise.all([
     api.rpc.chain.getBlock(blockHash),
-    api.query.system.events.at(blockHash),
-    api.query.timestamp.now.at(blockHash),
+    apiAt.query.system.events(),
+    apiAt.query.timestamp.now(),
   ]);
 
-  const authorId = block.extrinsics
-    .find((tx) => tx.method.section == "authorInherent" && tx.method.method == "setAuthor")
-    ?.args[0]?.toString() || block.header.digest.logs.find(l => l.isPreRuntime && l.asPreRuntime.length > 0 && l.asPreRuntime[0].toString() == "nmbs")?.asPreRuntime[1]?.toString();
+  const authorId =
+    block.extrinsics
+      .find((tx) => tx.method.section == "authorInherent" && tx.method.method == "setAuthor")
+      ?.args[0]?.toString() ||
+    block.header.digest.logs
+      .find(
+        (l) => l.isPreRuntime && l.asPreRuntime.length > 0 && l.asPreRuntime[0].toString() == "nmbs"
+      )
+      ?.asPreRuntime[1]?.toString();
 
   const [fees, authorName] = await Promise.all([
     Promise.all(
       block.extrinsics.map((ext) => api.rpc.payment.queryInfo(ext.toHex(), block.header.parentHash))
     ),
-    authorId ? getAuthorIdentity(api, authorId) : "0x0000000000000000000000000000000000000000000000000000000000000000",
+    authorId
+      ? getAuthorIdentity(api, authorId)
+      : "0x0000000000000000000000000000000000000000000000000000000000000000",
   ]);
 
   const txWithEvents = mapExtrinsics(block.extrinsics, records, fees);
@@ -101,7 +117,7 @@ export interface BlockRangeOption {
   concurrency?: number;
 }
 
-// Explore all blocks for the given range adn return block information for each one 
+// Explore all blocks for the given range adn return block information for each one
 // fromBlockNumber and toBlockNumber included
 export const exploreBlockRange = async (
   api: ApiPromise,
@@ -248,11 +264,13 @@ export function generateBlockDetailsLog(
     .filter(({ dispatchInfo }) => dispatchInfo.paysFee.isYes && !dispatchInfo.class.isMandatory)
     .reduce((p, { dispatchInfo, extrinsic, events, fee }) => {
       if (extrinsic.method.section == "ethereum") {
-        return (
-          p +
-          (BigInt((extrinsic.method.args[0] as any).gasPrice) * dispatchInfo.weight.toBigInt()) /
-            25000n
-        );
+        const payload = extrinsic.method.args[0] as any;
+        const gasPrice =
+          payload.asLegacy?.gasPrice ||
+          payload.asEip2930?.gasPrice ||
+          payload.asEip1559?.gasPrice ||
+          payload.gasPrice;
+        return p + (BigInt(gasPrice) * dispatchInfo.weight.toBigInt()) / 25000n;
       }
       return p + fee.partialFee.toBigInt();
     }, 0n);
@@ -270,7 +288,13 @@ export function generateBlockDetailsLog(
   const transferred = blockDetails.txWithEvents
     .map((tx) => {
       if (tx.extrinsic.method.section == "ethereum" && tx.extrinsic.method.method == "transact") {
-        return (tx.extrinsic.method.args[0] as any).value.toBigInt();
+        const payload = tx.extrinsic.method.args[0] as any;
+        return (
+          payload.asLegacy?.value.toBigInt() ||
+          payload.asEip2930?.value.toBigInt() ||
+          payload.asEip1559?.value.toBigInt() ||
+          payload.value.toBigInt()
+        );
       }
       return tx.events.reduce((total, event) => {
         if (event.section == "balances" && event.method == "Transfer") {
@@ -291,14 +315,19 @@ export function generateBlockDetailsLog(
       ? chalk.green(transferredText)
       : transferredText;
 
-  const authorId = blockDetails.authorName.length > 20 ? 
-  `${blockDetails.authorName.substring(
-    0,
-    7
-  )}..${blockDetails.authorName.substring(blockDetails.authorName.length - 4)}` : blockDetails.authorName;
+  const authorId =
+    blockDetails.authorName.length > 20
+      ? `${blockDetails.authorName.substring(0, 7)}..${blockDetails.authorName.substring(
+          blockDetails.authorName.length - 4
+        )}`
+      : blockDetails.authorName;
 
   const hash = blockDetails.block.header.hash.toString();
-  const time = new Date().toLocaleTimeString("fr-FR", {hour: '2-digit', minute:'2-digit', second:'2-digit'});
+  const time = new Date().toLocaleTimeString("fr-FR", {
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  });
 
   return `${time} ${options?.prefix ? `${options.prefix} ` : ""}#${blockDetails.block.header.number
     .toString()
