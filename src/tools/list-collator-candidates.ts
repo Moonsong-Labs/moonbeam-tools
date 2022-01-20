@@ -51,9 +51,12 @@ const main = async () => {
     if (stateData.requests.revocationsCount > 0) {
       for (const requestData of stateData.requests.requests) {
         const request = requestData[1].toJSON();
-        candidates[request.collator.toString()].pendingRevoke += BigInt(request.amount);
-        if (request.whenExecutable <= roundInfo.current.toNumber()) {
-          candidates[request.collator.toString()].totalRevokable += BigInt(request.amount);
+        // Checking because of bug allowing pending request even if no collator
+        if (candidates[request.collator.toString()]) {
+          candidates[request.collator.toString()].pendingRevoke += BigInt(request.amount);
+          if (request.whenExecutable <= roundInfo.current.toNumber()) {
+            candidates[request.collator.toString()].totalRevokable += BigInt(request.amount);
+          }
         }
       }
     }
