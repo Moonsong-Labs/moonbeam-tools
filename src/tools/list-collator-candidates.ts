@@ -5,6 +5,10 @@ import { table, getBorderCharacters } from "table";
 
 import { getAccountIdentity, getApiFor, getAuthorIdentity, NETWORK_YARGS_OPTIONS } from "..";
 
+function numberWithCommas(x) {
+  return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+}
+
 const argv = yargs(process.argv.slice(2))
   .usage("Usage: $0")
   .version("1.0.0")
@@ -16,23 +20,36 @@ const main = async () => {
   // Instantiate Api
   const api = await getApiFor(argv);
 
-  const [roundInfo, blockHeader, delegatorState, candidatePool, totalSelected] = await Promise.all([
+  // Load asycnhronously all data
+  const dataPromise = Promise.all([
     api.query.parachainStaking.round() as Promise<any>,
-    api.rpc.chain.getHeader(),
     api.query.parachainStaking.delegatorState.entries(),
-    api.query.parachainStaking.candidatePool() as Promise<any>,
+    api.query.parachainStaking.candidateState.entries(),
     api.query.parachainStaking.totalSelected() as Promise<any>,
   ]);
 
+  const [candidatePool] = await Promise.all([
+    api.query.parachainStaking.candidatePool() as Promise<any>,
+  ]);
   const candidateNames = await Promise.all(
     candidatePool.map((c: any) => getAccountIdentity(api, c.owner))
   );
+
+  // Wait for data to be retrieved
+  const [roundInfo, delegatorState, candidateState, totalSelected] = await dataPromise;
 
   const candidates = candidatePool.reduce((p, v: any, index: number) => {
     p[v.owner.toString()] = {
       id: v.owner.toString(),
       name: candidateNames[index],
+      totalDelegators: 0,
       totalDelegations: v.amount.toBigInt(),
+      totalUnused:
+        (
+          candidateState.find((c: any) => c[1].unwrap().id.toString() == v.owner.toString()) as any
+        )[1]
+          .unwrap()
+          .totalBacking.toBigInt() - v.amount.toBigInt(),
       totalRevokable: 0n,
       pendingRevoke: 0n,
     };
@@ -48,6 +65,9 @@ const main = async () => {
   for (const state of delegatorState) {
     const stateData = (state[1] as any).unwrap();
     delegationCount += stateData.delegations.length;
+    for (const delegation of stateData.delegations) {
+      candidates[delegation.owner.toString()].totalDelegators += 1;
+    }
     if (stateData.requests.revocationsCount > 0) {
       for (const requestData of stateData.requests.requests) {
         const request = requestData[1].toJSON();
@@ -69,25 +89,45 @@ const main = async () => {
   const minCollator = candidateList[totalSelected.toNumber()];
   const minCollatorFifth = candidateList[Math.floor((totalSelected.toNumber() * 4) / 5)];
 
-  const tableData = ([["Id", "Name", "Delegations", "Revokable", "Pending"]] as any[]).concat(
+  const tableData = (
+    [["Id", "Name", "Delegators", "Delegations", "Revokable", "Pending", "Unused"]] as any[]
+  ).concat(
     candidateList.map((candidate, index) => {
       return [
         candidate.id,
         candidate.name,
-        candidate.totalDelegations / 10n ** 18n,
+        candidate.totalDelegators > 400
+          ? chalk.red(candidate.totalDelegators)
+          : candidate.totalDelegators > 300
+          ? chalk.yellow(candidate.totalDelegators)
+          : candidate.totalDelegators,
+        numberWithCommas(candidate.totalDelegations / 10n ** 18n),
         candidate.totalDelegations - candidate.totalRevokable < minCollator.totalDelegations
-          ? chalk.red(candidate.totalRevokable / 10n ** 18n)
+          ? chalk.red(numberWithCommas(candidate.totalRevokable / 10n ** 18n))
           : candidate.totalDelegations - candidate.totalRevokable <
             minCollatorFifth.totalDelegations
-          ? chalk.yellow(candidate.totalRevokable / 10n ** 18n)
-          : candidate.totalRevokable / 10n ** 18n,
+          ? chalk.yellow(numberWithCommas(candidate.totalRevokable / 10n ** 18n))
+          : numberWithCommas(candidate.totalRevokable / 10n ** 18n),
         candidate.totalDelegations - candidate.pendingRevoke < minCollator.totalDelegations
-          ? chalk.red(candidate.pendingRevoke / 10n ** 18n)
+          ? chalk.red(numberWithCommas(candidate.pendingRevoke / 10n ** 18n))
           : candidate.totalDelegations - candidate.pendingRevoke < minCollatorFifth.totalDelegations
-          ? chalk.yellow(candidate.pendingRevoke / 10n ** 18n)
-          : candidate.pendingRevoke / 10n ** 18n,
+          ? chalk.yellow(numberWithCommas(candidate.pendingRevoke / 10n ** 18n))
+          : numberWithCommas(candidate.pendingRevoke / 10n ** 18n),
+
+        numberWithCommas(candidate.totalUnused / 10n ** 18n),
       ];
-    })
+    }),
+    [
+      [
+        "",
+        "Total",
+        candidateList.reduce((p, c) => p + c.totalDelegators, 0),
+        numberWithCommas(candidateList.reduce((p, c) => p + c.totalDelegations, 0n) / 10n ** 18n),
+        numberWithCommas(candidateList.reduce((p, c) => p + c.totalRevokable, 0n) / 10n ** 18n),
+        numberWithCommas(candidateList.reduce((p, c) => p + c.pendingRevoke, 0n) / 10n ** 18n),
+        numberWithCommas(candidateList.reduce((p, c) => p + c.totalUnused, 0n) / 10n ** 18n),
+      ],
+    ]
   );
 
   console.log(
@@ -96,7 +136,17 @@ const main = async () => {
         lineIndex == 0 ||
         lineIndex == 1 ||
         lineIndex == tableData.length ||
+        lineIndex == tableData.length - 1 ||
         lineIndex == totalSelected.toNumber() + 1,
+      columns: [
+        { alignment: "left" },
+        { alignment: "left" },
+        { alignment: "right" },
+        { alignment: "right" },
+        { alignment: "right" },
+        { alignment: "right" },
+        { alignment: "right" },
+      ],
     })
   );
 
