@@ -56,7 +56,7 @@ const main = async () => {
           : tokens.toString().padStart(6);
 
     const blockLefts =
-      (req.request.whenExecutable - roundInfo.current.toNumber() - 1) * roundInfo.length.toNumber() +
+      (req.request.whenExecutable - roundInfo.current.toNumber()) * roundInfo.length.toNumber() +
       roundBlockLefts;
     const timeLeft = blockLefts * 12;
     console.log(
