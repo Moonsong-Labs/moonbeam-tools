@@ -38,6 +38,9 @@ const identityCache: {
 } = {};
 
 export const getAccountIdentity = async (api: ApiPromise, account: string): Promise<string> => {
+  if (!account) {
+    return "";
+  }
   if (!identityCache[account] || identityCache[account].lastUpdate < Date.now() - 3600 * 1000) {
     const identityData = await api.query.identity.identityOf(account.toString());
     identityCache[account] = {

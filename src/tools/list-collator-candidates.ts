@@ -1,9 +1,9 @@
 // This script is expected to run against a parachain network (using launch.ts script)
 import chalk from "chalk";
 import yargs from "yargs";
-import { table, getBorderCharacters } from "table";
+import { table } from "table";
 
-import { getAccountIdentity, getApiFor, getAuthorIdentity, NETWORK_YARGS_OPTIONS } from "..";
+import { getAccountIdentity, getApiFor, NETWORK_YARGS_OPTIONS } from "..";
 
 function numberWithCommas(x) {
   return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
@@ -22,6 +22,7 @@ const main = async () => {
 
   // Load asycnhronously all data
   const dataPromise = Promise.all([
+    api.rpc.chain.getHeader(),
     api.query.parachainStaking.round() as Promise<any>,
     api.query.parachainStaking.delegatorState.entries(),
     api.query.parachainStaking.candidateState.entries(),
@@ -36,7 +37,7 @@ const main = async () => {
   );
 
   // Wait for data to be retrieved
-  const [roundInfo, delegatorState, candidateState, totalSelected] = await dataPromise;
+  const [blockHeader, roundInfo, delegatorState, candidateState, totalSelected] = await dataPromise;
 
   const candidates = candidatePool.reduce((p, v: any, index: number) => {
     p[v.owner.toString()] = {
@@ -89,6 +90,8 @@ const main = async () => {
   const minCollator = candidateList[totalSelected.toNumber()];
   const minCollatorFifth = candidateList[Math.floor((totalSelected.toNumber() * 4) / 5)];
 
+  const nextRoundSeconds =
+    12 * (roundInfo.first.toNumber() + roundInfo.length.toNumber() - blockHeader.number.toNumber());
   const tableData = (
     [["Id", "Name", "Delegators", "Delegations", "Revokable", "Pending", "Unused"]] as any[]
   ).concat(
@@ -119,7 +122,13 @@ const main = async () => {
     }),
     [
       [
-        "",
+        `Next Round #${roundInfo.current.toNumber() + 1} - block #${
+          roundInfo.first.toNumber() + roundInfo.length.toNumber() - blockHeader.number.toNumber()
+        } (+${
+          nextRoundSeconds / 3600 >= 1 ? `${Math.floor(nextRoundSeconds / 3600)}h` : ""
+        }${Math.floor((nextRoundSeconds % 3600) / 60)
+          .toString()
+          .padStart(2, "0")}m)`,
         "Total",
         candidateList.reduce((p, c) => p + c.totalDelegators, 0),
         numberWithCommas(candidateList.reduce((p, c) => p + c.totalDelegations, 0n) / 10n ** 18n),
@@ -149,11 +158,6 @@ const main = async () => {
       ],
     })
   );
-
-  console.log(
-    `\nTotal delegations: ${(delegationSum / 10n ** 18n).toString()} (count: ${delegationCount})`
-  );
-
   await api.disconnect();
 };
 
