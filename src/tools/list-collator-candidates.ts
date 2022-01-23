@@ -46,7 +46,7 @@ const main = async () => {
       isActive: candidate.state.toString() == "Active",
       totalDelegations: candidate.totalCounted.toBigInt(),
       totalUnused: candidate.totalBacking.toBigInt() - candidate.totalCounted.toBigInt(),
-      totalRevokable: 0n,
+      totalRevokable: new Array(8).fill(0n),
       pendingRevoke: 0n,
     };
     return p;
@@ -70,9 +70,12 @@ const main = async () => {
         // Checking because of bug allowing pending request even if no collator
         if (candidates[request.collator.toString()]) {
           candidates[request.collator.toString()].pendingRevoke += BigInt(request.amount);
-          if (request.whenExecutable <= roundInfo.current.toNumber()) {
-            candidates[request.collator.toString()].totalRevokable += BigInt(request.amount);
-          }
+          const day = Math.ceil(
+            (Math.max(request.whenExecutable, roundInfo.current.toNumber()) -
+              roundInfo.current.toNumber()) /
+              4
+          );
+          candidates[request.collator.toString()].totalRevokable[day] += BigInt(request.amount);
         }
       }
     }
@@ -93,8 +96,32 @@ const main = async () => {
   const candidateOffCount = candidateList.filter((c) => !c.isActive).length;
   const nextRoundSeconds =
     12 * (roundInfo.first.toNumber() + roundInfo.length.toNumber() - blockHeader.number.toNumber());
+
+  const printColoredNumber = (value: bigint, total: bigint) => {
+    const valueWithCommas = numberWithCommas(value / 10n ** 18n);
+    return value > total / 10n
+      ? chalk.red(valueWithCommas)
+      : value > total / 20n
+      ? chalk.yellow(valueWithCommas)
+      : valueWithCommas;
+  };
+
+  const sumRevokable = new Array(8)
+    .fill(0)
+    .map((_, day) => candidateList.reduce((p, c) => p + c.totalRevokable[day], 0n));
   const tableData = (
-    [["Id", "Name", "Delegators", "Delegations", "Revokable", "Pending", "Unused"]] as any[]
+    [
+      [
+        "Id",
+        "Name",
+        "Delegators",
+        "Delegations",
+        "Revokable",
+        ...new Array(7).fill(0).map((_, i) => `${i + 1} day`),
+        "Pending",
+        "Unused",
+      ],
+    ] as any[]
   ).concat(
     candidateList.map((candidate, index) => {
       return [
@@ -106,12 +133,7 @@ const main = async () => {
           ? chalk.yellow(candidate.totalDelegators)
           : candidate.totalDelegators,
         numberWithCommas(candidate.totalDelegations / 10n ** 18n),
-        candidate.totalDelegations - candidate.totalRevokable < minCollator.totalDelegations
-          ? chalk.red(numberWithCommas(candidate.totalRevokable / 10n ** 18n))
-          : candidate.totalDelegations - candidate.totalRevokable <
-            minCollatorFifth.totalDelegations
-          ? chalk.yellow(numberWithCommas(candidate.totalRevokable / 10n ** 18n))
-          : numberWithCommas(candidate.totalRevokable / 10n ** 18n),
+        ...candidate.totalRevokable.map((r, i) => printColoredNumber(r, sumRevokable[i])),
         candidate.totalDelegations - candidate.pendingRevoke < minCollator.totalDelegations
           ? chalk.red(numberWithCommas(candidate.pendingRevoke / 10n ** 18n))
           : candidate.totalDelegations - candidate.pendingRevoke < minCollatorFifth.totalDelegations
@@ -133,7 +155,13 @@ const main = async () => {
         "Total",
         candidateList.reduce((p, c) => p + c.totalDelegators, 0),
         numberWithCommas(candidateList.reduce((p, c) => p + c.totalDelegations, 0n) / 10n ** 18n),
-        numberWithCommas(candidateList.reduce((p, c) => p + c.totalRevokable, 0n) / 10n ** 18n),
+        ...new Array(8)
+          .fill(0)
+          .map((_, day) =>
+            numberWithCommas(
+              candidateList.reduce((p, c) => p + c.totalRevokable[day], 0n) / 10n ** 18n
+            )
+          ),
         numberWithCommas(candidateList.reduce((p, c) => p + c.pendingRevoke, 0n) / 10n ** 18n),
         numberWithCommas(candidateList.reduce((p, c) => p + c.totalUnused, 0n) / 10n ** 18n),
       ],
@@ -152,6 +180,13 @@ const main = async () => {
       columns: [
         { alignment: "left" },
         { alignment: "left" },
+        { alignment: "right" },
+        { alignment: "right" },
+        { alignment: "right" },
+        { alignment: "right" },
+        { alignment: "right" },
+        { alignment: "right" },
+        { alignment: "right" },
         { alignment: "right" },
         { alignment: "right" },
         { alignment: "right" },
