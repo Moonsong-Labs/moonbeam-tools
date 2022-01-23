@@ -12,6 +12,7 @@ const argv = yargs(process.argv.slice(2))
     collator: {
       type: "string",
       description: "address of the collator",
+      demandOption: true,
     },
   }).argv;
 

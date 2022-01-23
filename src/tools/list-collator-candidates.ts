@@ -25,32 +25,27 @@ const main = async () => {
     api.rpc.chain.getHeader(),
     api.query.parachainStaking.round() as Promise<any>,
     api.query.parachainStaking.delegatorState.entries(),
-    api.query.parachainStaking.candidateState.entries(),
+    api.query.parachainStaking.candidatePool() as Promise<any>,
     api.query.parachainStaking.totalSelected() as Promise<any>,
   ]);
 
-  const [candidatePool] = await Promise.all([
-    api.query.parachainStaking.candidatePool() as Promise<any>,
-  ]);
+  const [candidateState] = await Promise.all([api.query.parachainStaking.candidateState.entries()]);
   const candidateNames = await Promise.all(
-    candidatePool.map((c: any) => getAccountIdentity(api, c.owner))
+    candidateState.map((c: any) => getAccountIdentity(api, c[1].unwrap().id.toString()))
   );
 
   // Wait for data to be retrieved
-  const [blockHeader, roundInfo, delegatorState, candidateState, totalSelected] = await dataPromise;
+  const [blockHeader, roundInfo, delegatorState, candidatePool, totalSelected] = await dataPromise;
 
-  const candidates = candidatePool.reduce((p, v: any, index: number) => {
-    p[v.owner.toString()] = {
-      id: v.owner.toString(),
+  const candidates = candidateState.reduce((p, v: any, index: number) => {
+    const candidate = v[1].unwrap();
+    p[candidate.id.toString()] = {
+      id: candidate.id.toString(),
       name: candidateNames[index],
       totalDelegators: 0,
-      totalDelegations: v.amount.toBigInt(),
-      totalUnused:
-        (
-          candidateState.find((c: any) => c[1].unwrap().id.toString() == v.owner.toString()) as any
-        )[1]
-          .unwrap()
-          .totalBacking.toBigInt() - v.amount.toBigInt(),
+      isActive: candidate.state.toString() == "Active",
+      totalDelegations: candidate.totalCounted.toBigInt(),
+      totalUnused: candidate.totalBacking.toBigInt() - candidate.totalCounted.toBigInt(),
       totalRevokable: 0n,
       pendingRevoke: 0n,
     };
@@ -84,12 +79,18 @@ const main = async () => {
   }
 
   const candidateList = Object.keys(candidates)
-    .sort((a, b) => Number(candidates[b].totalDelegations - candidates[a].totalDelegations))
+    .sort((a, b) =>
+      Number(
+        (candidates[b].isActive ? candidates[b].totalDelegations : 0n) -
+          (candidates[a].isActive ? candidates[a].totalDelegations : 0n)
+      )
+    )
     .map((a) => candidates[a]);
 
   const minCollator = candidateList[totalSelected.toNumber()];
   const minCollatorFifth = candidateList[Math.floor((totalSelected.toNumber() * 4) / 5)];
 
+  const candidateOffCount = candidateList.filter((c) => !c.isActive).length;
   const nextRoundSeconds =
     12 * (roundInfo.first.toNumber() + roundInfo.length.toNumber() - blockHeader.number.toNumber());
   const tableData = (
@@ -97,8 +98,8 @@ const main = async () => {
   ).concat(
     candidateList.map((candidate, index) => {
       return [
-        candidate.id,
-        candidate.name,
+        candidate.isActive ? candidate.id : chalk.yellow(candidate.id.toString()),
+        candidate.isActive ? candidate.name : chalk.yellow(candidate.name.toString() + ` [off]`),
         candidate.totalDelegators > 400
           ? chalk.red(candidate.totalDelegators)
           : candidate.totalDelegators > 300
@@ -122,9 +123,9 @@ const main = async () => {
     }),
     [
       [
-        `Next Round #${roundInfo.current.toNumber() + 1} - block #${
+        `Next Round #${roundInfo.current.toNumber() + 1} - blocks: -${
           roundInfo.first.toNumber() + roundInfo.length.toNumber() - blockHeader.number.toNumber()
-        } (+${
+        } (-${
           nextRoundSeconds / 3600 >= 1 ? `${Math.floor(nextRoundSeconds / 3600)}h` : ""
         }${Math.floor((nextRoundSeconds % 3600) / 60)
           .toString()
@@ -146,6 +147,7 @@ const main = async () => {
         lineIndex == 1 ||
         lineIndex == tableData.length ||
         lineIndex == tableData.length - 1 ||
+        lineIndex == tableData.length - candidateOffCount - 1 ||
         lineIndex == totalSelected.toNumber() + 1,
       columns: [
         { alignment: "left" },
