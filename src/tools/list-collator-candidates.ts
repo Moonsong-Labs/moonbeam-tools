@@ -26,6 +26,7 @@ const main = async () => {
     api.query.parachainStaking.round() as Promise<any>,
     api.query.parachainStaking.delegatorState.entries(),
     api.query.parachainStaking.candidatePool() as Promise<any>,
+    api.query.parachainStaking.selectedCandidates() as Promise<any>,
     api.query.parachainStaking.totalSelected() as Promise<any>,
   ]);
 
@@ -35,7 +36,8 @@ const main = async () => {
   );
 
   // Wait for data to be retrieved
-  const [blockHeader, roundInfo, delegatorState, candidatePool, totalSelected] = await dataPromise;
+  const [blockHeader, roundInfo, delegatorState, candidatePool, selectedCandidates, totalSelected] =
+    await dataPromise;
 
   const candidates = candidateState.reduce((p, v: any, index: number) => {
     const candidate = v[1].unwrap();
@@ -47,6 +49,7 @@ const main = async () => {
       ),
       totalDelegators: 0,
       isActive: candidate.state.toString() == "Active",
+      isSelected: selectedCandidates.find((c) => c.toString() == candidate.id.toString()),
       totalDelegations: candidate.totalCounted.toBigInt(),
       totalUnused: candidate.totalBacking.toBigInt() - candidate.totalCounted.toBigInt(),
       totalRevokable: new Array(8).fill(0n),
@@ -128,8 +131,16 @@ const main = async () => {
   ).concat(
     candidateList.map((candidate, index) => {
       return [
-        candidate.isActive ? candidate.id : chalk.yellow(candidate.id.toString()),
-        candidate.isActive ? candidate.name : chalk.yellow(candidate.name.toString() + ` [off]`),
+        !candidate.isActive
+          ? chalk.yellow(candidate.id.toString())
+          : candidate.isSelected
+          ? candidate.id
+          : chalk.red(candidate.id.toString()),
+        !candidate.isActive
+          ? chalk.yellow(candidate.name.toString() + ` [off]`)
+          : candidate.isSelected
+          ? candidate.name
+          : chalk.red(candidate.name.toString()),
         candidate.totalDelegators > 400
           ? chalk.red(candidate.totalDelegators)
           : candidate.totalDelegators > 300
