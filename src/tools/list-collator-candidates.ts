@@ -3,7 +3,7 @@ import chalk from "chalk";
 import yargs from "yargs";
 import { table } from "table";
 
-import { getAccountIdentity, getApiFor, NETWORK_YARGS_OPTIONS } from "..";
+import { getAccountIdentities, getApiFor, NETWORK_YARGS_OPTIONS } from "..";
 
 function numberWithCommas(x) {
   return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
@@ -20,19 +20,26 @@ const main = async () => {
   // Instantiate Api
   const api = await getApiFor(argv);
 
+  const blockHash = await api.rpc.chain.getBlockHash();
+  const apiAt = await api.at(blockHash);
+
   // Load asycnhronously all data
   const dataPromise = Promise.all([
-    api.rpc.chain.getHeader(),
-    api.query.parachainStaking.round() as Promise<any>,
-    api.query.parachainStaking.delegatorState.entries(),
-    api.query.parachainStaking.candidatePool() as Promise<any>,
-    api.query.parachainStaking.selectedCandidates() as Promise<any>,
-    api.query.parachainStaking.totalSelected() as Promise<any>,
+    api.rpc.chain.getHeader(blockHash),
+    apiAt.query.parachainStaking.round() as Promise<any>,
+    apiAt.query.parachainStaking.delegatorState.entries(),
+    apiAt.query.parachainStaking.candidatePool() as Promise<any>,
+    apiAt.query.parachainStaking.selectedCandidates() as Promise<any>,
+    apiAt.query.parachainStaking.totalSelected() as Promise<any>,
   ]);
 
-  const [candidateState] = await Promise.all([api.query.parachainStaking.candidateState.entries()]);
-  const candidateNames = await Promise.all(
-    candidateState.map((c: any) => getAccountIdentity(api, c[1].unwrap().id.toString()))
+  const [candidateState] = await Promise.all([
+    apiAt.query.parachainStaking.candidateState.entries(),
+  ]);
+  const candidateNames = await getAccountIdentities(
+    api,
+    candidateState.map((c: any) => c[1].unwrap().id.toString()),
+    blockHash
   );
 
   // Wait for data to be retrieved
@@ -43,10 +50,7 @@ const main = async () => {
     const candidate = v[1].unwrap();
     p[candidate.id.toString()] = {
       id: candidate.id.toString(),
-      name: candidateNames[index].replace(
-        /([\u2700-\u27BF]|[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2011-\u26FF]|\uD83E[\uDD10-\uDDFF])/g,
-        ""
-      ),
+      name: candidateNames[index].replace(/[\t\n]/g, "").slice(0, 42),
       totalDelegators: 0,
       isActive: candidate.state.toString() == "Active",
       isSelected: selectedCandidates.find((c) => c.toString() == candidate.id.toString()),
@@ -96,7 +100,7 @@ const main = async () => {
     )
     .map((a) => candidates[a]);
 
-  const minCollator = candidateList[totalSelected.toNumber()];
+  const minCollator = candidateList[Math.min(candidateList.length - 1, totalSelected.toNumber())];
   const minCollatorFifth = candidateList[Math.floor((totalSelected.toNumber() * 4) / 5)];
 
   const candidateOffCount = candidateList.filter((c) => !c.isActive).length;

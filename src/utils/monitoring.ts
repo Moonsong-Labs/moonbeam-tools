@@ -2,11 +2,12 @@ import type { ApiPromise } from "@polkadot/api";
 import type { Extrinsic, BlockHash, EventRecord } from "@polkadot/types/interfaces";
 import type { Block } from "@polkadot/types/interfaces/runtime/types";
 import type { Option } from "@polkadot/types";
-import { u8aToString } from "@polkadot/util";
+import { u8aConcat, u8aToString } from "@polkadot/util";
+import { xxhashAsU8a } from "@polkadot/util-crypto";
 import { ethereumEncode } from "@polkadot/util-crypto";
 import { mapExtrinsics, TxWithEventAndFee } from "./types";
 
-import '@polkadot/api-augment';
+import "@polkadot/api-augment";
 
 import chalk from "chalk";
 import Debug from "debug";
@@ -32,10 +33,58 @@ const authorMappingCache: {
 
 const identityCache: {
   [author: string]: {
-    identity: Option<PalletIdentityRegistration>;
+    identity?: PalletIdentityRegistration;
     lastUpdate: number;
   };
 } = {};
+
+const getIdentityKey = (account: string) => {
+  return `0x${Buffer.from(
+    u8aConcat(
+      xxhashAsU8a("Identity", 128),
+      xxhashAsU8a("IdentityOf", 128),
+      xxhashAsU8a(account, 64),
+      account
+    )
+  ).toString("hex")}`;
+};
+
+export const getAccountIdentities = async (
+  api: ApiPromise,
+  accounts: string[],
+  at?: BlockHash | string
+): Promise<string[]> => {
+  if (!accounts || accounts.length == 0) {
+    return [];
+  }
+  const missingAccounts = accounts.filter(
+    (account) =>
+      account &&
+      (!identityCache[account] || identityCache[account].lastUpdate < Date.now() - 3600 * 1000)
+  );
+
+  if (missingAccounts.length > 0) {
+    const keys = missingAccounts.map((a) => getIdentityKey(a.toString()));
+    const identities = await api.rpc.state.queryStorageAt<Option<PalletIdentityRegistration>[]>(
+      keys,
+      at
+    );
+    identities.forEach((identityData, i) => {
+      identityCache[missingAccounts[i]] = {
+        lastUpdate: Date.now(),
+        identity:
+          identityData.isSome &&
+          api.registry.createType("PalletIdentityRegistration", identityData.toString()),
+      };
+    });
+  }
+
+  return accounts.map((account) =>
+    account && identityCache[account].identity
+      ? u8aToString(identityCache[account].identity.info.display.asRaw.toU8a(true))
+      : account?.toString()
+  );
+};
 
 export const getAccountIdentity = async (api: ApiPromise, account: string): Promise<string> => {
   if (!account) {
@@ -45,14 +94,12 @@ export const getAccountIdentity = async (api: ApiPromise, account: string): Prom
     const identityData = await api.query.identity.identityOf(account.toString());
     identityCache[account] = {
       lastUpdate: Date.now(),
-      identity: identityData,
+      identity: identityData.unwrapOr(undefined),
     };
   }
 
   const { identity } = identityCache[account];
-  return identity.isSome
-    ? u8aToString(identity.unwrap().info.display.asRaw.toU8a(true))
-    : account?.toString();
+  return identity ? u8aToString(identity.info.display.asRaw.toU8a(true)) : account?.toString();
 };
 
 export const getAuthorIdentity = async (api: ApiPromise, author: string): Promise<string> => {
