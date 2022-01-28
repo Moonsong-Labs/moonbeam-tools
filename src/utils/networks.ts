@@ -20,8 +20,8 @@ export const NETWORK_HTTP_URLS: { [name in NETWORK_NAME]: string } = {
   alphanet: "https://rpc.api.moonbase.moonbeam.network",
   moonsama: "https://rpc.moonsama.gcp.purestake.run",
   moonsilver: "https://rpc.moonsilver.moonbeam.network",
-  moonriver: "https://rpc.moonriver.moonbeam.network",
-  moonbeam: "https://rpc.moonriver.moonbeam.network",
+  moonriver: "https://rpc.api.moonriver.moonbeam.network",
+  moonbeam: "https://rpc.api.moonbeam.network",
 };
 export const NETWORK_NAMES = Object.keys(NETWORK_WS_URLS) as NETWORK_NAME[];
 
