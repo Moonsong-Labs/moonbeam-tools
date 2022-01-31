@@ -26,6 +26,11 @@ const argv = yargs(process.argv.slice(2))
       description: "Private key to transfer from",
       conflicts: ["to"],
     },
+    threshold: {
+      type: "number",
+      description: "Minimum number of token for revocations to execute (0 for no threshold)",
+      default: 0,
+    },
   }).argv;
 
 const main = async () => {
@@ -42,7 +47,7 @@ const main = async () => {
   let nonce = await web3.eth.getTransactionCount(revoker.address);
   let balance = await web3.eth.getBalance(revoker.address);
   console.log(`Using ${revoker.address}: nonce ${nonce}, balance ${balance}`);
-  console.log(`Listing revocations for ${formattedCollators.join(', ')}`);
+  console.log(`Listing revocations for ${formattedCollators.join(", ")}`);
 
   const [roundInfo, delegatorState] = await Promise.all([
     (await api.query.parachainStaking.round()) as any,
@@ -59,7 +64,11 @@ const main = async () => {
       const requestData = stateData.requests.requests.toJSON();
       for (const collator of formattedCollators) {
         const request = requestData[collator];
-        if (request && request.whenExecutable <= roundInfo.current.toNumber()) {
+        if (
+          request &&
+          request.whenExecutable <= roundInfo.current.toNumber() &&
+          (!argv.threshold || BigInt(request.amount) / 10n ** 18n > argv.threshold)
+        ) {
           requests.push({
             collator,
             id: stateData.id,
