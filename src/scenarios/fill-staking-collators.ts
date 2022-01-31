@@ -80,7 +80,7 @@ const main = async () => {
         ).toNumber();
         transactions.push(
           await api.tx.parachainStaking
-            .candidateBondMore(minCandidateStk, argv.collators)
+            .candidateBondMore(minCandidateStk)
             .signAsync(collators[collatorIndex], { nonce })
         );
       }
