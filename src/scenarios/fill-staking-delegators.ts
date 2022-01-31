@@ -19,14 +19,12 @@ const argv = yargs(process.argv.slice(2))
     },
     from: {
       type: "string",
-      description: "Private key to transfer from"
+      description: "Private key to transfer from",
     },
     // Todo: use MinCandidateStk from constants instead
     amount: {
       type: "number",
-      default: 5,
-      description: "Number of Token to delegate",
-      demandOption: true
+      description: "Number of Token to delegate (default to minDelegatorStk)",
     },
     "transfer-initial-funds": {
       type: "boolean",
@@ -39,10 +37,11 @@ const main = async () => {
   const api = await getMonitoredApiFor(argv);
   const keyring = new Keyring({ type: "ethereum" });
 
-  const minCandidateStk = BigInt(argv.amount) * 10n ** 18n;
+  const minDelegatorStk = argv.amount
+    ? BigInt(argv.amount) * 10n ** 18n
+    : ((await api.consts.parachainStaking.minDelegatorStk) as any).toBigInt();
 
   // Create a bunch of delegator using deterministic private key
-
 
   const collators: {
     owner: any;
@@ -59,46 +58,62 @@ const main = async () => {
     })
   );
 
-  
   if (argv["transfer-initial-funds"]) {
-
     if (!argv["from"]) {
       console.log(`Missing --from`);
       return;
     }
     const fromAccount = await keyring.addFromUri(argv.from);
 
-    const amountToTransfer = minCandidateStk + (5n * 10n ** 18n); // extra for fees
+    const amountToTransfer = minDelegatorStk + 1n * 10n ** 18n; // extra for fees
     const amountToTip = 1n * 10n ** 15n;
     const amountRequired = (amountToTransfer + amountToTip) * BigInt(delegators.length);
-    const amountAvailable = (await api.query.system.account(fromAccount.address)).data.free.toBigInt();
-    
+    const amountAvailable = (
+      await api.query.system.account(fromAccount.address)
+    ).data.free.toBigInt();
+
     if (amountRequired > amountAvailable) {
-      console.log(`Amount required ${amountRequired} > amount available ${amountAvailable} (from ${fromAccount.address})`)
+      console.log(
+        `Amount required ${amountRequired} > amount available ${amountAvailable} (from ${fromAccount.address})`
+      );
       return;
     }
 
     // Create transaction for 100 tokens tranfer to each delegator, from Alith
-    console.log(`Transferring ${(amountToTransfer + amountToTip) / 10n ** 18n} tokens to ${delegators.length} to delegators... (Total: ${amountRequired / (10n * 18n)} Tokens)`);
+    console.log(
+      `Transferring ${(amountToTransfer + amountToTip) / 10n ** 18n} tokens to ${
+        delegators.length
+      } to delegators... (Total: ${amountRequired / (10n * 18n)} Tokens)`
+    );
 
     const batchSize = 20000;
     for (let i = 0; i < delegators.length; i += batchSize) {
       const chunk = delegators.slice(i, i + batchSize);
-      console.log(`Preparing to transfer to delegator ${i}...${i + batchSize - 1}`);
+      console.log(
+        `Preparing to transfer to delegator ${i}...${Math.min(
+          i + batchSize - 1,
+          delegators.length - 1
+        )}`
+      );
       let fromNonce = (await api.rpc.system.accountNextIndex(fromAccount.address)).toNumber();
       const transferTxs = (
         await Promise.all(
           chunk.map(async (delegator, index) => {
-            if ((await api.query.system.account(delegator.address as string)).data.free.toBigInt() > 0n) {
+            if (
+              (await api.query.system.account(delegator.address as string)).data.free.toBigInt() >
+              0n
+            ) {
               return null;
             }
             return api.tx.balances
               .transfer(delegator.address, amountToTransfer)
-              .signAsync(fromAccount, { nonce: fromNonce++, tip: amountToTip  });
+              .signAsync(fromAccount, { nonce: fromNonce++, tip: amountToTip });
           })
         )
       ).filter((t) => !!t);
-      console.log(`Transferring to delegator ${i}...${i + batchSize - 1}`);
+      console.log(
+        `Transferring to delegator ${i}...${Math.min(i + batchSize - 1, delegators.length - 1)}`
+      );
       if (transferTxs.length > 0) {
         // Send the transfer transactions and wait for the last one to finish
         await sendAllStreamAndWaitLast(api, transferTxs, { threshold: 5000, batch: 200 }).catch(
@@ -114,53 +129,60 @@ const main = async () => {
   }
 
   const transactions: SubmittableExtrinsic[] = [];
-  await Promise.all(collators.map(async (_, collatorIndex) => {
-    
-    console.log(`Registering delegators for collator ${collatorIndex}`);
+  await Promise.all(
+    collators.map(async (_, collatorIndex) => {
+      console.log(`Registering delegators for collator ${collatorIndex}`);
 
-    const collator = ((await api.query.parachainStaking.candidateState(
-      collators[collatorIndex].owner
-    )) as any).unwrap();
+      const collator = (
+        (await api.query.parachainStaking.candidateState(collators[collatorIndex].owner)) as any
+      ).unwrap();
 
-    const delegatorChunk = delegators.slice(
-      collatorIndex * argv.delegations,
-      (collatorIndex + 1) * argv.delegations
-    );
-
-    const existingDelegators = collator.delegators.reduce((p, v) => {
-          p[v] = true;
-          return p;
-        }, {});
-
-    // for each delegator (sequentially)
-    console.log(`Delegating to collator ${collatorIndex}...`);
-    let delegationCount = collator.delegators.length + 1;
-    for (const delegator of delegatorChunk) {
-      if (existingDelegators[delegator.address]) {
-        continue;
-      }
-      // Retrieve the nonce
-      const nonce = (await api.rpc.system.accountNextIndex(delegator.address)).toNumber();
-
-      // Creates and Adds the nomination transaction (5 token)
-      transactions.push(
-        await api.tx.parachainStaking
-          .delegate(collators[collatorIndex].owner, minCandidateStk, delegationCount++, 1)
-          .signAsync(delegator, { nonce })
+      const delegatorChunk = delegators.slice(
+        collatorIndex * argv.delegations,
+        (collatorIndex + 1) * argv.delegations
       );
-    }
-  }));
-  if (transactions.length !== 0) {
-    await sendAllStreamAndWaitLast(api, transactions, { threshold: 5000, batch: 200 }).catch((e) => {
-      console.log(`Failing to send delegation`);
-      console.log(e.msg || e.message || e.error);
-      console.log(e.toString());
-      console.log(JSON.stringify(e));
-    });
-  }
 
-  //await api.disconnect();
-  console.log(`Finished`);
+      const existingDelegators = collator.delegators.reduce((p, v) => {
+        p[v] = true;
+        return p;
+      }, {});
+
+      // for each delegator (sequentially)
+      console.log(`Delegating to collator ${collatorIndex}...`);
+      let delegationCount = collator.delegators.length + 1;
+      for (const delegator of delegatorChunk) {
+        if (existingDelegators[delegator.address]) {
+          continue;
+        }
+        // Retrieve the nonce
+        const nonce = (await api.rpc.system.accountNextIndex(delegator.address)).toNumber();
+
+        // Creates and Adds the nomination transaction (5 token)
+        transactions.push(
+          await api.tx.parachainStaking
+            .delegate(collators[collatorIndex].owner, minDelegatorStk, delegationCount++, 1)
+            .signAsync(delegator, { nonce })
+        );
+      }
+    })
+  );
+  if (transactions.length !== 0) {
+    await sendAllStreamAndWaitLast(api, transactions, { threshold: 2000, batch: 200, timeout: 300000 }).catch(
+      (e) => {
+        console.log(`Failing to send delegation`);
+        console.log(e.msg || e.message || e.error);
+        console.log(e.toString());
+        console.log(JSON.stringify(e));
+      }
+    );
+  }
+  console.log(`Finished\nShutting down...`);
+  // For some reason we need to wait to avoid error message
+  await new Promise(resolve => {
+    setTimeout(resolve, 5000);
+  });
+
+  await api.disconnect();
 };
 
 main();
