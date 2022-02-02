@@ -23,6 +23,16 @@ const argv = yargs(process.argv.slice(2))
       default: false,
       description: "Should funds be transferered from Alice to those accounts",
     },
+    "setup-staking": {
+      type: "boolean",
+      default: false,
+      description: "Will configure staking to support the given amount of collators",
+    },
+    "setup-eligibility": {
+      type: "boolean",
+      default: false,
+      description: "Will configure author filter to allow all node to create blocks",
+    },
   }).argv;
 
 const main = async () => {
@@ -45,6 +55,25 @@ const main = async () => {
   ]);
 
   let aliceNonce = (await api.rpc.system.accountNextIndex(alith.address)).toNumber();
+
+  if (argv["setup-staking"]) {
+    console.log(`     Setting staking total selected to ${argv.collators}`);
+
+    await api.tx.sudo
+      .sudo(await api.tx.parachainStaking.setTotalSelected(argv.collators))
+      .signAndSend(alith, { nonce: aliceNonce++ });
+
+    console.log(`     Setting staking block per round to 100`);
+    await api.tx.sudo
+      .sudo(await api.tx.parachainStaking.setBlocksPerRound(100))
+      .signAndSend(alith, { nonce: aliceNonce++ });
+  }
+  if (argv["setup-eligibility"]) {
+    console.log(`     Setting author eligibility to 100%`);
+    await api.tx.sudo.sudo(api.tx.authorFilter.setEligible(100)).signAndSend(alith, {
+      nonce: aliceNonce++,
+    });
+  }
 
   if (argv["transfer-initial-funds"]) {
     console.log(

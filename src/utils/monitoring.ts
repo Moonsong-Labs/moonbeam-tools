@@ -1,7 +1,7 @@
 import type { ApiPromise } from "@polkadot/api";
 import type { Extrinsic, BlockHash, EventRecord } from "@polkadot/types/interfaces";
 import type { Block } from "@polkadot/types/interfaces/runtime/types";
-import type { Option } from "@polkadot/types";
+import type { Data, GenericEthereumAccountId, Option } from "@polkadot/types";
 import { u8aConcat, u8aToString } from "@polkadot/util";
 import { xxhashAsU8a } from "@polkadot/util-crypto";
 import { ethereumEncode } from "@polkadot/util-crypto";
@@ -12,6 +12,7 @@ import "@polkadot/api-augment";
 import chalk from "chalk";
 import Debug from "debug";
 import { PalletIdentityRegistration } from "@polkadot/types/lookup";
+import { Codec, ITuple } from "@polkadot/types-codec/types";
 const debug = Debug("monitoring");
 
 export interface BlockDetails {
@@ -34,6 +35,10 @@ const authorMappingCache: {
 const identityCache: {
   [author: string]: {
     identity?: PalletIdentityRegistration;
+    superOf?: {
+      identity?: PalletIdentityRegistration;
+      data: Data;
+    };
     lastUpdate: number;
   };
 } = {};
@@ -64,26 +69,85 @@ export const getAccountIdentities = async (
   );
 
   if (missingAccounts.length > 0) {
-    const keys = missingAccounts.map((a) => getIdentityKey(a.toString()));
-    const identities = await api.rpc.state.queryStorageAt<Option<PalletIdentityRegistration>[]>(
-      keys,
-      at
+    const identityKeys = missingAccounts.map((a) =>
+      api.query.identity.identityOf.key(a.toString())
     );
-    identities.forEach((identityData, i) => {
+    const superOfKeys = missingAccounts.map((a) => api.query.identity.superOf.key(a.toString()));
+    const [identities, superOfIdentities] = await Promise.all([
+      api.rpc.state
+        .queryStorageAt<Option<PalletIdentityRegistration>[]>(identityKeys, at)
+        .then((arr) =>
+          arr.map(
+            (i) =>
+              i.isSome &&
+              api.registry.createType<PalletIdentityRegistration>(
+                "PalletIdentityRegistration",
+                i.toString()
+              )
+          )
+        ),
+      api.rpc.state
+        .queryStorageAt<Option<Codec>[]>(superOfKeys, at)
+        .then((superOfOpts) => {
+          return superOfOpts.map(
+            (superOfOpt) =>
+              (superOfOpt.isSome &&
+                api.registry.createType<ITuple<[GenericEthereumAccountId, Data]>>(
+                  "(GenericEthereumAccountId, Data)",
+                  superOfOpt.toString()
+                )) ||
+              null
+          );
+        })
+        .then(async (superOfs) => {
+          const validSuperOfs = superOfs.filter((a) => !!a);
+          const superIdentityOpts =
+            validSuperOfs.length > 0
+              ? await api.rpc.state.queryStorageAt<Option<PalletIdentityRegistration>[]>(
+                  validSuperOfs.map(
+                    (superOf) => api.query.identity.identityOf.key(superOf[0].toString()),
+                    at
+                  )
+                )
+              : [];
+          let index = 0;
+          return superOfs.map((superOf) => {
+            if (!!superOf) {
+              const superIdentityOpt = superIdentityOpts[index++];
+              return {
+                identity:
+                  superIdentityOpt.isSome &&
+                  api.registry.createType<PalletIdentityRegistration>(
+                    "PalletIdentityRegistration",
+                    superIdentityOpt.toString()
+                  ),
+                data: superOf[1],
+              };
+            }
+            return null;
+          });
+        }),
+    ]);
+
+    identities.forEach((identity, i) => {
       identityCache[missingAccounts[i]] = {
         lastUpdate: Date.now(),
-        identity:
-          identityData.isSome &&
-          api.registry.createType("PalletIdentityRegistration", identityData.toString()),
+        identity,
+        superOf: superOfIdentities[i],
       };
     });
   }
 
-  return accounts.map((account) =>
-    account && identityCache[account].identity
-      ? u8aToString(identityCache[account].identity.info.display.asRaw.toU8a(true))
-      : account?.toString()
-  );
+  return accounts.map((account) => {
+    const { identity, superOf } = identityCache[account];
+    return account && identity
+      ? u8aToString(identity.info.display.asRaw.toU8a(true))
+      : superOf && superOf.identity
+      ? `${u8aToString(superOf.identity.info.display.asRaw.toU8a(true))} - Sub ${
+          (superOf.data && u8aToString(superOf.data.asRaw.toU8a(true))) || ""
+        }`
+      : account?.toString();
+  });
 };
 
 export const getAccountIdentity = async (api: ApiPromise, account: string): Promise<string> => {
@@ -91,15 +155,36 @@ export const getAccountIdentity = async (api: ApiPromise, account: string): Prom
     return "";
   }
   if (!identityCache[account] || identityCache[account].lastUpdate < Date.now() - 3600 * 1000) {
-    const identityData = await api.query.identity.identityOf(account.toString());
+    const [identity, superOfIdentity] = await Promise.all([
+      api.query.identity.identityOf(account.toString()).then((a) => (a.isSome ? a.unwrap() : null)),
+      api.query.identity.superOf(account.toString()).then(async (superOfOpt) => {
+        const superOf = (superOfOpt.isSome && superOfOpt.unwrap()) || null;
+        if (!superOf) {
+          return null;
+        }
+        const identityOpt = await api.query.identity.identityOf(superOf[0].toString());
+        const identity = (identityOpt.isSome && identityOpt.unwrap()) || null;
+        return {
+          identity,
+          data: superOf[1],
+        };
+      }),
+    ]);
     identityCache[account] = {
       lastUpdate: Date.now(),
-      identity: identityData.unwrapOr(undefined),
+      identity,
+      superOf: superOfIdentity,
     };
   }
 
-  const { identity } = identityCache[account];
-  return identity ? u8aToString(identity.info.display.asRaw.toU8a(true)) : account?.toString();
+  const { identity, superOf } = identityCache[account];
+  return identity
+    ? u8aToString(identity.info.display.asRaw.toU8a(true))
+    : superOf
+    ? `${u8aToString(superOf.identity.info.display.asRaw.toU8a(true))} - Sub ${
+        (superOf.data && u8aToString(superOf.data.asRaw.toU8a(true))) || ""
+      }`
+    : account?.toString();
 };
 
 export const getAuthorIdentity = async (api: ApiPromise, author: string): Promise<string> => {

@@ -86,7 +86,9 @@ const main = async () => {
       } to delegators... (Total: ${amountRequired / (10n * 18n)} Tokens)`
     );
 
-    const batchSize = 20000;
+    const batchSize = 200;
+    let batches = [];
+    let fromNonce = (await api.rpc.system.accountNextIndex(fromAccount.address)).toNumber();
     for (let i = 0; i < delegators.length; i += batchSize) {
       const chunk = delegators.slice(i, i + batchSize);
       console.log(
@@ -95,37 +97,38 @@ const main = async () => {
           delegators.length - 1
         )}`
       );
-      let fromNonce = (await api.rpc.system.accountNextIndex(fromAccount.address)).toNumber();
       const transferTxs = (
         await Promise.all(
-          chunk.map(async (delegator, index) => {
+          chunk.map(async (delegator) => {
             if (
               (await api.query.system.account(delegator.address as string)).data.free.toBigInt() >
               0n
             ) {
               return null;
             }
-            return api.tx.balances
-              .transfer(delegator.address, amountToTransfer)
-              .signAsync(fromAccount, { nonce: fromNonce++, tip: amountToTip });
+            return api.tx.balances.transfer(delegator.address, amountToTransfer);
           })
         )
       ).filter((t) => !!t);
-      console.log(
-        `Transferring to delegator ${i}...${Math.min(i + batchSize - 1, delegators.length - 1)}`
-      );
       if (transferTxs.length > 0) {
-        // Send the transfer transactions and wait for the last one to finish
-        await sendAllStreamAndWaitLast(api, transferTxs, { threshold: 5000, batch: 200 }).catch(
-          (e) => {
-            console.log(`Failing to send transfer`);
-            console.log(e.msg || e.message || e.error);
-            console.log(e.toString());
-            console.log(JSON.stringify(e));
-          }
+        console.log(
+          `Transferring to delegator ${i}...${Math.min(i + batchSize - 1, delegators.length - 1)}`
+        );
+        batches.push(
+          await api.tx.utility
+            .batchAll(transferTxs)
+            .signAsync(fromAccount, { nonce: fromNonce++, tip: amountToTip })
         );
       }
     }
+
+    // Send the transfer transactions and wait for the last one to finish
+    await sendAllStreamAndWaitLast(api, batches, { threshold: 30, batch: 10 }).catch((e) => {
+      console.log(`Failing to send transfer`);
+      console.log(e.msg || e.message || e.error);
+      console.log(e.toString());
+      console.log(JSON.stringify(e));
+    });
   }
 
   const transactions: SubmittableExtrinsic[] = [];
@@ -167,18 +170,20 @@ const main = async () => {
     })
   );
   if (transactions.length !== 0) {
-    await sendAllStreamAndWaitLast(api, transactions, { threshold: 2000, batch: 200, timeout: 300000 }).catch(
-      (e) => {
-        console.log(`Failing to send delegation`);
-        console.log(e.msg || e.message || e.error);
-        console.log(e.toString());
-        console.log(JSON.stringify(e));
-      }
-    );
+    await sendAllStreamAndWaitLast(api, transactions, {
+      threshold: 2000,
+      batch: 200,
+      timeout: 300000,
+    }).catch((e) => {
+      console.log(`Failing to send delegation`);
+      console.log(e.msg || e.message || e.error);
+      console.log(e.toString());
+      console.log(JSON.stringify(e));
+    });
   }
   console.log(`Finished\nShutting down...`);
   // For some reason we need to wait to avoid error message
-  await new Promise(resolve => {
+  await new Promise((resolve) => {
     setTimeout(resolve, 5000);
   });
 

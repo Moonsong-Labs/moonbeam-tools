@@ -47,11 +47,12 @@ export const sendAllStreamAndWaitLast = async (
         Promise.all(
           chunk.map((tx) => {
             return new Promise(async (resolve, reject) => {
+              let unsub;
               const timer = setTimeout(() => {
                 reject(`timed out`);
                 unsub();
               }, timeout);
-              const unsub = await tx.send((result) => {
+              unsub = await tx.send((result) => {
                 // reset the timer
                 if (result.isError) {
                   console.log(result.toHuman());
