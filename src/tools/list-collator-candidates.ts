@@ -14,13 +14,19 @@ const argv = yargs(process.argv.slice(2))
   .version("1.0.0")
   .options({
     ...NETWORK_YARGS_OPTIONS,
+    at: {
+      type: "number",
+      description: "Block number to look into",
+    },
   }).argv;
 
 const main = async () => {
   // Instantiate Api
   const api = await getApiFor(argv);
 
-  const blockHash = await api.rpc.chain.getBlockHash();
+  const blockHash = argv.at
+    ? await api.rpc.chain.getBlockHash(argv.at)
+    : await api.rpc.chain.getBlockHash();
   const apiAt = await api.at(blockHash);
 
   // Load asycnhronously all data
@@ -33,12 +39,14 @@ const main = async () => {
     apiAt.query.parachainStaking.totalSelected() as Promise<any>,
   ]);
 
-  const [candidateState] = await Promise.all([
-    apiAt.query.parachainStaking.candidateState.entries(),
+  const [candidateData] = await Promise.all([
+    (
+      apiAt.query.parachainStaking.candidateInfo || apiAt.query.parachainStaking.candidateState
+    ).entries(),
   ]);
   const candidateNames = await getAccountIdentities(
     api,
-    candidateState.map((c: any) => c[1].unwrap().id.toString()),
+    candidateData.map((c: any) => `0x${c[0].toHex().slice(-40)}`),
     blockHash
   );
 
@@ -46,47 +54,61 @@ const main = async () => {
   const [blockHeader, roundInfo, delegatorState, candidatePool, selectedCandidates, totalSelected] =
     await dataPromise;
 
-  const candidates = candidateState.reduce((p, v: any, index: number) => {
+  const candidates = candidateData.reduce((p, v: any, index: number) => {
     const candidate = v[1].unwrap();
-    p[candidate.id.toString()] = {
-      id: candidate.id.toString(),
+    const id = `0x${v[0].toHex().slice(-40)}`;
+    p[id] = {
+      id,
       name: candidateNames[index].replace(/[\t\n]/g, "").slice(0, 42),
       totalDelegators: 0,
-      isActive: candidate.state.toString() == "Active",
-      isSelected: selectedCandidates.find((c) => c.toString() == candidate.id.toString()),
+      isActive: (candidate.state || candidate.status).toString() == "Active",
+      isSelected: selectedCandidates.find((c) => c.toString() == id),
       totalDelegations: candidate.totalCounted.toBigInt(),
-      totalUnused: candidate.totalBacking.toBigInt() - candidate.totalCounted.toBigInt(),
       totalRevokable: new Array(8).fill(0n),
       pendingRevoke: 0n,
     };
     return p;
   }, {});
 
-  let delegationCount = candidatePool.length;
-  const delegationSum = candidatePool.reduce(
-    (p, v: any, index: number) => p + v.amount.toBigInt(),
-    0n
-  );
-
   for (const state of delegatorState) {
     const stateData = (state[1] as any).unwrap();
-    delegationCount += stateData.delegations.length;
+    let totalDelegations = 0n;
     for (const delegation of stateData.delegations) {
-      candidates[delegation.owner.toString()].totalDelegators += 1;
+      candidates[delegation.owner.toHex()].totalDelegators += 1;
+      totalDelegations += delegation.amount.toBigInt();
     }
-    if (stateData.requests.revocationsCount > 0) {
-      for (const requestData of stateData.requests.requests) {
-        const request = requestData[1].toJSON();
-        // Checking because of bug allowing pending request even if no collator
-        if (candidates[request.collator.toString()]) {
-          candidates[request.collator.toString()].pendingRevoke += BigInt(request.amount);
-          const day = Math.ceil(
-            (Math.max(request.whenExecutable, roundInfo.current.toNumber()) -
-              roundInfo.current.toNumber()) /
-              4
-          );
-          candidates[request.collator.toString()].totalRevokable[day] += BigInt(request.amount);
-        }
+    // This is used to know how many delegation are left to count if the delegator is leaving 
+    const delegationLeft = stateData.delegations.reduce((p, delegation)=>{
+      p[delegation.owner.toHex()] = delegation;
+      return p;
+    }, {});
+    
+    const isLeavingAt = stateData.status.isLeaving && stateData.status.asLeaving.toNumber() || 0;
+    for (const requestData of stateData.requests.requests) {
+      const request = requestData[1].toJSON();
+      const collatorId = request.collator.toLowerCase()
+      // Checking because of bug allowing pending request even if no collator
+      if (candidates[collatorId] && (!isLeavingAt || request.whenExecutable < isLeavingAt)) {
+        candidates[collatorId].pendingRevoke += BigInt(request.amount);
+        const day = Math.ceil(
+          (Math.max(request.whenExecutable, roundInfo.current.toNumber()) -
+            roundInfo.current.toNumber()) /
+            4
+        );
+        delete delegationLeft[collatorId]; // The delegation will not count anymore if the delegator is leaving
+        candidates[collatorId].totalRevokable[day] += BigInt(request.amount);
+      }
+    }
+    if (isLeavingAt) {
+      for (const collatorId of Object.keys(delegationLeft)) {
+        const delegation = delegationLeft[collatorId];
+        const day = Math.ceil(
+          (Math.max(isLeavingAt, roundInfo.current.toNumber()) -
+            roundInfo.current.toNumber()) /
+            4
+        );
+        candidates[collatorId].pendingRevoke += delegation.amount.toBigInt();
+        candidates[collatorId].totalRevokable[day] += delegation.amount.toBigInt();
       }
     }
   }
@@ -129,7 +151,6 @@ const main = async () => {
         "Revokable",
         ...new Array(7).fill(0).map((_, i) => `${i + 1} day`),
         "Pending",
-        "Unused",
       ],
     ] as any[]
   ).concat(
@@ -157,8 +178,6 @@ const main = async () => {
           : candidate.totalDelegations - candidate.pendingRevoke < minCollatorFifth.totalDelegations
           ? chalk.yellow(numberWithCommas(candidate.pendingRevoke / 10n ** 18n))
           : numberWithCommas(candidate.pendingRevoke / 10n ** 18n),
-
-        numberWithCommas(candidate.totalUnused / 10n ** 18n),
       ];
     }),
     [
@@ -181,7 +200,6 @@ const main = async () => {
             )
           ),
         numberWithCommas(candidateList.reduce((p, c) => p + c.pendingRevoke, 0n) / 10n ** 18n),
-        numberWithCommas(candidateList.reduce((p, c) => p + c.totalUnused, 0n) / 10n ** 18n),
       ],
     ]
   );
@@ -198,7 +216,6 @@ const main = async () => {
       columns: [
         { alignment: "left" },
         { alignment: "left" },
-        { alignment: "right" },
         { alignment: "right" },
         { alignment: "right" },
         { alignment: "right" },
