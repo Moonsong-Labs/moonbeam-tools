@@ -62,7 +62,7 @@ const main = async () => {
       name: candidateNames[index].replace(/[\t\n]/g, "").slice(0, 42),
       totalDelegators: 0,
       isActive: (candidate.state || candidate.status).toString() == "Active",
-      isSelected: selectedCandidates.find((c) => c.toString() == id),
+      isSelected: selectedCandidates.find((c) => c.toHex() == id),
       totalDelegations: candidate.totalCounted.toBigInt(),
       totalRevokable: new Array(8).fill(0n),
       pendingRevoke: 0n,
