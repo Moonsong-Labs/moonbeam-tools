@@ -401,9 +401,9 @@ export function generateBlockDetailsLog(
       if (extrinsic.method.section == "ethereum") {
         const payload = extrinsic.method.args[0] as any;
         const gasPrice =
-          payload.asLegacy?.gasPrice ||
-          payload.asEip2930?.gasPrice ||
-          payload.asEip1559?.gasPrice ||
+          payload.isLegacy ? payload.asLegacy?.gasPrice :
+          payload.isEip2930 ? payload.asEip2930?.gasPrice :
+          payload.isEip1559 ? payload.asEip1559?.gasPrice :
           payload.gasPrice;
         return p + (BigInt(gasPrice) * dispatchInfo.weight.toBigInt()) / 25000n;
       }
@@ -425,9 +425,9 @@ export function generateBlockDetailsLog(
       if (tx.extrinsic.method.section == "ethereum" && tx.extrinsic.method.method == "transact") {
         const payload = tx.extrinsic.method.args[0] as any;
         return (
-          payload.asLegacy?.value.toBigInt() ||
-          payload.asEip2930?.value.toBigInt() ||
-          payload.asEip1559?.value.toBigInt() ||
+          payload.isLegacy ? payload.asLegacy?.value.toBigInt() :
+          payload.isEip2930 ? payload.asEip2930?.value.toBigInt() :
+          payload.isEip1559 ? payload.asEip1559?.value.toBigInt() :
           payload.value.toBigInt()
         );
       }
