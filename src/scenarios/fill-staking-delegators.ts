@@ -31,6 +31,16 @@ const argv = yargs(process.argv.slice(2))
       default: false,
       description: "Should funds be transferered from Alice to those accounts",
     },
+    "schedule-leave": {
+      type: "boolean",
+      default: false,
+      description: "Schedule leaving delegators",
+    },
+    "execute-leave": {
+      type: "boolean",
+      default: false,
+      description: "Schedule leaving delegators",
+    },
   }).argv;
 
 const main = async () => {
@@ -131,47 +141,108 @@ const main = async () => {
     });
   }
 
+  function chunkArray<T>(myArray: T[], chunk_size: number): T[][] {
+    var index = 0;
+    var arrayLength = myArray.length;
+    var tempArray: T[][] = [];
+
+    for (index = 0; index < arrayLength; index += chunk_size) {
+      const myChunk: T[] = myArray.slice(index, index + chunk_size);
+      // Do something if you want with the group
+      tempArray.push(myChunk);
+    }
+
+    return tempArray;
+  }
+
   const transactions: SubmittableExtrinsic[] = [];
-  await Promise.all(
-    collators.map(async (_, collatorIndex) => {
-      console.log(`Registering delegators for collator ${collatorIndex}`);
-
-      const collator = (
-        (await api.query.parachainStaking.candidateState(collators[collatorIndex].owner)) as any
-      ).unwrap();
-
-      const delegatorChunk = delegators.slice(
-        collatorIndex * argv.delegations,
-        (collatorIndex + 1) * argv.delegations
+  if (argv["schedule-leave"]) {
+    for (const chunk of chunkArray(delegators, 300)) {
+      await Promise.all(
+        chunk.map(async (delegator) => {
+          const nonce = (await api.rpc.system.accountNextIndex(delegator.address)).toNumber();
+          if (nonce == 0) {
+            return; // Delegator doesn't have previous delegation tx
+          }
+          transactions.push(
+            await api.tx.parachainStaking.scheduleLeaveDelegators().signAsync(delegator, { nonce })
+          );
+        })
       );
+    }
+  } else if (argv["execute-leave"]) {
+    for (const chunk of chunkArray(delegators, 300)) {
+      await Promise.all(
+        chunk.map(async (delegator) => {
+          const nonce = (await api.rpc.system.accountNextIndex(delegator.address)).toNumber();
+          if (nonce == 0) {
+            return; // Delegator doesn't have previous delegation tx
+          }
+          transactions.push(
+            await api.tx.parachainStaking
+              .executeLeaveDelegators(delegator.address, 100)
+              .signAsync(delegator, { nonce })
+          );
+        })
+      );
+    }
+  } else {
+    await Promise.all(
+      collators.map(async (_, collatorIndex) => {
+        console.log(`Registering delegators for collator ${collatorIndex}`);
 
-      const existingDelegators = collator.delegators.reduce((p, v) => {
-        p[v] = true;
-        return p;
-      }, {});
+        const collator = (
+          (await api.query.parachainStaking.candidateState(collators[collatorIndex].owner)) as any
+        ).unwrap();
 
-      // for each delegator (sequentially)
-      console.log(`Delegating to collator ${collatorIndex}...`);
-      let delegationCount = collator.delegators.length + 1;
-      for (const delegator of delegatorChunk) {
-        if (existingDelegators[delegator.address]) {
-          continue;
-        }
-        // Retrieve the nonce
-        const nonce = (await api.rpc.system.accountNextIndex(delegator.address)).toNumber();
-
-        // Creates and Adds the nomination transaction (5 token)
-        transactions.push(
-          await api.tx.parachainStaking
-            .delegate(collators[collatorIndex].owner, minDelegatorStk, delegationCount++, 1)
-            .signAsync(delegator, { nonce })
+        const delegatorChunk = delegators.slice(
+          collatorIndex * argv.delegations,
+          (collatorIndex + 1) * argv.delegations
         );
-      }
-    })
-  );
+
+        const existingDelegators = collator.delegators.reduce((p, v) => {
+          p[v] = true;
+          return p;
+        }, {});
+
+        // for each delegator (sequentially)
+        console.log(`Delegating to collator ${collatorIndex}...`);
+        let delegationCount = collator.delegators.length + 1;
+        for (const delegator of delegatorChunk) {
+          if (existingDelegators[delegator.address]) {
+            continue;
+          }
+          // Retrieve the nonce
+          const nonce = (await api.rpc.system.accountNextIndex(delegator.address)).toNumber();
+
+          // Creates and Adds the nomination transaction (5 token)
+          if (argv["schedule-revoke"]) {
+            transactions.push(
+              await api.tx.parachainStaking
+                .scheduleRevokeDelegation(collators[collatorIndex].owner)
+                .signAsync(delegator, { nonce, tip: 1000000000000000000n })
+            );
+          } else if (argv["execute-revoke"]) {
+            transactions.push(
+              await api.tx.parachainStaking
+                .executeDelegationRequest(delegator.address, collators[collatorIndex].owner)
+                .signAsync(delegator, { nonce })
+            );
+          } else {
+            transactions.push(
+              await api.tx.parachainStaking
+                .delegate(collators[collatorIndex].owner, minDelegatorStk, delegationCount++, 1)
+                .signAsync(delegator, { nonce })
+            );
+          }
+        }
+      })
+    );
+  }
+
   if (transactions.length !== 0) {
     await sendAllStreamAndWaitLast(api, transactions, {
-      threshold: 2000,
+      threshold: 2500,
       batch: 200,
       timeout: 300000,
     }).catch((e) => {

@@ -3,11 +3,7 @@ import chalk from "chalk";
 import yargs from "yargs";
 import { table } from "table";
 
-import { getAccountIdentities, getApiFor, NETWORK_YARGS_OPTIONS } from "..";
-
-function numberWithCommas(x) {
-  return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-}
+import { getAccountIdentities, getApiFor, NETWORK_YARGS_OPTIONS, numberWithCommas } from "..";
 
 const argv = yargs(process.argv.slice(2))
   .usage("Usage: $0")
