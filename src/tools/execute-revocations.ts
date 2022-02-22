@@ -67,7 +67,8 @@ const main = async () => {
         if (
           request &&
           request.whenExecutable <= roundInfo.current.toNumber() &&
-          (!argv.threshold || BigInt(request.amount) / 10n ** 18n > argv.threshold)
+          (!argv.threshold || BigInt(request.amount) / 10n ** 18n > argv.threshold) &&
+          stateData.delegations.find(({owner}) => owner.toString() == collator)
         ) {
           requests.push({
             collator,
@@ -99,7 +100,7 @@ const main = async () => {
             .toHex()
             .slice(2)}000000000000000000000000${req.collator.slice(2).toLowerCase()}`,
           gasPrice: web3.utils.toWei("100", "Gwei"),
-          gas: 61671,
+          gas: 200000,
           value: 0,
           nonce: nonce++,
         },
