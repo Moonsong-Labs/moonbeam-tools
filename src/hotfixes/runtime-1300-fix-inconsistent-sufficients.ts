@@ -22,7 +22,7 @@ import yargs from "yargs";
 import chunk from "lodash.chunk";
 import { readFile } from "fs/promises";
 
-import { ALITH_PRIVATE_KEY, getApiFor, NETWORK_YARGS_OPTIONS, waitTxDone } from "..";
+import { getApiFor, NETWORK_YARGS_OPTIONS, waitTxDone } from "..";
 import { ApiPromise, Keyring } from "@polkadot/api";
 
 const argv = yargs(process.argv.slice(2))
@@ -73,16 +73,15 @@ async function main() {
       : await consumeGenerator(getInvalidAccounts(api));
 
     const keyring = new Keyring({ type: "ethereum" });
-    const alith = keyring.addFromUri(ALITH_PRIVATE_KEY);
-    const account = keyring.addFromUri(argv["account-priv-key"], null, "ethereum");
+    const signer = keyring.addFromUri(argv["account-priv-key"], null, "ethereum");
 
     const txs = chunk(invalidAccounts, argv.size).map((b) => api.tx.evm.hotfixIncAccountSufficients(b));
-    await waitTxDone(api, api.tx.utility.batch(txs), alith, { nonce: -1 });
+    await waitTxDone(api, api.tx.utility.batch(txs), signer, { nonce: -1 });
 
     for await (const batch of chunk(invalidAccounts, argv.size)) {
       console.log(`hotfixing ${batch.length} accounts`);
       const tx = api.tx.evm.hotfixIncAccountSufficients(batch);
-      const inBlock = await waitTxDone(api, tx, alith, { nonce: -1 });
+      const inBlock = await waitTxDone(api, tx, signer, { nonce: -1 });
       inBlocks.push(inBlock);
     }
 
