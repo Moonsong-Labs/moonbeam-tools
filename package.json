@@ -10,6 +10,7 @@
     "@polkadot/api": "^7.4.1",
     "chalk": "^4.1.2",
     "esbuild": "^0.13.8",
+    "lodash.chunk": "^4.2.0",
     "moonbeam-types-bundle": "^2.0.1",
     "p-map": "^4.0.0",
     "rollup-plugin-esbuild": "^4.6.0",
