@@ -80,7 +80,7 @@ export function isKnownNetwork(name: string): name is NETWORK_NAME {
 }
 
 export const getWsProviderForNetwork = (name: NETWORK_NAME) => {
-  return new WsProvider(NETWORK_WS_URLS[name]);
+  return new WsProvider(NETWORK_WS_URLS[name], 10_000); // auto-connect every 10 seconds
 };
 
 // Supports providing an URL or a known network
@@ -88,7 +88,7 @@ export const getWsProviderFor = (argv: Argv) => {
   if (isKnownNetwork(argv.network)) {
     return getWsProviderForNetwork(argv.network);
   }
-  return new WsProvider(argv.url);
+  return new WsProvider(argv.url, 10_000); // auto-connect every 10 seconds
 };
 
 export const getApiFor = async (argv: Argv) => {
