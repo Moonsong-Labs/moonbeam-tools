@@ -68,7 +68,7 @@ const main = async () => {
           request &&
           request.whenExecutable <= roundInfo.current.toNumber() &&
           (!argv.threshold || BigInt(request.amount) / 10n ** 18n > argv.threshold) &&
-          stateData.delegations.find(({owner}) => owner.toString() == collator)
+          stateData.delegations.find(({ owner }) => owner.toString() == collator)
         ) {
           requests.push({
             collator,

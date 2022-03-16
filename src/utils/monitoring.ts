@@ -400,11 +400,13 @@ export function generateBlockDetailsLog(
     .reduce((p, { dispatchInfo, extrinsic, events, fee }) => {
       if (extrinsic.method.section == "ethereum") {
         const payload = extrinsic.method.args[0] as any;
-        const gasPrice =
-          payload.isLegacy ? payload.asLegacy?.gasPrice :
-          payload.isEip2930 ? payload.asEip2930?.gasPrice :
-          payload.isEip1559 ? payload.asEip1559?.gasPrice :
-          payload.gasPrice;
+        const gasPrice = payload.isLegacy
+          ? payload.asLegacy?.gasPrice
+          : payload.isEip2930
+          ? payload.asEip2930?.gasPrice
+          : payload.isEip1559
+          ? payload.asEip1559?.gasPrice
+          : payload.gasPrice;
         return p + (BigInt(gasPrice) * dispatchInfo.weight.toBigInt()) / 25000n;
       }
       return p + fee.partialFee.toBigInt();
@@ -424,12 +426,13 @@ export function generateBlockDetailsLog(
     .map((tx) => {
       if (tx.extrinsic.method.section == "ethereum" && tx.extrinsic.method.method == "transact") {
         const payload = tx.extrinsic.method.args[0] as any;
-        return (
-          payload.isLegacy ? payload.asLegacy?.value.toBigInt() :
-          payload.isEip2930 ? payload.asEip2930?.value.toBigInt() :
-          payload.isEip1559 ? payload.asEip1559?.value.toBigInt() :
-          payload.value.toBigInt()
-        );
+        return payload.isLegacy
+          ? payload.asLegacy?.value.toBigInt()
+          : payload.isEip2930
+          ? payload.asEip2930?.value.toBigInt()
+          : payload.isEip1559
+          ? payload.asEip1559?.value.toBigInt()
+          : payload.value.toBigInt();
       }
       return tx.events.reduce((total, event) => {
         if (event.section == "balances" && event.method == "Transfer") {
