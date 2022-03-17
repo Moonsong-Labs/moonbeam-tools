@@ -40,7 +40,7 @@ const main = async () => {
     delegatorState,
   ] = await Promise.all([
     api.rpc.chain.getHeader(blockHash),
-    apiAt.query.balances.account.entries(),
+    apiAt.query.system.account.entries(),
     apiAt.query.proxy.proxies.entries(),
     apiAt.query.treasury.proposals.entries(),
     apiAt.query.authorMapping.mappingWithDeposit.entries(),
@@ -51,7 +51,7 @@ const main = async () => {
   const reservedAccounts = accountBalances.reduce((p, v) => {
     const accountData = v[1];
     const accountId = `0x${v[0].toHex().slice(-40)}`;
-    const reserved = accountData.reserved.toBigInt();
+    const reserved = accountData.data.reserved.toBigInt();
     if (!p[accountId]) {
       p[accountId] = {
         accountId,
