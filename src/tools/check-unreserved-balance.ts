@@ -48,12 +48,20 @@ const main = async () => {
     apiAt.query.parachainStaking.delegatorState.entries(),
   ]);
   // ACTUAL AMOUNT RESERVED FOR ALL ACCOUNTS
-  const reservedAccounts: { [accountId: string]: bigint } = accountBalances.reduce((p, v) => {
+  const reservedAccounts = accountBalances.reduce((p, v) => {
     const accountData = v[1];
     const accountId = `0x${v[0].toHex().slice(-40)}`;
-    p[accountId] = accountData.reserved.toBigInt();
+    const reserved = accountData.reserved.toBigInt();
+    if (!p[accountId]) {
+      p[accountId] = {
+        accountId,
+        reserved: 0n,
+      };
+    }
+    p[accountId].reserved += reserved;
     return p;
   }, {});
+  console.log(reservedAccounts);
   // TOTAL EXPECTED = STAKING (CANDIDATE || DELEGATOR) + AUTHOR MAPPING +
   // PROXY + TREASURY
   const treasuryDeposits = treasuryProposals.reduce((p, v) => {
@@ -137,14 +145,12 @@ const main = async () => {
       (delegatorDeposits[accountId] ? delegatorDeposits[accountId].reserved : 0n) +
       (treasuryDeposits[accountId] ? treasuryDeposits[accountId].reserved : 0n) +
       (proxyDeposits[accountId] ? proxyDeposits[accountId].reserved : 0n);
-    if (p[accountId] !== reservedAccounts[accountId]) {
+    if (p[accountId] != (reservedAccounts[accountId] ? reservedAccounts[accountId].reserved : 0n)) {
       console.log(
         "RESERVED: ",
-        reservedAccounts[accountId],
+        reservedAccounts[accountId] ? reservedAccounts[accountId].reserved : 0n,
         "ACCOUNTED FOR: ",
-        p[accountId],
-        "UNACCOUNTED FOR: ",
-        reservedAccounts[accountId] - p[accountId]
+        p[accountId]
       );
     }
     return p;
