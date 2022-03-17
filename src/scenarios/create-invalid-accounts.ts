@@ -12,13 +12,11 @@ Ex: ./node_modules/.bin/ts-node-transpile-only src/scenarios/create-invalid-acco
 
 
 import yargs from "yargs";
+import '@moonbeam-network/api-augment';
 
 import { ALITH_PRIVATE_KEY, getApiFor, NETWORK_YARGS_OPTIONS, waitTxDone } from "..";
 import { ApiPromise, Keyring } from "@polkadot/api";
 import { blake2AsHex, randomAsHex } from "@polkadot/util-crypto";
-import { KeyringPair } from "@polkadot/keyring/types";
-import { SubmittableExtrinsic } from "@polkadot/api/promise/types";
-import { Codec } from "@polkadot/types-codec/types";
 
 const argv = yargs(process.argv.slice(2))
   .usage("Usage: $0")
