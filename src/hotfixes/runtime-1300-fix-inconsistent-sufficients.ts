@@ -21,6 +21,7 @@ Ex: ./node_modules/.bin/ts-node-transpile-only src/hotfixes/runtime-1300-fix-inc
 import yargs from "yargs";
 import chunk from "lodash.chunk";
 import { readFile } from "fs/promises";
+import '@moonbeam-network/api-augment';
 
 import { getApiFor, NETWORK_YARGS_OPTIONS, waitTxDone } from "..";
 import { ApiPromise, Keyring } from "@polkadot/api";
