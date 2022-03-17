@@ -63,7 +63,7 @@ async function main() {
   try {
     if (argv.check) {
       for await (const invalidAccount of getInvalidAccounts(api)) {
-        console.log("invalid", invalidAccount)
+        console.log(invalidAccount)
       }
       process.exit(0);
     }
