@@ -62,7 +62,7 @@ const main = async () => {
     return p;
   }, {});
   console.log(reservedAccounts);
-  // TOTAL EXPECTED = STAKING (CANDIDATE || DELEGATOR) + AUTHOR MAPPING +
+  // EXPECTED RESERVED = STAKING (CANDIDATE || DELEGATOR) + AUTHOR MAPPING +
   // PROXY + TREASURY
   const treasuryDeposits = treasuryProposals.reduce((p, v) => {
     const treasuryProposal = v[1].unwrap();
@@ -139,23 +139,24 @@ const main = async () => {
     if (p[accountId]) {
       return p;
     }
-    p[accountId] =
+    const expectedReserved: bigint =
       (authorMappingDeposits[accountId] ? authorMappingDeposits[accountId].reserved : 0n) +
       (candidateDeposits[accountId] ? candidateDeposits[accountId].reserved : 0n) +
       (delegatorDeposits[accountId] ? delegatorDeposits[accountId].reserved : 0n) +
       (treasuryDeposits[accountId] ? treasuryDeposits[accountId].reserved : 0n) +
       (proxyDeposits[accountId] ? proxyDeposits[accountId].reserved : 0n);
-    if (p[accountId] != (reservedAccounts[accountId] ? reservedAccounts[accountId].reserved : 0n)) {
+    if (expectedReserved != reservedAccounts[accountId].reserved) {
+      console.log("Printing different RESERVED and EXPECTED_RESERVED for ", accountId);
       console.log(
         "RESERVED: ",
-        reservedAccounts[accountId] ? reservedAccounts[accountId].reserved : 0n,
-        "ACCOUNTED FOR: ",
-        p[accountId]
+        reservedAccounts[accountId].reserved,
+        "EXPECTED RESERVED: ",
+        expectedReserved
       );
     }
+    p[accountId] = expectedReserved;
     return p;
   }, {});
-  //   console.log(allDeposits);
 
   api.disconnect();
 };
