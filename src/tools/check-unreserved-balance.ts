@@ -4,8 +4,9 @@
 // bug.
 import yargs from "yargs";
 import "@moonbeam-network/api-augment";
-
-import { getAccountIdentities, getApiFor, NETWORK_YARGS_OPTIONS, numberWithCommas } from "..";
+import { getApiFor, NETWORK_YARGS_OPTIONS } from "..";
+import { Keyring } from "@polkadot/api";
+import { blake2AsHex } from "@polkadot/util-crypto";
 
 const argv = yargs(process.argv.slice(2))
   .usage("Usage: $0")
@@ -32,18 +33,15 @@ const argv = yargs(process.argv.slice(2))
 const main = async () => {
   // Instantiate Api
   const api = await getApiFor(argv);
-
-  const blockHash = await api.rpc.chain.getBlockHash();
-  const apiAt = await api.at(blockHash);
-
-  // Load asycnhronously all data
+  const keyring = new Keyring({ type: "ethereum" });
+  // Load data
   const [proxies, treasuryProposals, mappingWithDeposit, candidateInfo, delegatorState] =
     await Promise.all([
-      apiAt.query.proxy.proxies.entries(),
-      apiAt.query.treasury.proposals.entries(),
-      apiAt.query.authorMapping.mappingWithDeposit.entries(),
-      apiAt.query.parachainStaking.candidateInfo.entries(),
-      apiAt.query.parachainStaking.delegatorState.entries(),
+      api.query.proxy.proxies.entries(),
+      api.query.treasury.proposals.entries(),
+      api.query.authorMapping.mappingWithDeposit.entries(),
+      api.query.parachainStaking.candidateInfo.entries(),
+      api.query.parachainStaking.delegatorState.entries(),
     ]);
 
   let limit = 1000;
@@ -167,7 +165,7 @@ const main = async () => {
     const expectedReserved: bigint = deposits.reduce((a, b) => a + b, 0n);
 
     if (expectedReserved != reservedAccounts[accountId].reserved) {
-      console.log("Printing different RESERVED and EXPECTED_RESERVED for ", accountId);
+      console.log("RESERVED != EXPECTED_RESERVED for ", accountId);
       if (reservedAccounts[accountId].reserved < expectedReserved) {
         negativeImbalanceRequiresHotfixExtrinsic = true;
         const dueToBeReserved = expectedReserved - reservedAccounts[accountId].reserved;
@@ -201,37 +199,43 @@ const main = async () => {
   }, {});
   console.log("DUE TO BE UNRESERVED: \n", balancesToForceUnReserve);
   console.log("DUE TO BE RESERVED: \n", balancesToForceReserve);
-  if (negativeImbalanceRequiresHotfixExtrinsic) {
-    console.log("FIX REQUIRES HOTFIX EXTRINSIC TO FIX NEGATIVE RESERVE IMBALANCE(S)");
-    // look for console output prefixed by
-    // `BUG REQUIRES HOTFIX EXTRINSIC TO CORRECT ACCOUNT: `
+  console.log(
+    `Found ${balancesToForceUnReserve.length} accounts to force unreserve and ${balancesToForceReserve.length} accounts to force reserve`
+  );
+  if (argv["send-preimage-hash"]) {
+    const collectiveThreshold = argv["collective-threshold"] || 1;
+    const account = await keyring.addFromUri(argv["account-priv-key"], null, "ethereum");
+    const { nonce: rawNonce, data: balance } = (await api.query.system.account(
+      account.address
+    )) as any;
+    let nonce = BigInt(rawNonce.toString());
+    const forceUnreserveCalls = [];
+    // TODO: chunk and batch instead of this
+    balancesToForceUnReserve.forEach(({ accountId, dueToBeUnreserved }) => {
+      forceUnreserveCalls.push(api.tx.balances.forceUnreserve(accountId, dueToBeUnreserved));
+    });
+    const batchCall = api.tx.utility.batchAll(forceUnreserveCalls);
+    let encodedProposal = batchCall?.method.toHex() || "";
+    let encodedHash = blake2AsHex(encodedProposal);
+    console.log("Encoded proposal hash for complete is %s", encodedHash);
+    console.log("Encoded length %d", encodedProposal.length);
+
+    console.log("Sending pre-image");
+    await api.tx.democracy.notePreimage(encodedProposal).signAndSend(account, { nonce: nonce++ });
+
+    if (argv["send-proposal-as"] == "democracy") {
+      console.log("Sending proposal");
+      await api.tx.democracy
+        .propose(encodedHash, await api.consts.democracy.minimumDeposit)
+        .signAndSend(account, { nonce: nonce++ });
+    } else if (argv["send-proposal-as"] == "council-external") {
+      console.log("Sending external motion");
+      let external = api.tx.democracy.externalProposeMajority(encodedHash);
+      await api.tx.councilCollective
+        .propose(collectiveThreshold, external, external.length)
+        .signAndSend(account, { nonce: nonce++ });
+    }
   }
-  // TODO: propose and send as democracy proposal
-  // use code below
-  //   const delegatorChunk = delegators.slice(i, i + BATCH_SIZE);
-  //       console.log(`Preparing hotfix for ${delegatorChunk.length} delegators`);
-  //       const hotFixTx = api.tx.parachainStaking.hotfixRemoveDelegationRequests(delegatorChunk);
-
-  //       let encodedProposal = hotFixTx?.method.toHex() || "";
-  //       let encodedHash = blake2AsHex(encodedProposal);
-  //       console.log("Encoded proposal hash for complete is %s", encodedHash);
-  //       console.log("Encoded length %d", encodedProposal.length);
-
-  //       console.log("Sending pre-image");
-  //       await api.tx.democracy.notePreimage(encodedProposal).signAndSend(account, { nonce: nonce++ });
-
-  //       if (argv["send-proposal-as"] == "democracy") {
-  //         console.log("Sending proposal");
-  //         await api.tx.democracy
-  //           .propose(encodedHash, await api.consts.democracy.minimumDeposit)
-  //           .signAndSend(account, { nonce: nonce++ });
-  //       } else if (argv["send-proposal-as"] == "council-external") {
-  //         console.log("Sending external motion");
-  //         let external = api.tx.democracy.externalProposeMajority(encodedHash);
-  //         await api.tx.councilCollective
-  //           .propose(collectiveThreshold, external, external.length)
-  //           .signAndSend(account, { nonce: nonce++ });
-  //       }
   api.disconnect();
 };
 
