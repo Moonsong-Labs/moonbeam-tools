@@ -209,31 +209,35 @@ const main = async () => {
       account.address
     )) as any;
     let nonce = BigInt(rawNonce.toString());
-    const forceUnreserveCalls = [];
-    // TODO: chunk and batch instead of this
-    balancesToForceUnReserve.forEach(({ accountId, dueToBeUnreserved }) => {
-      forceUnreserveCalls.push(api.tx.balances.forceUnreserve(accountId, dueToBeUnreserved));
-    });
-    const batchCall = api.tx.utility.batchAll(forceUnreserveCalls);
-    let encodedProposal = batchCall?.method.toHex() || "";
-    let encodedHash = blake2AsHex(encodedProposal);
-    console.log("Encoded proposal hash for complete is %s", encodedHash);
-    console.log("Encoded length %d", encodedProposal.length);
+    const BATCH_SIZE = 500;
+    for (let i = 0; i < balancesToForceUnReserve.length; i += BATCH_SIZE) {
+      const fixChunk = balancesToForceUnReserve.slice(i, i + BATCH_SIZE);
+      console.log(`Preparing force unreserve for ${fixChunk.length} accounts`);
+      const forceUnreserveCalls = [];
+      fixChunk.forEach(({ accountId, dueToBeUnreserved }) => {
+        forceUnreserveCalls.push(api.tx.balances.forceUnreserve(accountId, dueToBeUnreserved));
+      });
+      const batchCall = api.tx.utility.batchAll(forceUnreserveCalls);
+      let encodedProposal = batchCall?.method.toHex() || "";
+      let encodedHash = blake2AsHex(encodedProposal);
+      console.log("Encoded proposal hash for complete is %s", encodedHash);
+      console.log("Encoded length %d", encodedProposal.length);
 
-    console.log("Sending pre-image");
-    await api.tx.democracy.notePreimage(encodedProposal).signAndSend(account, { nonce: nonce++ });
+      console.log("Sending pre-image");
+      await api.tx.democracy.notePreimage(encodedProposal).signAndSend(account, { nonce: nonce++ });
 
-    if (argv["send-proposal-as"] == "democracy") {
-      console.log("Sending proposal");
-      await api.tx.democracy
-        .propose(encodedHash, await api.consts.democracy.minimumDeposit)
-        .signAndSend(account, { nonce: nonce++ });
-    } else if (argv["send-proposal-as"] == "council-external") {
-      console.log("Sending external motion");
-      let external = api.tx.democracy.externalProposeMajority(encodedHash);
-      await api.tx.councilCollective
-        .propose(collectiveThreshold, external, external.length)
-        .signAndSend(account, { nonce: nonce++ });
+      if (argv["send-proposal-as"] == "democracy") {
+        console.log("Sending proposal");
+        await api.tx.democracy
+          .propose(encodedHash, await api.consts.democracy.minimumDeposit)
+          .signAndSend(account, { nonce: nonce++ });
+      } else if (argv["send-proposal-as"] == "council-external") {
+        console.log("Sending external motion");
+        let external = api.tx.democracy.externalProposeMajority(encodedHash);
+        await api.tx.councilCollective
+          .propose(collectiveThreshold, external, external.length)
+          .signAndSend(account, { nonce: nonce++ });
+      }
     }
   }
   api.disconnect();
