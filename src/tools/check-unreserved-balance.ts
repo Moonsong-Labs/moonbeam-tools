@@ -30,36 +30,41 @@ const main = async () => {
   const apiAt = await api.at(blockHash);
 
   // Load asycnhronously all data
-  const [
-    blockHeader,
-    accountBalances,
-    proxies,
-    treasuryProposals,
-    mappingWithDeposit,
-    candidateInfo,
-    delegatorState,
-  ] = await Promise.all([
-    api.rpc.chain.getHeader(blockHash),
-    apiAt.query.system.account.entries(),
-    apiAt.query.proxy.proxies.entries(),
-    apiAt.query.treasury.proposals.entries(),
-    apiAt.query.authorMapping.mappingWithDeposit.entries(),
-    apiAt.query.parachainStaking.candidateInfo.entries(),
-    apiAt.query.parachainStaking.delegatorState.entries(),
-  ]);
-  // ACTUAL AMOUNT RESERVED FOR ALL ACCOUNTS
-  const reservedAccounts: { [accountId: string]: { accountId: string; reserved: bigint } } =
-    accountBalances.reduce((p, v) => {
-      const accountId = `0x${v[0].toHex().slice(-40)}`;
-      const reserved = v[1].data.reserved.toBigInt();
-      if (!p[accountId]) {
-        p[accountId] = {
-          accountId,
-          reserved,
-        };
-      }
-      return p;
-    }, {});
+  const [proxies, treasuryProposals, mappingWithDeposit, candidateInfo, delegatorState] =
+    await Promise.all([
+      apiAt.query.proxy.proxies.entries(),
+      apiAt.query.treasury.proposals.entries(),
+      apiAt.query.authorMapping.mappingWithDeposit.entries(),
+      apiAt.query.parachainStaking.candidateInfo.entries(),
+      apiAt.query.parachainStaking.delegatorState.entries(),
+    ]);
+
+  let limit = 1000;
+  let last_key = "";
+  const reservedAccounts: { [accountId: string]: { accountId: string; reserved: bigint } } = {};
+
+  while (true) {
+    let query = await api.query.system.account.entriesPaged({
+      args: [],
+      pageSize: limit,
+      startKey: last_key,
+    });
+
+    if (query.length == 0) {
+      break;
+    }
+
+    for (const user of query) {
+      let accountId = `0x${user[0].toHex().slice(-40)}`;
+      let reserved = user[1].data.reserved.toBigInt();
+      last_key = user[0].toString();
+      reservedAccounts[accountId] = {
+        accountId,
+        reserved,
+      };
+    }
+    console.log(`...${Object.keys(reservedAccounts).length}`);
+  }
   // EXPECTED RESERVED = STAKING (CANDIDATE || DELEGATOR) + AUTHOR MAPPING +
   // PROXY + TREASURY
   const treasuryDeposits: { [accountId: string]: { accountId: string; reserved: bigint } } =
@@ -93,7 +98,7 @@ const main = async () => {
     mappingWithDeposit.reduce((p, v) => {
       const registrationInfo = v[1].unwrap();
       const accountId = `0x${registrationInfo.account.toHex().slice(-40)}`;
-      const reserved = registrationInfo.deposit;
+      const reserved = registrationInfo.deposit.toBigInt();
       if (!p[accountId]) {
         p[accountId] = {
           accountId,
@@ -107,7 +112,7 @@ const main = async () => {
     candidateInfo.reduce((p, v) => {
       const candidate = v[1].unwrap();
       const id = `0x${v[0].toHex().slice(-40)}`;
-      const reserved = candidate.bond;
+      const reserved = candidate.bond.toBigInt();
       if (!p[id]) {
         p[id] = {
           id,
@@ -121,7 +126,7 @@ const main = async () => {
     delegatorState.reduce((p, v) => {
       const delegator = v[1].unwrap();
       const id = `0x${v[0].toHex().slice(-40)}`;
-      const reserved = delegator.total;
+      const reserved = delegator.total.toBigInt();
       if (!p[id]) {
         p[id] = {
           id,
@@ -146,11 +151,11 @@ const main = async () => {
     }
     // const deposits = [{}]; and sum them to print if hotfix required
     const expectedReserved: bigint =
-      authorMappingDeposits[accountId].reserved +
-      candidateDeposits[accountId].reserved +
-      delegatorDeposits[accountId].reserved +
-      treasuryDeposits[accountId].reserved +
-      proxyDeposits[accountId].reserved;
+      (authorMappingDeposits[accountId]?.reserved || 0n) +
+      (candidateDeposits[accountId]?.reserved || 0n) +
+      (delegatorDeposits[accountId]?.reserved || 0n) +
+      (treasuryDeposits[accountId]?.reserved || 0n) +
+      (proxyDeposits[accountId]?.reserved || 0n);
     if (expectedReserved != reservedAccounts[accountId].reserved) {
       console.log("Printing different RESERVED and EXPECTED_RESERVED for ", accountId);
       if (reservedAccounts[accountId].reserved < expectedReserved) {
