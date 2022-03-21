@@ -144,7 +144,8 @@ const main = async () => {
       return p;
     }, {});
   var negativeImbalanceRequiresHotfixExtrinsic = false;
-  const imbalancesToFix = [];
+  const balancesToForceUnReserve = [];
+  const balancesToForceReserve = [];
   const allDeposits: { [accountId: string]: bigint } = [
     ...Object.keys(authorMappingDeposits),
     ...Object.keys(candidateDeposits),
@@ -156,43 +157,50 @@ const main = async () => {
     if (p[accountId]) {
       return p;
     }
-    // const deposits = [{}]; and sum them to print if hotfix required
-    const expectedReserved: bigint =
-      (authorMappingDeposits[accountId]?.reserved || 0n) +
-      (candidateDeposits[accountId]?.reserved || 0n) +
-      (delegatorDeposits[accountId]?.reserved || 0n) +
-      (treasuryDeposits[accountId]?.reserved || 0n) +
-      (proxyDeposits[accountId]?.reserved || 0n);
+    const deposits = [
+      authorMappingDeposits[accountId]?.reserved || 0n,
+      candidateDeposits[accountId]?.reserved || 0n,
+      delegatorDeposits[accountId]?.reserved || 0n,
+      treasuryDeposits[accountId]?.reserved || 0n,
+      proxyDeposits[accountId]?.reserved || 0n,
+    ];
+    const expectedReserved: bigint = deposits.reduce((a, b) => a + b, 0n);
 
     if (expectedReserved != reservedAccounts[accountId].reserved) {
       console.log("Printing different RESERVED and EXPECTED_RESERVED for ", accountId);
       if (reservedAccounts[accountId].reserved < expectedReserved) {
         negativeImbalanceRequiresHotfixExtrinsic = true;
+        const dueToBeReserved = expectedReserved - reservedAccounts[accountId].reserved;
         console.log(
           "BUG REQUIRES HOTFIX EXTRINSIC TO CORRECT ACCOUNT: ",
           accountId,
           "RESERVED: ",
           reservedAccounts[accountId].reserved,
           "EXPECTED RESERVED: ",
-          expectedReserved
+          expectedReserved,
+          "NEGATIVE DIFFERENCE: ",
+          dueToBeReserved
         );
+        console.log("INDIVIDUAL DEPOSITS: ", deposits);
+        balancesToForceReserve.push({ accountId, dueToBeReserved });
+      } else {
+        const dueToBeUnreserved = reservedAccounts[accountId].reserved - expectedReserved;
+        console.log(
+          "RESERVED: ",
+          reservedAccounts[accountId].reserved,
+          "EXPECTED RESERVED: ",
+          expectedReserved,
+          "POSITIVE DIFFERENCE: ",
+          dueToBeUnreserved
+        );
+        balancesToForceUnReserve.push({ accountId, dueToBeUnreserved });
       }
-      const dueToBeUnreserved = reservedAccounts[accountId].reserved - expectedReserved;
-      console.log(
-        "RESERVED: ",
-        reservedAccounts[accountId].reserved,
-        "EXPECTED RESERVED: ",
-        expectedReserved,
-        "POSITIVE DIFFERENCE: ",
-        dueToBeUnreserved
-      );
-      // COLLECT INTO OUTPUT
-      imbalancesToFix.push({ accountId, dueToBeUnreserved });
     }
     p[accountId] = expectedReserved;
     return p;
   }, {});
-  console.log("DUE TO BE UNRESERVED: \n", imbalancesToFix);
+  console.log("DUE TO BE UNRESERVED: \n", balancesToForceUnReserve);
+  console.log("DUE TO BE RESERVED: \n", balancesToForceReserve);
   if (negativeImbalanceRequiresHotfixExtrinsic) {
     console.log("FIX REQUIRES HOTFIX EXTRINSIC TO FIX NEGATIVE RESERVE IMBALANCE(S)");
     // look for console output prefixed by
