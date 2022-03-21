@@ -2,9 +2,7 @@
 //
 // Purpose is to find the accounts that have unreserved balances leftover from a staking
 // bug.
-import chalk from "chalk";
-import yargs, { string } from "yargs";
-import { table } from "table";
+import yargs from "yargs";
 import "@moonbeam-network/api-augment";
 
 import { getAccountIdentities, getApiFor, NETWORK_YARGS_OPTIONS, numberWithCommas } from "..";
@@ -14,19 +12,28 @@ const argv = yargs(process.argv.slice(2))
   .version("1.0.0")
   .options({
     ...NETWORK_YARGS_OPTIONS,
-    at: {
-      type: "number",
-      description: "Block number to look into",
+    "account-priv-key": { type: "string", demandOption: false, alias: "account" },
+    "send-preimage-hash": { type: "boolean", demandOption: false, alias: "h" },
+    "send-proposal-as": {
+      choices: ["democracy", "council-external", "sudo"],
+      demandOption: false,
+      alias: "s",
     },
+    "collective-threshold": { type: "number", demandOption: false, alias: "c" },
+  })
+  .check(function (argv) {
+    if (argv["send-preimage-hash"] && !argv["account-priv-key"]) {
+      console.log(`Missing --account-priv-key`);
+      return false;
+    }
+    return true;
   }).argv;
 
 const main = async () => {
   // Instantiate Api
   const api = await getApiFor(argv);
 
-  const blockHash = argv.at
-    ? await api.rpc.chain.getBlockHash(argv.at)
-    : await api.rpc.chain.getBlockHash();
+  const blockHash = await api.rpc.chain.getBlockHash();
   const apiAt = await api.at(blockHash);
 
   // Load asycnhronously all data
@@ -156,6 +163,7 @@ const main = async () => {
       (delegatorDeposits[accountId]?.reserved || 0n) +
       (treasuryDeposits[accountId]?.reserved || 0n) +
       (proxyDeposits[accountId]?.reserved || 0n);
+
     if (expectedReserved != reservedAccounts[accountId].reserved) {
       console.log("Printing different RESERVED and EXPECTED_RESERVED for ", accountId);
       if (reservedAccounts[accountId].reserved < expectedReserved) {
@@ -191,6 +199,31 @@ const main = async () => {
     // `BUG REQUIRES HOTFIX EXTRINSIC TO CORRECT ACCOUNT: `
   }
   // TODO: propose and send as democracy proposal
+  // use code below
+  //   const delegatorChunk = delegators.slice(i, i + BATCH_SIZE);
+  //       console.log(`Preparing hotfix for ${delegatorChunk.length} delegators`);
+  //       const hotFixTx = api.tx.parachainStaking.hotfixRemoveDelegationRequests(delegatorChunk);
+
+  //       let encodedProposal = hotFixTx?.method.toHex() || "";
+  //       let encodedHash = blake2AsHex(encodedProposal);
+  //       console.log("Encoded proposal hash for complete is %s", encodedHash);
+  //       console.log("Encoded length %d", encodedProposal.length);
+
+  //       console.log("Sending pre-image");
+  //       await api.tx.democracy.notePreimage(encodedProposal).signAndSend(account, { nonce: nonce++ });
+
+  //       if (argv["send-proposal-as"] == "democracy") {
+  //         console.log("Sending proposal");
+  //         await api.tx.democracy
+  //           .propose(encodedHash, await api.consts.democracy.minimumDeposit)
+  //           .signAndSend(account, { nonce: nonce++ });
+  //       } else if (argv["send-proposal-as"] == "council-external") {
+  //         console.log("Sending external motion");
+  //         let external = api.tx.democracy.externalProposeMajority(encodedHash);
+  //         await api.tx.councilCollective
+  //           .propose(collectiveThreshold, external, external.length)
+  //           .signAndSend(account, { nonce: nonce++ });
+  //       }
   api.disconnect();
 };
 
