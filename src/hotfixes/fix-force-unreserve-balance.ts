@@ -20,6 +20,10 @@ const argv = yargs(process.argv.slice(2))
       demandOption: false,
       alias: "s",
     },
+    at: {
+      type: "number",
+      description: "Block number to look into",
+    },
     "collective-threshold": { type: "number", demandOption: false, alias: "c" },
   })
   .check(function (argv) {
@@ -33,21 +37,99 @@ const argv = yargs(process.argv.slice(2))
 const main = async () => {
   // Instantiate Api
   const api = await getApiFor(argv);
+
+  // Ensure all the state queries happen on the same block number, for consistency
+  const apiAt = await api.at(
+    argv.at ? await api.rpc.chain.getBlockHash(argv.at) : await api.rpc.chain.getBlockHash()
+  );
+
   const keyring = new Keyring({ type: "ethereum" });
   // Load data
-  const [proxies, treasuryProposals, mappingWithDeposit, candidateInfo, delegatorState] =
-    await Promise.all([
-      api.query.proxy.proxies.entries(),
-      api.query.treasury.proposals.entries(),
-      api.query.authorMapping.mappingWithDeposit.entries(),
-      api.query.parachainStaking.candidateInfo.entries(),
-      api.query.parachainStaking.delegatorState.entries(),
-    ]);
+  const [
+    proxies,
+    proxyAnnouncements,
+    treasuryProposals,
+    mappingWithDeposit,
+    candidateInfo,
+    delegatorState,
+    identities,
+    preimages,
+    assets,
+    assetsMetadata,
+  ] = await Promise.all([
+    apiAt.query.proxy.proxies.entries(),
+    apiAt.query.proxy.announcements.entries(),
+    apiAt.query.treasury.proposals.entries(),
+    apiAt.query.authorMapping.mappingWithDeposit.entries(),
+    apiAt.query.parachainStaking.candidateInfo.entries(),
+    apiAt.query.parachainStaking.delegatorState.entries(),
+    apiAt.query.identity.identityOf.entries(),
+    apiAt.query.democracy.preimages.entries(),
+    apiAt.query.assets.asset.entries(),
+    apiAt.query.assets.metadata.entries(),
+  ]);
 
-  let limit = 1000;
+  const expectedReserveByAccount: { [accountId: string]: bigint } = [
+    treasuryProposals.map((proposal) => ({
+      accountId: `0x${proposal[1].unwrap().proposer.toHex().slice(-40)}`,
+      reserved: proposal[1].unwrap().bond.toBigInt(),
+    })),
+    proxies.map((proxy) => ({
+      accountId: `0x${proxy[0].toHex().slice(-40)}`,
+      reserved: proxy[1][1].toBigInt(),
+    })),
+    proxyAnnouncements.map((announcement) => ({
+      accountId: `0x${announcement[0].toHex().slice(-40)}`,
+      reserved: announcement[1][1].toBigInt(),
+    })),
+    mappingWithDeposit.map((mapping) => ({
+      accountId: `0x${mapping[1].unwrap().account.toHex().slice(-40)}`,
+      reserved: mapping[1].unwrap().deposit.toBigInt(),
+    })),
+    candidateInfo.map((candidate) => ({
+      accountId: `0x${candidate[0].toHex().slice(-40)}`,
+      reserved: candidate[1].unwrap().bond.toBigInt(),
+    })),
+    delegatorState.map((delegator) => ({
+      accountId: `0x${delegator[0].toHex().slice(-40)}`,
+      reserved: delegator[1].unwrap().total.toBigInt(),
+    })),
+    identities.map((identity) => ({
+      accountId: `0x${identity[0].toHex().slice(-40)}`,
+      reserved: identity[1].unwrap().deposit.toBigInt(),
+    })),
+    preimages
+      .filter((preimage) => preimage[1].unwrap().isAvailable)
+      .map((preimage) => ({
+        accountId: `0x${preimage[1].unwrap().asAvailable.provider.toHex().slice(-40)}`,
+        reserved: preimage[1].unwrap().asAvailable.deposit.toBigInt(),
+      })),
+    assets.map((asset) => ({
+      accountId: `0x${asset[1].unwrap().owner.toHex().slice(-40)}`,
+      reserved: asset[1].unwrap().deposit.toBigInt(),
+    })),
+    assetsMetadata.map((metadata) => ({
+      accountId: `0x${assets
+        .find((asset) => asset[0].toHex() == metadata[0].toHex())[1]
+        .unwrap()
+        .owner.toHex()
+        .slice(-40)}`,
+      reserved: metadata[1].deposit.toBigInt(),
+    })),
+  ]
+    .flat()
+    .reduce((p, v) => {
+      p[v.accountId] = (p[v.accountId] || 0n) + v.reserved;
+      return p;
+    }, {});
+
+  const accountsToAddReserve: { accountId: string; reserve: bigint }[] = [];
+  const accountsToRemoveReserve: { accountId: string; reserve: bigint }[] = [];
+  const limit = 1000;
   let last_key = "";
-  const reservedAccounts: { [accountId: string]: { accountId: string; reserved: bigint } } = {};
-
+  let count = 0;
+  
+  // loop over all system accounts
   while (true) {
     let query = await api.query.system.account.entriesPaged({
       args: [],
@@ -58,150 +140,52 @@ const main = async () => {
     if (query.length == 0) {
       break;
     }
+    count += query.length;
 
     for (const user of query) {
       let accountId = `0x${user[0].toHex().slice(-40)}`;
       let reserved = user[1].data.reserved.toBigInt();
       last_key = user[0].toString();
-      reservedAccounts[accountId] = {
-        accountId,
-        reserved,
-      };
+
+      const expectedReserve = expectedReserveByAccount[accountId] || 0n;
+
+      if (expectedReserve != reserved) {
+        console.log(
+          `${accountId}: reserved ${reserved.toString().padStart(25)} vs expected ${expectedReserve
+            .toString()
+            .padStart(25)} (diff: ${(reserved - expectedReserve).toString().padStart(25)})`
+        );
+        if (reserved < expectedReserve) {
+          accountsToAddReserve.push({
+            accountId,
+            reserve: expectedReserve - reserved,
+          });
+        } else {
+          accountsToRemoveReserve.push({
+            accountId,
+            reserve: reserved - expectedReserve,
+          });
+        }
+      }
     }
-    console.log(`...${Object.keys(reservedAccounts).length}`);
+    console.log(`...${count}`);
   }
+
+  console.log(
+    `Total reserve
+      - missing: ${accountsToAddReserve
+        .reduce((p, v) => p + v.reserve, 0n)
+        .toString()
+        .padStart(25)} - ${accountsToAddReserve.length} accounts
+      -   extra: ${accountsToRemoveReserve
+        .reduce((p, v) => p + v.reserve, 0n)
+        .toString()
+        .padStart(25)} - ${accountsToRemoveReserve.length} accounts`
+  );
+
   // EXPECTED RESERVED = STAKING (CANDIDATE || DELEGATOR) + AUTHOR MAPPING +
   // PROXY + TREASURY
-  const treasuryDeposits: { [accountId: string]: { accountId: string; reserved: bigint } } =
-    treasuryProposals.reduce((p, v) => {
-      const treasuryProposal = v[1].unwrap();
-      const accountId = `0x${treasuryProposal.proposer.toHex().slice(-40)}`;
-      const reserved = treasuryProposal.bond.toBigInt();
-      if (!p[accountId]) {
-        p[accountId] = {
-          accountId,
-          reserved: 0n,
-        };
-      }
-      p[accountId].reserved += reserved;
-      return p;
-    }, {});
-  const proxyDeposits: { [accountId: string]: { accountId: string; reserved: bigint } } =
-    proxies.reduce((p, v) => {
-      const reserved = v[1][1].toBigInt();
-      const accountId = `0x${v[0].toHex().slice(-40)}`;
-      if (!p[accountId]) {
-        p[accountId] = {
-          accountId,
-          reserved: 0n,
-        };
-      }
-      p[accountId].reserved += reserved;
-      return p;
-    }, {});
-  const authorMappingDeposits: { [accountId: string]: { accountId: string; reserved: bigint } } =
-    mappingWithDeposit.reduce((p, v) => {
-      const registrationInfo = v[1].unwrap();
-      const accountId = `0x${registrationInfo.account.toHex().slice(-40)}`;
-      const reserved = registrationInfo.deposit.toBigInt();
-      if (!p[accountId]) {
-        p[accountId] = {
-          accountId,
-          reserved: 0n,
-        };
-      }
-      p[accountId].reserved += reserved;
-      return p;
-    }, {});
-  const candidateDeposits: { [accountId: string]: { accountId: string; reserved: bigint } } =
-    candidateInfo.reduce((p, v) => {
-      const candidate = v[1].unwrap();
-      const id = `0x${v[0].toHex().slice(-40)}`;
-      const reserved = candidate.bond.toBigInt();
-      if (!p[id]) {
-        p[id] = {
-          id,
-          reserved: 0n,
-        };
-      }
-      p[id].reserved += reserved;
-      return p;
-    }, {});
-  const delegatorDeposits: { [accountId: string]: { accountId: string; reserved: bigint } } =
-    delegatorState.reduce((p, v) => {
-      const delegator = v[1].unwrap();
-      const id = `0x${v[0].toHex().slice(-40)}`;
-      const reserved = delegator.total.toBigInt();
-      if (!p[id]) {
-        p[id] = {
-          id,
-          reserved: 0n,
-        };
-      }
-      p[id].reserved += reserved;
-      return p;
-    }, {});
-  var negativeImbalanceRequiresHotfixExtrinsic = false;
-  const balancesToForceUnReserve = [];
-  const balancesToForceReserve = [];
-  const allDeposits: { [accountId: string]: bigint } = [
-    ...Object.keys(authorMappingDeposits),
-    ...Object.keys(candidateDeposits),
-    ...Object.keys(delegatorDeposits),
-    ...Object.keys(treasuryDeposits),
-    ...Object.keys(proxyDeposits),
-    ...Object.keys(reservedAccounts),
-  ].reduce((p, accountId) => {
-    if (p[accountId]) {
-      return p;
-    }
-    const deposits = [
-      authorMappingDeposits[accountId]?.reserved || 0n,
-      candidateDeposits[accountId]?.reserved || 0n,
-      delegatorDeposits[accountId]?.reserved || 0n,
-      treasuryDeposits[accountId]?.reserved || 0n,
-      proxyDeposits[accountId]?.reserved || 0n,
-    ];
-    const expectedReserved: bigint = deposits.reduce((a, b) => a + b, 0n);
 
-    if (expectedReserved != reservedAccounts[accountId].reserved) {
-      console.log("RESERVED != EXPECTED_RESERVED for ", accountId);
-      if (reservedAccounts[accountId].reserved < expectedReserved) {
-        negativeImbalanceRequiresHotfixExtrinsic = true;
-        const dueToBeReserved = expectedReserved - reservedAccounts[accountId].reserved;
-        console.log(
-          "BUG REQUIRES HOTFIX EXTRINSIC TO CORRECT ACCOUNT: ",
-          accountId,
-          "RESERVED: ",
-          reservedAccounts[accountId].reserved,
-          "EXPECTED RESERVED: ",
-          expectedReserved,
-          "NEGATIVE DIFFERENCE: ",
-          dueToBeReserved
-        );
-        console.log("INDIVIDUAL DEPOSITS: ", deposits);
-        balancesToForceReserve.push({ accountId, dueToBeReserved });
-      } else {
-        const dueToBeUnreserved = reservedAccounts[accountId].reserved - expectedReserved;
-        console.log(
-          "RESERVED: ",
-          reservedAccounts[accountId].reserved,
-          "EXPECTED RESERVED: ",
-          expectedReserved,
-          "POSITIVE DIFFERENCE: ",
-          dueToBeUnreserved
-        );
-        balancesToForceUnReserve.push({ accountId, dueToBeUnreserved });
-      }
-    }
-    p[accountId] = expectedReserved;
-    return p;
-  }, {});
-  console.log("DUE TO BE UNRESERVED: \n", balancesToForceUnReserve);
-  console.log("DUE TO BE RESERVED: \n", balancesToForceReserve);
-  console.log(
-    `Found ${balancesToForceUnReserve.length} accounts to force unreserve and ${balancesToForceReserve.length} accounts to force reserve`
-  );
   if (argv["send-preimage-hash"]) {
     const collectiveThreshold = argv["collective-threshold"] || 1;
     const account = await keyring.addFromUri(argv["account-priv-key"], null, "ethereum");
@@ -210,12 +194,12 @@ const main = async () => {
     )) as any;
     let nonce = BigInt(rawNonce.toString());
     const BATCH_SIZE = 500;
-    for (let i = 0; i < balancesToForceUnReserve.length; i += BATCH_SIZE) {
-      const fixChunk = balancesToForceUnReserve.slice(i, i + BATCH_SIZE);
+    for (let i = 0; i < accountsToRemoveReserve.length; i += BATCH_SIZE) {
+      const fixChunk = accountsToRemoveReserve.slice(i, i + BATCH_SIZE);
       console.log(`Preparing force unreserve for ${fixChunk.length} accounts`);
       const forceUnreserveCalls = [];
-      fixChunk.forEach(({ accountId, dueToBeUnreserved }) => {
-        forceUnreserveCalls.push(api.tx.balances.forceUnreserve(accountId, dueToBeUnreserved));
+      fixChunk.forEach(({ accountId, reserve }) => {
+        forceUnreserveCalls.push(api.tx.balances.forceUnreserve(accountId, reserve));
       });
       const batchCall = api.tx.utility.batchAll(forceUnreserveCalls);
       let encodedProposal = batchCall?.method.toHex() || "";
