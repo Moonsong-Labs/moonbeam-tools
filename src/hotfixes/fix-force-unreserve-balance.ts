@@ -110,7 +110,7 @@ const main = async () => {
     })),
     assetsMetadata.map((metadata) => ({
       accountId: `0x${assets
-        .find((asset) => asset[0].toHex() == metadata[0].toHex())[1]
+        .find((asset) => asset[0].toHex().slice(-64) == metadata[0].toHex().slice(-64))[1]
         .unwrap()
         .owner.toHex()
         .slice(-40)}`,
