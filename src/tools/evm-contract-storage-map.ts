@@ -37,14 +37,15 @@ const main = async () => {
 
   const contractAddress = api.registry.createType("EthereumAccountId", argv.contract).toString();
 
+  const keyHash = web3Utils.sha3(
+    `0x${argv.key.slice(2).padStart(64, "0").concat(argv.slot.toString().padStart(64, "0"))}`
+  );
   const contractStorageValue = (await apiAt.query.evm.accountStorages(
     contractAddress,
-    web3Utils.sha3(
-      `0x${argv.key.slice(2).padStart(64, "0").concat(argv.slot.toString().padStart(64, "0"))}`
-    )
+    keyHash
   )) as any;
 
-  console.log(`${contractStorageValue}`);
+  console.log(`${keyHash}: ${contractStorageValue}`);
 
   await api.disconnect();
 };
