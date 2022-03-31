@@ -29,15 +29,15 @@ const main = async () => {
   const formattedCollator = api.registry.createType("EthereumAccountId", argv.collator).toString();
 
   // Load asycnhronously all data
-  const [delegatorState, candidateState] = await Promise.all([
+  const [delegatorState, candidateInfo] = await Promise.all([
     apiAt.query.parachainStaking.delegatorState.entries(),
-    apiAt.query.parachainStaking.candidateState(formattedCollator) as Promise<any>,
+    apiAt.query.parachainStaking.candidateInfo(formattedCollator) as Promise<any>,
   ]);
 
   const delegations = [
     {
       owner: `${formattedCollator}*`,
-      amount: candidateState.unwrap().bond,
+      amount: candidateInfo.unwrap().bond,
       revoking: 0n,
     },
   ];

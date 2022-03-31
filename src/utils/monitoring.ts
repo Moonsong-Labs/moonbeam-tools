@@ -2,18 +2,30 @@ import type { ApiPromise } from "@polkadot/api";
 import type { Extrinsic, BlockHash, EventRecord } from "@polkadot/types/interfaces";
 import type { Block } from "@polkadot/types/interfaces/runtime/types";
 import type { Data, GenericEthereumAccountId, Option } from "@polkadot/types";
-import { u8aConcat, u8aToString } from "@polkadot/util";
-import { xxhashAsU8a } from "@polkadot/util-crypto";
+import type { EthereumTransactionTransactionV2 } from "@polkadot/types/lookup";
+import type { EthTransaction } from "@polkadot/types/interfaces/eth";
+import { u8aToString } from "@polkadot/util";
 import { ethereumEncode } from "@polkadot/util-crypto";
 import { mapExtrinsics, TxWithEventAndFee } from "./types";
 
 import "@polkadot/api-augment";
+import "@moonbeam-network/api-augment";
 
 import chalk from "chalk";
 import Debug from "debug";
 import { PalletIdentityRegistration } from "@polkadot/types/lookup";
 import { Codec, ITuple } from "@polkadot/types-codec/types";
+import { promiseConcurrent } from "..";
 const debug = Debug("monitoring");
+
+export const printTokens = (api: ApiPromise, tokens: bigint, decimals = 2, pad = 9) => {
+  return `${(
+    Math.ceil(Number(tokens / 10n ** BigInt(api.registry.chainDecimals[0] - decimals))) /
+    10 ** decimals
+  )
+    .toString()
+    .padStart(pad)} ${api.registry.chainTokens[0]}`;
+};
 
 export interface BlockDetails {
   block: Block;
@@ -42,17 +54,6 @@ const identityCache: {
     lastUpdate: number;
   };
 } = {};
-
-const getIdentityKey = (account: string) => {
-  return `0x${Buffer.from(
-    u8aConcat(
-      xxhashAsU8a("Identity", 128),
-      xxhashAsU8a("IdentityOf", 128),
-      xxhashAsU8a(account, 64),
-      account
-    )
-  ).toString("hex")}`;
-};
 
 export const getAccountIdentities = async (
   api: ApiPromise,
@@ -224,8 +225,18 @@ export const getBlockDetails = async (api: ApiPromise, blockHash: BlockHash) => 
       ?.asPreRuntime[1]?.toString();
 
   const [fees, authorName] = await Promise.all([
-    Promise.all(
-      block.extrinsics.map((ext) => api.rpc.payment.queryInfo(ext.toHex(), block.header.parentHash))
+    promiseConcurrent(
+      5,
+      async (ext: any) => {
+        try {
+          const r = await api.rpc.payment.queryInfo(ext.toHex(), block.header.hash);
+          return r;
+        } catch (e) {
+          console.log(`error for fees: ${e}`);
+          process.exit(1);
+        }
+      },
+      block.extrinsics
     ),
     authorId
       ? getAuthorIdentity(api, authorId)
@@ -259,19 +270,17 @@ export const exploreBlockRange = async (
   { from, to, concurrency = 1 }: BlockRangeOption,
   callBack: (blockDetails: BlockDetails) => Promise<void>
 ) => {
-  let current = from;
-  while (current <= to) {
-    const concurrentTasks = [];
-    for (let i = 0; i < concurrency && current <= to; i++) {
-      concurrentTasks.push(
-        api.rpc.chain.getBlockHash(current++).then((hash) => getBlockDetails(api, hash))
-      );
-    }
-    const blocksDetails = await Promise.all(concurrentTasks);
-    for (const blockDetails of blocksDetails) {
+  await promiseConcurrent(
+    concurrency,
+    async (_, i) => {
+      const current = i + from;
+      const blockDetails = await api.rpc.chain
+        .getBlockHash(current)
+        .then((hash) => getBlockDetails(api, hash));
       await callBack(blockDetails);
-    }
-  }
+    },
+    new Array(to - from + 1).fill(0)
+  );
 };
 
 export interface RealtimeBlockDetails extends BlockDetails {
@@ -399,14 +408,15 @@ export function generateBlockDetailsLog(
     .filter(({ dispatchInfo }) => dispatchInfo.paysFee.isYes && !dispatchInfo.class.isMandatory)
     .reduce((p, { dispatchInfo, extrinsic, events, fee }) => {
       if (extrinsic.method.section == "ethereum") {
-        const payload = extrinsic.method.args[0] as any;
-        const gasPrice = payload.isLegacy
-          ? payload.asLegacy?.gasPrice
+        const payload = extrinsic.method.args[0] as EthereumTransactionTransactionV2;
+        let gasPrice = payload.isLegacy
+          ? payload.asLegacy?.gasPrice.toBigInt()
           : payload.isEip2930
-          ? payload.asEip2930?.gasPrice
+          ? payload.asEip2930?.gasPrice.toBigInt()
           : payload.isEip1559
-          ? payload.asEip1559?.gasPrice
-          : payload.gasPrice;
+          ? // If gasPrice is not indicated, we should use the base fee defined in that block
+            payload.asEip1559?.maxFeePerGas.toBigInt() || 0n
+          : (payload as any as EthTransaction).gasPrice.toBigInt();
         return p + (BigInt(gasPrice) * dispatchInfo.weight.toBigInt()) / 25000n;
       }
       return p + fee.partialFee.toBigInt();
@@ -425,14 +435,16 @@ export function generateBlockDetailsLog(
   const transferred = blockDetails.txWithEvents
     .map((tx) => {
       if (tx.extrinsic.method.section == "ethereum" && tx.extrinsic.method.method == "transact") {
-        const payload = tx.extrinsic.method.args[0] as any;
-        return payload.isLegacy
-          ? payload.asLegacy?.value.toBigInt()
+
+        const payload = tx.extrinsic.method.args[0] as EthereumTransactionTransactionV2;
+        let gasPrice = payload.isLegacy
+          ? payload.asLegacy?.gasPrice.toBigInt()
           : payload.isEip2930
-          ? payload.asEip2930?.value.toBigInt()
+          ? payload.asEip2930?.gasPrice.toBigInt()
           : payload.isEip1559
-          ? payload.asEip1559?.value.toBigInt()
-          : payload.value.toBigInt();
+          ? // If gasPrice is not indicated, we should use the base fee defined in that block
+            payload.asEip1559?.maxFeePerGas.toBigInt() || 0n
+          : (payload as any as EthTransaction).gasPrice.toBigInt();
       }
       return tx.events.reduce((total, event) => {
         if (event.section == "balances" && event.method == "Transfer") {
