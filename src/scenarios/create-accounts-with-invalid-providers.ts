@@ -5,7 +5,7 @@
   This script will create inconsistent accounts having a zero value for `sufficients`,
   `consumers` and `providers`, but a non-zero value for `nonce`.
 
-Ex: ./node_modules/.bin/ts-node-transpile-only src/scenarios/create-invalid-accounts.ts \
+Ex: ./node_modules/.bin/ts-node-transpile-only src/scenarios/create-accounts-with-invalid-providers.ts \
    --network alphanet \
    --count <N>
 */
