@@ -5,7 +5,7 @@ import { Keyring } from "@polkadot/api";
 import yargs from "yargs";
 import { getMonitoredApiFor, NETWORK_YARGS_OPTIONS } from "../utils/networks";
 import { SubmittableExtrinsic } from "@polkadot/api/promise/types";
-import { sendAllStreamAndWaitLast } from "../utils/transactions";
+import { sendBatchedAndWait } from "../utils/transactions";
 import { ALITH_PRIVATE_KEY, BALTATHAR_PRIVATE_KEY } from "..";
 
 const argv = yargs(process.argv.slice(2))
@@ -89,8 +89,7 @@ const main = async () => {
       )
     );
 
-    // Send the transfer transactions and wait for the last one to finish
-    await sendAllStreamAndWaitLast(api, transferTxs);
+    await sendBatchedAndWait(api, transferTxs);
   }
 
   const transactions: SubmittableExtrinsic[] = [];
@@ -128,7 +127,7 @@ const main = async () => {
     })
   );
   if (transactions.length !== 0) {
-    await sendAllStreamAndWaitLast(api, transactions, { threshold: 5000, batch: 200 }).catch(
+    await sendBatchedAndWait(api, transactions, { maxPending: 5000, batch: 200 }).catch(
       (e) => {
         console.log(`Failing to send delegation`);
         console.log(e.msg || e.message || e.error);

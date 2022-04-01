@@ -76,13 +76,14 @@ async function main() {
     const keyring = new Keyring({ type: "ethereum" });
     const signer = keyring.addFromUri(argv["account-priv-key"], null, "ethereum");
 
+    const sender = { account: signer, options: { nonce: -1 }};
     const txs = chunk(invalidAccounts, argv.size).map((b) => api.tx.evm.hotfixIncAccountSufficients(b));
-    await waitTxDone(api, api.tx.utility.batch(txs), signer, { nonce: -1 });
+    await waitTxDone(api, api.tx.utility.batch(txs), sender);
 
     for await (const batch of chunk(invalidAccounts, argv.size)) {
       console.log(`hotfixing ${batch.length} accounts`);
       const tx = api.tx.evm.hotfixIncAccountSufficients(batch);
-      const inBlock = await waitTxDone(api, tx, signer, { nonce: -1 });
+      const inBlock = await waitTxDone(api, tx, sender);
       inBlocks.push(inBlock);
     }
 

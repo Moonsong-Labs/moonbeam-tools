@@ -83,7 +83,7 @@ async function createInvalidAccounts(api: ApiPromise, count: number): Promise<st
   });
 
   const txSudo = api.tx.sudo.sudo(api.tx.utility.batch(txs));
-  const inBlock = await waitTxDone(api, txSudo, alith, { nonce: -1 });
+  const inBlock = await waitTxDone(api, txSudo, { account: alith, options: { nonce: -1 } });
 
   console.error(`inBlock: ${inBlock}`);
 
