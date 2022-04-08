@@ -5,7 +5,10 @@ import { typesBundlePre900 } from "moonbeam-types-bundle";
 import { listenBlocks, printBlockDetails, RealtimeBlockDetails } from "./monitoring";
 import { Options } from "yargs";
 
-export type NETWORK_NAME = "stagenet" | "alphanet" | "moonsama" | "moonsilver" | "moonriver" | "moonbeam";
+export type MOONBEAM_NETWORK_NAME = "stagenet" | "alphanet" | "moonsama" | "moonsilver" | "moonriver" | "moonbeam";
+export type POLKADOT_NETWORK_NAME = "kusama" | "polkadot";
+
+export type NETWORK_NAME = MOONBEAM_NETWORK_NAME | POLKADOT_NETWORK_NAME;
 
 export const NETWORK_WS_URLS: { [name in NETWORK_NAME]: string } = {
   stagenet: "wss://wss.api.stagenet.gcp.purestake.run",
@@ -14,6 +17,8 @@ export const NETWORK_WS_URLS: { [name in NETWORK_NAME]: string } = {
   moonsilver: "wss://wss.moonsilver.moonbeam.network",
   moonriver: "wss://moonriver.api.onfinality.io/public-ws",
   moonbeam: "wss://moonbeam.api.onfinality.io/public-ws",
+  kusama: "wss://kusama-rpc.polkadot.io",
+  polkadot: "wss://rpc.polkadot.io",
 };
 export const NETWORK_HTTP_URLS: { [name in NETWORK_NAME]: string } = {
   stagenet: "https://rpc.stagenet.moonbeam.gcp.purestake.run",
@@ -22,6 +27,8 @@ export const NETWORK_HTTP_URLS: { [name in NETWORK_NAME]: string } = {
   moonsilver: "https://rpc.moonsilver.moonbeam.network",
   moonriver: "https://rpc.api.moonriver.moonbeam.network",
   moonbeam: "https://rpc.api.moonbeam.network",
+  kusama: "wss://kusama-rpc.polkadot.io",
+  polkadot: "wss://rpc.polkadot.io",
 };
 export const NETWORK_NAMES = Object.keys(NETWORK_WS_URLS) as NETWORK_NAME[];
 
@@ -32,6 +39,8 @@ export const NETWORK_CHAIN_MAPPING: { [name: string]: NETWORK_NAME } = {
   Moonsilver: "moonsilver",
   Moonriver: "moonriver",
   Moonbeam: "moonbeam",
+  Kusama: "kusama",
+  Polkadot: "polkadot",
 };
 
 export const NETWORK_COLORS: { [name in NETWORK_NAME]: chalk.ChalkFunction } = {
@@ -41,6 +50,8 @@ export const NETWORK_COLORS: { [name in NETWORK_NAME]: chalk.ChalkFunction } = {
   moonsilver: chalk.yellowBright,
   moonriver: chalk.redBright,
   moonbeam: chalk.magentaBright,
+  kusama: chalk.redBright,
+  polkadot: chalk.magentaBright,
 };
 
 export type NetworkOptions = {
