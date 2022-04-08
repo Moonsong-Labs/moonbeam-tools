@@ -44,10 +44,13 @@ const main = async () => {
     return senderKey.toNumber() == argv.para || receiverKey.toNumber() == argv.para;
   };
 
+  const filteredChannels = channels.filter(filterPara);
+  const filteredChannelRequests = channelRequets.filter(filterPara);
+
   const tableData = (
     [["Sender", "Receiver", "Status", "Messages", "Capacity", "Head"]] as any[]
   ).concat(
-    channels.filter(filterPara).map(([key, data], index) => {
+    filteredChannels.filter(filterPara).map(([key, data], index) => {
       const channel = data.unwrap();
       const senderKey = api.registry.createType("ParaId", key.toU8a().slice(-8, -4));
       const receiverKey = api.registry.createType("ParaId", key.toU8a().slice(-4));
@@ -60,7 +63,7 @@ const main = async () => {
         channel.mqcHead,
       ];
     }),
-    channelRequets.filter(filterPara).map(([key, data], index) => {
+    filteredChannelRequests.filter(filterPara).map(([key, data], index) => {
       const request = data.unwrap();
       const senderKey = api.registry.createType("ParaId", key.toU8a().slice(-8, -4));
       const receiverKey = api.registry.createType("ParaId", key.toU8a().slice(-4));
@@ -74,7 +77,7 @@ const main = async () => {
         lineIndex == 0 ||
         lineIndex == 1 ||
         lineIndex == tableData.length ||
-        lineIndex == channels.length + 1,
+        lineIndex == filteredChannels.length + 1,
     })
   );
   await api.disconnect();
