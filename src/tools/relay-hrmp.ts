@@ -16,6 +16,10 @@ const argv = yargs(process.argv.slice(2))
       description: "at given block (past or future)",
       conflicts: ["in"],
     },
+    para: {
+      type: "number",
+      description: "filter given parachain id",
+    },
   }).argv;
 
 const main = async () => {
@@ -28,23 +32,40 @@ const main = async () => {
 
   const [channelRequets, channels] = await Promise.all([
     apiAt.query.hrmp.hrmpOpenChannelRequests.entries(),
-    apiAt.query.hrmp.hrmpChannels.entries()
+    apiAt.query.hrmp.hrmpChannels.entries(),
   ]);
 
+  const filterPara = ([key, data]) => {
+    const senderKey = api.registry.createType("ParaId", key.toU8a().slice(-8, -4));
+    const receiverKey = api.registry.createType("ParaId", key.toU8a().slice(-4));
+    if (!argv.para) {
+      return true;
+    }
+    return senderKey.toNumber() == argv.para || receiverKey.toNumber() == argv.para;
+  };
 
-  const tableData = ([["Sender", "Receiver", "Status", "Messages", "Capacity", "Head"]] as any[]).concat(
-    channels.map(([key, data], index) => {
+  const tableData = (
+    [["Sender", "Receiver", "Status", "Messages", "Capacity", "Head"]] as any[]
+  ).concat(
+    channels.filter(filterPara).map(([key, data], index) => {
       const channel = data.unwrap();
       const senderKey = api.registry.createType("ParaId", key.toU8a().slice(-8, -4));
       const receiverKey = api.registry.createType("ParaId", key.toU8a().slice(-4));
-      return [senderKey, receiverKey, chalk.green("Open"), channel.msgCount, channel.maxCapacity, channel.mqcHead];
+      return [
+        senderKey,
+        receiverKey,
+        chalk.green("Open"),
+        channel.msgCount,
+        channel.maxCapacity,
+        channel.mqcHead,
+      ];
     }),
-    channelRequets.map(([key, data], index) => {
+    channelRequets.filter(filterPara).map(([key, data], index) => {
       const request = data.unwrap();
       const senderKey = api.registry.createType("ParaId", key.toU8a().slice(-8, -4));
       const receiverKey = api.registry.createType("ParaId", key.toU8a().slice(-4));
       return [senderKey, receiverKey, chalk.yellow("Pending"), "", request.maxCapacity, ""];
-    }),
+    })
   );
 
   console.log(
@@ -53,7 +74,7 @@ const main = async () => {
         lineIndex == 0 ||
         lineIndex == 1 ||
         lineIndex == tableData.length ||
-        lineIndex == channels.length + 1
+        lineIndex == channels.length + 1,
     })
   );
   await api.disconnect();
