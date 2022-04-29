@@ -13,13 +13,12 @@ Ex: ./node_modules/.bin/ts-node-transpile-only src/hotfixes/runtime-1300-fix-orp
    --account-priv-key <key> \
 */
 
-
 import yargs from "yargs";
-import fs from "fs";
 
 import { getApiFor, NETWORK_YARGS_OPTIONS } from "..";
 import { Keyring } from "@polkadot/api";
 import { blake2AsHex } from "@polkadot/util-crypto";
+import { printTokens } from "../utils/monitoring";
 
 const argv = yargs(process.argv.slice(2))
   .usage("Usage: $0")
@@ -32,6 +31,10 @@ const argv = yargs(process.argv.slice(2))
       choices: ["democracy", "council-external", "sudo"],
       demandOption: false,
       alias: "s",
+    },
+    at: {
+      type: "number",
+      description: "Block number to look into",
     },
     "collective-threshold": { type: "number", demandOption: false, alias: "c" },
   })
@@ -48,24 +51,43 @@ const main = async () => {
   const api = await getApiFor(argv);
   const keyring = new Keyring({ type: "ethereum" });
 
+  const atBlockNumber = argv.at || (await api.rpc.chain.getHeader()).number.toNumber();
+  const apiAt = await api.at(await api.rpc.chain.getBlockHash(atBlockNumber));
+
   const [delegatorState] = await Promise.all([
-    await api.query.parachainStaking.delegatorState.entries(),
+    await apiAt.query.parachainStaking.delegatorState.entries(),
   ]);
+
+  const upgradeInfo = (await apiAt.query.system.lastRuntimeUpgrade()).unwrap();
+  const runtimeVersion = upgradeInfo.specVersion.toNumber();
+
+  console.log(
+    `Using data from block #${atBlockNumber} (${api.runtimeVersion.specName.toString()}-${runtimeVersion})`
+  );
 
   const delegatorsToFix = [];
   let totalRequests = 0;
   for (const state of delegatorState) {
-    const stateData = (state[1] as any).unwrap();
-    if (stateData.requests.revocationsCount.toNumber() > 0) {
-      const requestData = stateData.requests.requests;
-      requestData.forEach((request, collator) => {
-        totalRequests++;
-        if (!stateData.delegations.find(({ owner }) => owner.toString() == collator.toString())) {
-          console.log(`${stateData.id}: ${request.whenExecutable}`);
-          delegatorsToFix.push(stateData.id);
-        }
-      });
-    }
+    const stateData = state[1].unwrap();
+    const requestData = stateData.requests.requests;
+    requestData.forEach((request, collator) => {
+      totalRequests++;
+      const delegation = stateData.delegations.find(
+        ({ owner }) => owner.toString() == collator.toString()
+      );
+      if (
+        !delegation ||
+        (request.action.isRevoke && delegation.amount.toBigInt() != request.amount.toBigInt())
+      ) {
+        console.log(
+          `${stateData.id}: ${request.whenExecutable} - ${printTokens(
+            api,
+            delegation.amount.toBigInt()
+          )} vs requested ${printTokens(api, request.amount.toBigInt())}`
+        );
+        delegatorsToFix.push(stateData.id);
+      }
+    });
   }
 
   // Unify multiple occurences of the same delegator.
