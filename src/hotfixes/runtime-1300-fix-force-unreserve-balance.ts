@@ -213,19 +213,12 @@ const main = async () => {
   let count = 0;
 
   // loop over all system accounts
-  while (count == 0) {
-    // let query = await apiAt.query.system.account.entriesPaged({
-    //   args: [],
-    //   pageSize: limit,
-    //   startKey: last_key,
-    // });
-
-    let query = [
-      [
-        api.registry.createType("AccountId", "0xa88170e2142b0e1eefcb2041b7f3754f4f4298fd"),
-        await apiAt.query.system.account("0xa88170e2142b0e1eefcb2041b7f3754f4f4298fd"),
-      ] as any,
-    ];
+  while (true) {
+    let query = await apiAt.query.system.account.entriesPaged({
+      args: [],
+      pageSize: limit,
+      startKey: last_key,
+    });
 
     if (query.length == 0) {
       break;

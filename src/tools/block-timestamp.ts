@@ -19,15 +19,23 @@ const argv = yargs(process.argv.slice(2))
     at: {
       type: "number",
       description: "at given block (past or future)",
-      demandOption: true,
+      conflicts: ["in"],
     },
+    in: {
+      type: "number",
+      description: "number of block in the future",
+      conflicts: ["at"],
+    },
+  })
+  .check((argv) => {
+    return argv.at || argv.in;
   }).argv;
 
 const main = async () => {
   const api = await getApiFor(argv);
 
-  const atBlockNumber = argv.at;
   const currentBlock = await api.rpc.chain.getBlock();
+  const atBlockNumber = argv.in ? currentBlock.block.header.number.toNumber() + argv.in : argv.at;
 
   if (atBlockNumber <= currentBlock.block.header.number.toNumber()) {
     const pastBlock = await api.rpc.chain.getBlock(
@@ -53,7 +61,9 @@ const main = async () => {
 
     const targetDate = new Date(currentTimestamp.toNumber() + 6000 * diffCount);
     console.log(
-      `#${currentBlock.block.header.number.toNumber()}: ${new Date(currentTimestamp.toNumber()).toUTCString()}`
+      `#${currentBlock.block.header.number.toNumber()}: ${new Date(
+        currentTimestamp.toNumber()
+      ).toUTCString()}`
     );
 
     // We get the timestamp from X blocks before to have a better approximation
@@ -79,12 +89,8 @@ const main = async () => {
         `#${atBlockNumber} (+${diffCount}): target: ${targetDate.toUTCString()}, expected: ${expectedDate.toUTCString()}`
       );
     } else {
-      console.log(
-        `#${atBlockNumber} (+${diffCount}): target: ${targetDate.toUTCString()}`
-      );
-
+      console.log(`#${atBlockNumber} (+${diffCount}): target: ${targetDate.toUTCString()}`);
     }
-      
   }
   await api.disconnect();
 };
