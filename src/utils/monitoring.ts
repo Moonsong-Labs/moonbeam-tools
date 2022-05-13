@@ -16,6 +16,7 @@ import Debug from "debug";
 import { PalletIdentityRegistration } from "@polkadot/types/lookup";
 import { Codec, ITuple } from "@polkadot/types-codec/types";
 import { promiseConcurrent } from "..";
+import { ApiDecoration } from "@polkadot/api/types";
 const debug = Debug("monitoring");
 
 export const printTokens = (api: ApiPromise, tokens: bigint, decimals = 2, pad = 9) => {
@@ -151,7 +152,7 @@ export const getAccountIdentities = async (
   });
 };
 
-export const getAccountIdentity = async (api: ApiPromise, account: string): Promise<string> => {
+export const getAccountIdentity = async (api: ApiPromise | ApiDecoration<"promise">, account: string): Promise<string> => {
   if (!account) {
     return "";
   }
@@ -188,7 +189,23 @@ export const getAccountIdentity = async (api: ApiPromise, account: string): Prom
     : account?.toString();
 };
 
-export const getAuthorIdentity = async (api: ApiPromise, author: string): Promise<string> => {
+export const getAuthorAccount = async (api: ApiPromise | ApiDecoration<"promise">, author: string): Promise<string> => {
+  if (
+    !authorMappingCache[author] ||
+    authorMappingCache[author].lastUpdate < Date.now() - 3600 * 1000
+  ) {
+    const mappingData = (await api.query.authorMapping.mappingWithDeposit(author)) as Option<any>;
+    authorMappingCache[author] = {
+      lastUpdate: Date.now(),
+      account: mappingData.isEmpty ? null : ethereumEncode(mappingData.unwrap().account.toString()),
+    };
+  }
+  const { account } = authorMappingCache[author];
+
+  return account;
+};
+
+export const getAuthorIdentity = async (api: ApiPromise | ApiDecoration<"promise">, author: string): Promise<string> => {
   if (
     !authorMappingCache[author] ||
     authorMappingCache[author].lastUpdate < Date.now() - 3600 * 1000
