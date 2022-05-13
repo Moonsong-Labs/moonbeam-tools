@@ -1,9 +1,10 @@
 // List of functions to simplify supporting multiple version
 
-interface DelegatorRequest {
+export interface DelegatorRequest {
+  delegatorId: string;
   collatorId: string;
   when: number;
-  action: "revoke" | "decrease";
+  action: "Revoke" | "Decrease";
   amount: bigint;
 }
 
@@ -23,13 +24,14 @@ export const combineRequestsPerDelegators = (
             p[delegatorId] = [];
           }
           p[delegatorId].push({
+            delegatorId,
             collatorId,
             when: request.whenExecutable.toNumber(),
-            action: request.action.isRevoke ? "revoke" : "decrease",
+            action: request.action.isRevoke ? "Revoke" : "Decrease",
             amount: request.action.isRevoke
               ? request.action.asRevoke.toBigInt()
               : request.action.asDecrease.toBigInt(),
-          });
+          } as DelegatorRequest);
         });
         return p;
       }, {})
@@ -44,11 +46,12 @@ export const combineRequestsPerDelegators = (
           const collatorId = request.collator.toHex();
 
           p[delegatorId].push({
+            delegatorId,
             collatorId,
             when: request.whenExecutable.toNumber(),
-            action: request.action.isRevoke ? "revoke" : "decrease",
+            action: request.action.isRevoke ? "Revoke" : "Decrease",
             amount: request.amount.toBigInt(),
-          });
+          } as DelegatorRequest);
         }
 
         return p;

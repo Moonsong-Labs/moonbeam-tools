@@ -3,7 +3,7 @@ import chalk from "chalk";
 import yargs from "yargs";
 import { table } from "table";
 
-import { getApiFor, NETWORK_YARGS_OPTIONS } from "..";
+import { getApiFor, combineRequestsPerDelegators, NETWORK_YARGS_OPTIONS } from "..";
 
 const argv = yargs(process.argv.slice(2))
   .usage("Usage: $0")
@@ -24,16 +24,32 @@ const argv = yargs(process.argv.slice(2))
 const main = async () => {
   // Instantiate Api
   const api = await getApiFor(argv);
-  const apiAt = argv.at ? await api.at(await api.rpc.chain.getBlockHash(argv.at)) : api;
-  
+
+  const blockHash = argv.at
+    ? await api.rpc.chain.getBlockHash(argv.at)
+    : await api.rpc.chain.getBlockHash();
+  const apiAt = await api.at(blockHash);
+  const specVersion = (await apiAt.query.system.lastRuntimeUpgrade())
+    .unwrap()
+    .specVersion.toNumber();
 
   const formattedCollator = api.registry.createType("EthereumAccountId", argv.collator).toString();
 
   // Load asycnhronously all data
-  const [delegatorState, candidateInfo] = await Promise.all([
+  // TODO: This could be highly optimized by avoid delegationScheduledRequests.entries()
+  const [delegatorState, candidateInfo, delegationRequests] = await Promise.all([
     apiAt.query.parachainStaking.delegatorState.entries(),
-    apiAt.query.parachainStaking.candidateInfo(formattedCollator) as Promise<any>,
+    apiAt.query.parachainStaking.candidateInfo(formattedCollator),
+    specVersion >= 1500
+      ? (apiAt.query.parachainStaking.delegationScheduledRequests.entries() as any)
+      : [],
   ]);
+
+  if (candidateInfo.isNone) {
+    console.log(`Candidate not found: ${formattedCollator}`);
+    await api.disconnect();
+    return;
+  }
 
   const delegations = [
     {
@@ -42,6 +58,12 @@ const main = async () => {
       revoking: 0n,
     },
   ];
+
+  const delegatorRequests = combineRequestsPerDelegators(
+    specVersion,
+    delegationRequests,
+    delegatorState
+  );
 
   for (const state of delegatorState) {
     const stateData = (state[1] as any).unwrap();
@@ -54,13 +76,12 @@ const main = async () => {
       amount: delegation.amount,
       revoking: 0n,
     };
-    if (stateData.requests.revocationsCount > 0) {
-      // console.log(stateData.toJSON());
-      if (stateData.requests.requests.toJSON()[formattedCollator]) {
-        delegationData.revoking += BigInt(
-          stateData.requests.requests.toJSON()[formattedCollator].amount
-        );
-      }
+
+    if (delegatorRequests[formattedCollator]) {
+      delegationData.revoking += delegatorRequests[formattedCollator].reduce(
+        (p, v) => (p += v.amount),
+        0n
+      );
     }
     delegations.push(delegationData);
   }

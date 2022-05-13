@@ -27,7 +27,7 @@ const argv = yargs(process.argv.slice(2))
     "private-key": {
       type: "string",
       description: "Private key to transfer from",
-      conflicts: ["to"],
+      demandOption: true,
     },
     threshold: {
       type: "number",
@@ -39,6 +39,17 @@ const argv = yargs(process.argv.slice(2))
 const main = async () => {
   // Instantiate Api
   const api = await getApiFor(argv);
+
+  const apiAt = await api.at(await api.rpc.chain.getBlockHash());
+  const specVersion = (await apiAt.query.system.lastRuntimeUpgrade())
+    .unwrap()
+    .specVersion.toNumber();
+
+  if (specVersion < 1500) {
+    console.log(`Only supported runtime >= 1500`);
+    await api.disconnect();
+    return;
+  }
 
   const web3 = new Web3(argv["eth-url"]);
   const revoker = web3.eth.accounts.privateKeyToAccount(argv["private-key"]);
@@ -55,19 +66,24 @@ const main = async () => {
   console.log(`Using ${revoker.address}: nonce ${nonce}, balance ${balance}`);
   console.log(`Listing revocations for ${formattedCollators.join(", ")}`);
 
-  const [roundInfo, delegatorState] = await Promise.all([
+  const [roundInfo, delegatorState, delegationScheduledRequests] = await Promise.all([
     (await api.query.parachainStaking.round()) as any,
     await api.query.parachainStaking.delegatorState.entries(),
+    (await apiAt.query.parachainStaking.delegationScheduledRequests.multi(
+      formattedCollators
+    )) as any,
   ]);
 
   const requests: {
-    requester: string;
-    request: ParachainStakingDelegationRequest;
-    collator: string;
+    delegatorId: string;
+    amount: bigint;
+    action: "Revoke" | "Decrease";
+    collatorId: string;
   }[] = [];
-  const leaves: { requester: string; amount: bigint; count: number }[] = [];
+  const leaves: { delegatorId: string; amount: bigint; count: number }[] = [];
   for (const state of delegatorState) {
     const stateData = state[1].unwrap();
+    const delegatorId = stateData.id.toHex();
 
     const delegationAmounts = stateData.delegations.reduce((p, delegation) => {
       p = delegation.amount.toBigInt();
@@ -86,36 +102,37 @@ const main = async () => {
 
     if (isLeaving) {
       leaves.push({
-        requester: stateData.id.toHex(),
+        delegatorId,
         amount: delegationAmounts,
         count: stateData.delegations.length,
       });
-    } else if (stateData.requests.revocationsCount.toNumber() > 0) {
-      // console.log(stateData.toJSON());
-      const requestData = stateData.requests.requests;
-      for (const collator of formattedCollators) {
-        const request = Array.from(requestData.values()).find(
-          (r) => r.collator.toHex() == collator
-        );
-        if (
-          request &&
-          request.whenExecutable <= roundInfo.current.toNumber() &&
-          (!argv.threshold || request.amount.toBigInt() / 10n ** 18n > argv.threshold) &&
-          stateData.delegations.find(({ owner }) => owner.toHex() == collator)
-        ) {
-          requests.push({
-            collator,
-            requester: stateData.id.toHex(),
-            request,
-          });
-        }
+    } else {
+      for (const index in delegationScheduledRequests) {
+        const collatorId = formattedCollators[index];
+        const collatorRequests = delegationScheduledRequests[index];
+        (collatorRequests as any).forEach((request) => {
+          if (
+            delegatorId == request.delegator.toHex() &&
+            request.whenExecutable.toNumber() <= roundInfo.current.toNumber() &&
+            (!argv.threshold || request.amount.toBigInt() / 10n ** 18n > argv.threshold)
+          ) {
+            requests.push({
+              collatorId,
+              delegatorId,
+              action: request.action.isRevoke ? "Revoke" : "Decrease",
+              amount: request.action.isRevoke
+                ? request.action.asRevoke.toBigInt()
+                : request.action.asDecrease.toBigInt(),
+            });
+          }
+        });
       }
     }
   }
 
   const txs = await Promise.all([
     ...requests.map(async (req) => {
-      const tokens = req.request.amount.toBigInt() / 10n ** 18n;
+      const tokens = req.amount / 10n ** 18n;
       const tokenString =
         tokens > 20000n
           ? chalk.red(tokens.toString().padStart(6))
@@ -123,12 +140,12 @@ const main = async () => {
           ? chalk.yellow(tokens.toString().padStart(6))
           : tokens.toString().padStart(6);
 
-      console.log(`${req.collator}: ${tokenString} by ${req.requester}`);
+      console.log(`${req.collatorId}: ${tokenString} by ${req.delegatorId}`);
 
       const txData = {
         from: revoker.address,
         to: "0x0000000000000000000000000000000000000800",
-        data: `0xe42366a6${req.requester.slice(2).toLowerCase().padStart(64, "0")}${req.collator
+        data: `0xe42366a6${req.delegatorId.slice(2).toLowerCase().padStart(64, "0")}${req.collatorId
           .slice(2)
           .toLowerCase()
           .padStart(64, "0")}`,
@@ -140,7 +157,7 @@ const main = async () => {
       console.log(`Less: ${JSON.stringify(txData)}`);
       return web3.eth.accounts.signTransaction(txData, revoker.privateKey);
     }),
-    ...leaves.map(async ({ requester, amount, count }) => {
+    ...leaves.map(async ({ delegatorId, amount, count }) => {
       const tokens = amount / 10n ** 18n;
       const tokenString =
         tokens > 20000n
@@ -149,12 +166,12 @@ const main = async () => {
           ? chalk.yellow(tokens.toString().padStart(6))
           : tokens.toString().padStart(6);
 
-      console.log(`Leave: ${tokenString} by ${requester}`);
+      console.log(`Leave: ${tokenString} by ${delegatorId}`);
 
       const txData = {
         from: revoker.address,
         to: "0x0000000000000000000000000000000000000800",
-        data: `0xa84a7468${requester.slice(2).toLowerCase().padStart(64, "0")}${count
+        data: `0xa84a7468${delegatorId.slice(2).toLowerCase().padStart(64, "0")}${count
           .toString(16)
           .padStart(64, "0")}`,
         gasPrice,
