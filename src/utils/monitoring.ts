@@ -246,7 +246,7 @@ export const getBlockDetails = async (api: ApiPromise, blockHash: BlockHash) => 
       5,
       async (ext: any) => {
         try {
-          const r = await api.rpc.payment.queryInfo(ext.toHex(), block.header.hash);
+          const r = await api.rpc.payment.queryInfo(ext.toHex(), block.header.parentHash);
           return r;
         } catch (e) {
           console.log(`error for fees: ${e}`);
