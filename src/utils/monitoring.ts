@@ -1,7 +1,7 @@
 import type { ApiPromise } from "@polkadot/api";
 import type { Extrinsic, BlockHash, EventRecord } from "@polkadot/types/interfaces";
 import type { Block } from "@polkadot/types/interfaces/runtime/types";
-import type { Data, GenericEthereumAccountId, Option } from "@polkadot/types";
+import type { Data, GenericEthereumAccountId, Option, u128 } from "@polkadot/types";
 import type { EthereumTransactionTransactionV2 } from "@polkadot/types/lookup";
 import type { EthTransaction } from "@polkadot/types/interfaces/eth";
 import { u8aToString } from "@polkadot/util";
@@ -152,7 +152,10 @@ export const getAccountIdentities = async (
   });
 };
 
-export const getAccountIdentity = async (api: ApiPromise | ApiDecoration<"promise">, account: string): Promise<string> => {
+export const getAccountIdentity = async (
+  api: ApiPromise | ApiDecoration<"promise">,
+  account: string
+): Promise<string> => {
   if (!account) {
     return "";
   }
@@ -189,7 +192,10 @@ export const getAccountIdentity = async (api: ApiPromise | ApiDecoration<"promis
     : account?.toString();
 };
 
-export const getAuthorAccount = async (api: ApiPromise | ApiDecoration<"promise">, author: string): Promise<string> => {
+export const getAuthorAccount = async (
+  api: ApiPromise | ApiDecoration<"promise">,
+  author: string
+): Promise<string> => {
   if (
     !authorMappingCache[author] ||
     authorMappingCache[author].lastUpdate < Date.now() - 3600 * 1000
@@ -205,7 +211,10 @@ export const getAuthorAccount = async (api: ApiPromise | ApiDecoration<"promise"
   return account;
 };
 
-export const getAuthorIdentity = async (api: ApiPromise | ApiDecoration<"promise">, author: string): Promise<string> => {
+export const getAuthorIdentity = async (
+  api: ApiPromise | ApiDecoration<"promise">,
+  author: string
+): Promise<string> => {
   if (
     !authorMappingCache[author] ||
     authorMappingCache[author].lastUpdate < Date.now() - 3600 * 1000
@@ -219,6 +228,21 @@ export const getAuthorIdentity = async (api: ApiPromise | ApiDecoration<"promise
   const { account } = authorMappingCache[author];
 
   return getAccountIdentity(api, account);
+};
+
+const feeMultiplierCache: {
+  [blockHash: string]: Promise<u128>;
+} = {};
+
+export const getFeeMultiplier = async (
+  api: ApiPromise | ApiDecoration<"promise">,
+  blockHash: string
+): Promise<u128> => {
+  if (!feeMultiplierCache[blockHash]) {
+    feeMultiplierCache[blockHash] = api.query.transactionPayment
+      .nextFeeMultiplier();
+  }
+  return feeMultiplierCache[blockHash];
 };
 
 export const getBlockDetails = async (api: ApiPromise, blockHash: BlockHash) => {
@@ -246,7 +270,7 @@ export const getBlockDetails = async (api: ApiPromise, blockHash: BlockHash) => 
       5,
       async (ext: any) => {
         try {
-          const r = await api.rpc.payment.queryInfo(ext.toHex(), block.header.parentHash);
+          const r = await api.rpc.payment.queryFeeDetails(ext.toHex(), block.header.parentHash);
           return r;
         } catch (e) {
           console.log(`error for fees: ${e}`);
@@ -260,7 +284,13 @@ export const getBlockDetails = async (api: ApiPromise, blockHash: BlockHash) => 
       : "0x0000000000000000000000000000000000000000000000000000000000000000",
   ]);
 
-  const txWithEvents = mapExtrinsics(block.extrinsics, records, fees);
+  const feeMultiplier = await getFeeMultiplier(api, block.header.parentHash.toString());
+  const txWithEvents = mapExtrinsics(
+    block.extrinsics,
+    records,
+    fees.map((fee) => fee.inclusionFee.unwrapOrDefault()),
+    feeMultiplier
+  );
   const blockWeight = txWithEvents.reduce((totalWeight, tx, index) => {
     return totalWeight + (tx.dispatchInfo && tx.dispatchInfo.weight.toBigInt());
   }, 0n);
@@ -423,7 +453,7 @@ export function generateBlockDetailsLog(
 
   const fees = blockDetails.txWithEvents
     .filter(({ dispatchInfo }) => dispatchInfo.paysFee.isYes && !dispatchInfo.class.isMandatory)
-    .reduce((p, { dispatchInfo, extrinsic, events, fee }) => {
+    .reduce((p, { dispatchInfo, extrinsic, events, fees }) => {
       if (extrinsic.method.section == "ethereum") {
         const payload = extrinsic.method.args[0] as EthereumTransactionTransactionV2;
         let gasPrice = payload.isLegacy
@@ -437,7 +467,7 @@ export function generateBlockDetailsLog(
 
         return p + (BigInt(gasPrice) * dispatchInfo.weight.toBigInt()) / 25000n;
       }
-      return p + fee.partialFee.toBigInt();
+      return p + fees.totalFees;
     }, 0n);
   const feesTokens = Number(fees / 10n ** 15n) / 1000;
   const feesTokenTxt = feesTokens.toFixed(3).padStart(5, " ");

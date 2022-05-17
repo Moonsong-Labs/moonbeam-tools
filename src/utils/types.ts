@@ -3,18 +3,26 @@ import type {
   DispatchInfo,
   EventRecord,
   Extrinsic,
-  RuntimeDispatchInfo,
+  InclusionFee,
 } from "@polkadot/types/interfaces";
+import type { u128 } from "@polkadot/types";
 import type { TxWithEvent } from "@polkadot/api-derive/types";
 
+export interface ComputedFees {
+  baseFee: bigint;
+  lenFee: bigint;
+  weightFee: bigint;
+  totalFees: bigint;
+}
 export interface TxWithEventAndFee extends TxWithEvent {
-  fee: RuntimeDispatchInfo;
+  fees: ComputedFees;
 }
 
 export function mapExtrinsics(
   extrinsics: Extrinsic[],
   records: EventRecord[],
-  fees?: RuntimeDispatchInfo[]
+  fees: InclusionFee[],
+  feeMultiplier: u128
 ): TxWithEventAndFee[] {
   return extrinsics.map((extrinsic, index): TxWithEventAndFee => {
     let dispatchError: DispatchError | undefined;
@@ -35,6 +43,20 @@ export function mapExtrinsics(
         return event;
       });
 
-    return { dispatchError, dispatchInfo, events, extrinsic, fee: fees ? fees[index] : undefined };
+    let computedFees: ComputedFees;
+    const feeDetails = fees[index];
+    const adjustedWeight =
+      (dispatchInfo.weight.toBigInt() * feeMultiplier.toBigInt() +
+        1_000_000_000_000_000_000n -
+        1n) /
+      1_000_000_000_000_000_000n;
+
+    computedFees = {
+      baseFee: feeDetails.baseFee.toBigInt(),
+      lenFee: feeDetails.lenFee.toBigInt(),
+      weightFee: adjustedWeight,
+      totalFees: adjustedWeight + feeDetails.baseFee.toBigInt() + feeDetails.lenFee.toBigInt(),
+    };
+    return { dispatchError, dispatchInfo, events, extrinsic, fees: computedFees };
   });
 }
