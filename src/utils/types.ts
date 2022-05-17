@@ -46,9 +46,7 @@ export function mapExtrinsics(
     let computedFees: ComputedFees;
     const feeDetails = fees[index];
     const adjustedWeight =
-      (dispatchInfo.weight.toBigInt() * feeMultiplier.toBigInt() +
-        1_000_000_000_000_000_000n -
-        1n) /
+      (dispatchInfo.weight.toBigInt() * feeMultiplier.toBigInt()) /
       1_000_000_000_000_000_000n;
 
     computedFees = {
