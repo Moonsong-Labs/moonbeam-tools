@@ -234,13 +234,11 @@ const feeMultiplierCache: {
   [blockHash: string]: Promise<u128>;
 } = {};
 
-export const getFeeMultiplier = async (
-  api: ApiPromise | ApiDecoration<"promise">,
-  blockHash: string
-): Promise<u128> => {
+export const getFeeMultiplier = async (api: ApiPromise, blockHash: string): Promise<u128> => {
   if (!feeMultiplierCache[blockHash]) {
-    feeMultiplierCache[blockHash] = api.query.transactionPayment
-      .nextFeeMultiplier();
+    feeMultiplierCache[blockHash] = (
+      await api.at(blockHash)
+    ).query.transactionPayment.nextFeeMultiplier();
   }
   return feeMultiplierCache[blockHash];
 };
