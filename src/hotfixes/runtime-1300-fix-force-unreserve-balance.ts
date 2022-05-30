@@ -234,14 +234,10 @@ const main = async () => {
 
       if (expectedReserve != reserved) {
         console.log(
-          `${accountId}: reserved ${printTokens(api, reserved)} vs expected ${printTokens(
-            api,
-            expectedReserve
-          )} (${Object.keys(expectedReserveByAccount[accountId]?.reserved || {})
-            .map(
-              (key) =>
-                `${key}: ${printTokens(api, expectedReserveByAccount[accountId].reserved[key])}`
-            )
+          `${accountId}: reserved ${reserved} vs expected ${expectedReserve} (${Object.keys(
+            expectedReserveByAccount[accountId]?.reserved || {}
+          )
+            .map((key) => `${key}: ${expectedReserveByAccount[accountId].reserved[key]}`)
             .join(` - `)})`
         );
         expectedReserveByAccount[accountId];
