@@ -189,6 +189,20 @@ const main = async () => {
         const baseFeePerGas =
           runtimeVersion >= 1200 ? (await apiAt.query.baseFee.baseFeePerGas()).toBigInt() : 0n;
 
+        // Might not work on first moonbase runtimes
+        const authorId =
+          blockDetails.block.extrinsics
+            .find((tx) => tx.method.section == "authorInherent" && tx.method.method == "setAuthor")
+            ?.args[0]?.toString() ||
+          blockDetails.block.header.digest.logs
+            .find(
+              (l) =>
+                l.isPreRuntime &&
+                l.asPreRuntime.length > 0 &&
+                l.asPreRuntime[0].toString() == "nmbs"
+            )
+            ?.asPreRuntime[1]?.toString();
+
         // Stores if a member did vote for the same proposal in the same block
         const hasMemberVoted: {
           [accountId: string]: { proposal: { [proposalKey: string]: true } };
@@ -297,13 +311,10 @@ const main = async () => {
 
               // Bug where a collator receives unexpected fees ("minted")
               const collatorDepositEvent = events.find(
-                (event, index) =>
+                (event) =>
                   event.section == "balances" &&
                   event.method == "Deposit" &&
-                  index > 0 &&
-                  // checking the deposit following the treasury deposit
-                  events[index - 1].section == "treasury" &&
-                  events[index - 1].method == "Deposit"
+                  authorId == event.data[0].toString()
               );
 
               if (collatorDepositEvent) {
@@ -440,9 +451,14 @@ const main = async () => {
               `Desposit Amount Discrepancy: [${blockDetails.block.header.number.toString()}-${index}:` +
                 ` ${extrinsic.method.section.toString()}.${extrinsic.method.method.toString()} - ${runtimeVersion}]`
             );
+            console.log(`     base fees : ${fees.baseFee.toString().padStart(30, " ")}`);
+            console.log(` +    len fees : ${fees.lenFee.toString().padStart(30, " ")}`);
+            console.log(` + weight fees : ${fees.weightFee.toString().padStart(30, " ")}`);
+            console.log(` =  total fees : ${fees.totalFees.toString().padStart(30, " ")}`);
             console.log(`fees not burnt : ${(txFees - txBurnt).toString().padStart(30, " ")}`);
             console.log(`       deposit : ${treasureDeposit.toString().padStart(30, " ")}`);
             console.log(extrinsic.toHex());
+            process.exit();
           }
 
           const values = [
