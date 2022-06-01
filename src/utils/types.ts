@@ -6,6 +6,9 @@ import type {
   InclusionFee,
 } from "@polkadot/types/interfaces";
 import type { u128 } from "@polkadot/types";
+import { BN } from "@polkadot/util";
+import type { FrameSupportWeightsWeightToFeeCoefficient } from "@polkadot/types/lookup";
+
 import type { TxWithEvent } from "@polkadot/api-derive/types";
 
 export interface ComputedFees {
@@ -22,7 +25,8 @@ export function mapExtrinsics(
   extrinsics: Extrinsic[],
   records: EventRecord[],
   fees: InclusionFee[],
-  feeMultiplier: u128
+  feeMultiplier: u128,
+  weightToFee: FrameSupportWeightsWeightToFeeCoefficient
 ): TxWithEventAndFee[] {
   return extrinsics.map((extrinsic, index): TxWithEventAndFee => {
     let dispatchError: DispatchError | undefined;
@@ -45,15 +49,21 @@ export function mapExtrinsics(
 
     let computedFees: ComputedFees;
     const feeDetails = fees[index];
-    const adjustedWeight =
-      (dispatchInfo.weight.toBigInt() * feeMultiplier.toBigInt()) /
-      1_000_000_000_000_000_000n;
+
+    const frac = weightToFee.coeffFrac.mul(dispatchInfo.weight);
+    const integer = weightToFee.coeffInteger.mul(dispatchInfo.weight);
+
+    const unadjustedFee = frac.add(integer);
+
+    const adjustedFee = BigInt(unadjustedFee
+      .mul(feeMultiplier.toBn())
+      .div(new BN("1000000000000000000")).toString());
 
     computedFees = {
       baseFee: feeDetails.baseFee.toBigInt(),
       lenFee: feeDetails.lenFee.toBigInt(),
-      weightFee: adjustedWeight,
-      totalFees: adjustedWeight + feeDetails.baseFee.toBigInt() + feeDetails.lenFee.toBigInt(),
+      weightFee: adjustedFee,
+      totalFees: adjustedFee + feeDetails.baseFee.toBigInt() + feeDetails.lenFee.toBigInt(),
     };
     return { dispatchError, dispatchInfo, events, extrinsic, fees: computedFees };
   });

@@ -287,7 +287,8 @@ export const getBlockDetails = async (api: ApiPromise, blockHash: BlockHash) => 
     block.extrinsics,
     records,
     fees.map((fee) => fee.inclusionFee.unwrapOrDefault()),
-    feeMultiplier
+    feeMultiplier,
+    api.consts.transactionPayment.weightToFee[0]
   );
   const blockWeight = txWithEvents.reduce((totalWeight, tx, index) => {
     return totalWeight + (tx.dispatchInfo && tx.dispatchInfo.weight.toBigInt());
