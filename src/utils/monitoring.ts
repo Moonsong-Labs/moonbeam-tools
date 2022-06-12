@@ -31,6 +31,7 @@ export const printTokens = (api: ApiPromise, tokens: bigint, decimals = 2, pad =
 export interface BlockDetails {
   block: Block;
   authorName: string;
+  isAuthorOrbiter: boolean;
   blockTime: number;
   records: EventRecord[];
   txWithEvents: TxWithEventAndFee[];
@@ -227,7 +228,7 @@ export const getAuthorIdentity = async (
   }
   const { account } = authorMappingCache[author];
 
-  return getAccountIdentity(api, account);
+  return getAccountIdentity(api, account)
 };
 
 const feeMultiplierCache: {
@@ -247,10 +248,11 @@ export const getBlockDetails = async (api: ApiPromise, blockHash: BlockHash) => 
   debug(`Querying ${blockHash}`);
   const maxBlockWeight = api.consts.system.blockWeights.maxBlock.toBigInt();
   const apiAt = await api.at(blockHash);
-  const [{ block }, records, blockTime] = await Promise.all([
+  const [{ block }, records, blockTime, collatorId] = await Promise.all([
     api.rpc.chain.getBlock(blockHash),
     apiAt.query.system.events(),
     apiAt.query.timestamp.now(),
+    apiAt.query.authorInherent.author(),
   ]);
 
   const authorId =
@@ -280,7 +282,7 @@ export const getBlockDetails = async (api: ApiPromise, blockHash: BlockHash) => 
     authorId
       ? getAuthorIdentity(api, authorId)
       : "0x0000000000000000000000000000000000000000000000000000000000000000",
-  ]);
+  ]); 
 
   const feeMultiplier = await getFeeMultiplier(api, block.header.parentHash.toString());
   const txWithEvents = mapExtrinsics(
@@ -295,6 +297,7 @@ export const getBlockDetails = async (api: ApiPromise, blockHash: BlockHash) => 
   }, 0n);
   return {
     block,
+    isAuthorOrbiter: collatorId.unwrapOr(null)?.toString() !=  (await getAuthorAccount(api, authorId)).toString(),
     authorName,
     blockTime: blockTime.toNumber(),
     weightPercentage: Number((blockWeight * 10000n) / maxBlockWeight) / 100,
@@ -511,12 +514,13 @@ export function generateBlockDetailsLog(
       ? chalk.green(transferredText)
       : transferredText;
 
-  const authorId =
-    blockDetails.authorName.length > 20
-      ? `${blockDetails.authorName.substring(0, 7)}..${blockDetails.authorName.substring(
-          blockDetails.authorName.length - 4
+  const authorId = 
+    blockDetails.authorName.length > 24
+      ? `${blockDetails.authorName.substring(0, 9)}..${blockDetails.authorName.substring(
+          blockDetails.authorName.length - 6
         )}`
       : blockDetails.authorName;
+  const authorName = blockDetails.isAuthorOrbiter ? chalk.yellow(authorId) : authorId;
 
   const hash = blockDetails.block.header.hash.toString();
   const time = new Date().toLocaleTimeString("fr-FR", {
@@ -534,7 +538,7 @@ export function generateBlockDetailsLog(
     txPoolText ? `[Pool:${txPoolText}${poolIncText ? `(+${poolIncText})` : ""}]` : ``
   }${secondText ? `[${secondText}s]` : ""}(hash: ${hash.substring(0, 7)}..${hash.substring(
     hash.length - 4
-  )})${options?.suffix ? ` ${options.suffix}` : ""} by ${authorId}`;
+  )})${options?.suffix ? ` ${options.suffix}` : ""} by ${authorName}`;
 }
 
 export function printBlockDetails(
