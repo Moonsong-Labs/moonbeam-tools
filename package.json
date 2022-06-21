@@ -1,19 +1,19 @@
 {
   "name": "moonbeam-tools",
-  "version": "0.0.25",
+  "version": "0.0.26",
   "description": "Set of tools for Moonbeam blockchain",
   "main": "dist/index.cjs.js",
   "module": "dist/index.esm.js",
   "browser": "dist/index.umd.js",
   "types": "dist/index.d.ts",
   "dependencies": {
-    "@moonbeam-network/api-augment": "0.0.1-beta.5",
-    "@polkadot/api": "^7.14.4-7",
-    "@polkadot/util": "^8.7.1",
-    "@polkadot/util-crypto": "^8.7.1",
+    "@moonbeam-network/api-augment": "^0.1605.3",
+    "@polkadot/api": "^8.8.2",
+    "@polkadot/util": "^9.5.1",
+    "@polkadot/util-crypto": "^9.5.1",
     "chalk": "^4.1.2",
     "esbuild": "^0.13.8",
-    "moonbeam-types-bundle": "^2.0.4",
+    "moonbeam-types-bundle": "^2.0.6",
     "p-map": "^4.0.0",
     "rollup-plugin-esbuild": "^4.6.0",
     "rollup-plugin-preserve-shebangs": "^0.2.0",
@@ -21,7 +21,7 @@
     "sqlite": "^4.0.25",
     "sqlite3": "^5.0.2",
     "table": "^6.8.0",
-    "ts-node": "^10.4.0",
+    "ts-node": "^10.8.1",
     "web3": "^1.6.0",
     "yargs": "^17.2.1"
   },
@@ -33,8 +33,8 @@
     "@types/yargs": "^15.0.12",
     "eslint": "^7.32.0",
     "rollup": "^2.58.0",
-    "tslib": "^2.3.1",
-    "typescript": "^4.4.4"
+    "tslib": "^2.4.0",
+    "typescript": "^4.7.4"
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",

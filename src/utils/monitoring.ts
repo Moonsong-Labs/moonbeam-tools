@@ -15,7 +15,7 @@ import chalk from "chalk";
 import Debug from "debug";
 import { PalletIdentityRegistration } from "@polkadot/types/lookup";
 import { Codec, ITuple } from "@polkadot/types-codec/types";
-import { promiseConcurrent } from "..";
+import { promiseConcurrent } from "./functions";
 import { ApiDecoration } from "@polkadot/api/types";
 const debug = Debug("monitoring");
 

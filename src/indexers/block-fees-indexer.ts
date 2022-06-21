@@ -257,8 +257,6 @@ const main = async () => {
             // Either ethereum transactions or signed extrinsics with fees (substrate tx)
 
             if (extrinsic.method.section == "ethereum") {
-              // Ethereum txs burn 100% of fees in version < 800
-
               const payload = extrinsic.method.args[0] as EthereumTransactionTransactionV2;
               // For Ethereum tx we caluculate fee by first converting weight to gas
               let gasUsed = dispatchInfo.weight.toBigInt() / WEIGHT_PER_GAS;
