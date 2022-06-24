@@ -6,7 +6,6 @@ import Web3 from "web3";
 import { getApiFor, NETWORK_YARGS_OPTIONS } from "..";
 import { promiseConcurrent } from "../utils/functions";
 import "@moonbeam-network/api-augment";
-import { ParachainStakingDelegationRequest } from "@polkadot/types/lookup";
 
 const argv = yargs(process.argv.slice(2))
   .usage("Usage: $0")
@@ -67,11 +66,9 @@ const main = async () => {
   console.log(`Listing revocations for ${formattedCollators.join(", ")}`);
 
   const [roundInfo, delegatorState, delegationScheduledRequests] = await Promise.all([
-    (await api.query.parachainStaking.round()) as any,
+    await api.query.parachainStaking.round(),
     await api.query.parachainStaking.delegatorState.entries(),
-    (await apiAt.query.parachainStaking.delegationScheduledRequests.multi(
-      formattedCollators
-    )) as any,
+    await apiAt.query.parachainStaking.delegationScheduledRequests.multi(formattedCollators),
   ]);
 
   const requests: {
@@ -110,11 +107,14 @@ const main = async () => {
       for (const index in delegationScheduledRequests) {
         const collatorId = formattedCollators[index];
         const collatorRequests = delegationScheduledRequests[index];
-        (collatorRequests as any).forEach((request) => {
+        collatorRequests.forEach((request) => {
+          const amount = request.action.isDecrease
+            ? request.action.asDecrease.toBigInt()
+            : request.action.asRevoke.toBigInt();
           if (
             delegatorId == request.delegator.toHex() &&
             request.whenExecutable.toNumber() <= roundInfo.current.toNumber() &&
-            (!argv.threshold || request.amount.toBigInt() / 10n ** 18n > argv.threshold)
+            (!argv.threshold || amount / 10n ** 18n > argv.threshold)
           ) {
             requests.push({
               collatorId,
