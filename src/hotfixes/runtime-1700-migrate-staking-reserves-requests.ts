@@ -57,7 +57,7 @@ const findUnmigratedCollators = async (apiAt: ApiDecoration<"promise">) => {
   return collators;
 }
 
-const findUnmigratedDelegators = async (apiAt: any) => {
+const findUnmigratedDelegators = async (apiAt: ApiDecoration<"promise">) => {
   const delegatorState = 
     await apiAt.query.parachainStaking.delegatorState.entries();
 
