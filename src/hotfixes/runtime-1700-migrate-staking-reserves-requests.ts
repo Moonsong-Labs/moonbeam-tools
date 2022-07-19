@@ -38,7 +38,7 @@ const findUnmigratedCollators = async (apiAt: ApiDecoration<"promise">) => {
   const collatorsToFix = [];
   for (const state of collatorState) {
     const storageKey = ""+state[0];
-    const id = storageKey.substring(storageKey.length - 40, storageKey.length);
+    const id = "0x"+ storageKey.substring(storageKey.length - 40, storageKey.length);
 
     let hasMigrated = 
       await apiAt.query.parachainStaking.collatorReserveToLockMigrations(id);
