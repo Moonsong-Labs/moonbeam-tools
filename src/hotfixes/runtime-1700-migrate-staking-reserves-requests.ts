@@ -58,22 +58,16 @@ const findUnmigratedCollators = async (apiAt: ApiDecoration<"promise">) => {
 }
 
 const findUnmigratedDelegators = async (apiAt: ApiDecoration<"promise">) => {
-  const delegatorState = 
-    await apiAt.query.parachainStaking.delegatorState.entries();
-
-  console.log(`examining ${delegatorState.length}`);
 
   const delegatorsToFix = [];
-  for (const state of delegatorState) {
-    const stateData = state[1].unwrap();
-
+  for await (const { args: [id] } of await apiAt.query.parachainStaking.delegatorState.keys()) {
     let hasMigrated = 
-      await apiAt.query.parachainStaking.delegatorReserveToLockMigrations(stateData.id);
+      await apiAt.query.parachainStaking.delegatorReserveToLockMigrations(id);
 
-    console.log(`${stateData.id}: ${hasMigrated.eq(true) ? '✅' : '✗'}`);
+    console.log(`${id}: ${hasMigrated.eq(true) ? '✅' : '✗'}`);
 
     if (hasMigrated.eq(false)) {
-      delegatorsToFix.push(stateData.id);
+      delegatorsToFix.push(id);
     }
   }
 
