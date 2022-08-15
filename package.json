@@ -45,7 +45,7 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "rollup -c -w",
     "build": "rollup -c && ./scripts/update-readme.sh",
-    "fmt": "npx prettier --write ."
+    "lint": "npx prettier --write ."
   },
   "repository": {
     "type": "git",
