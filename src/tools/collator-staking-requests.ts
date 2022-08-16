@@ -2,11 +2,7 @@
 import chalk from "chalk";
 import yargs from "yargs";
 
-import {
-  getApiFor,
-  DelegatorRequest,
-  NETWORK_YARGS_OPTIONS,
-} from "..";
+import { getApiFor, DelegatorRequest, NETWORK_YARGS_OPTIONS } from "..";
 
 const argv = yargs(process.argv.slice(2))
   .usage("Usage: $0")
@@ -64,12 +60,11 @@ const main = async () => {
   } else {
     const delegatorState = await apiAt.query.parachainStaking.delegatorState.entries();
     for (const state of delegatorState) {
-      
       const stateData = state[1].unwrap();
       const delegatorId = stateData.id.toHex();
 
       totalDelegations += stateData.delegations.length;
-        // console.log(stateData.toJSON());
+      // console.log(stateData.toJSON());
       const request = stateData.requests.requests.toJSON()[formattedCollator] as any;
       if (request) {
         requests.push({
@@ -96,15 +91,12 @@ const main = async () => {
         : tokens.toString().padStart(6);
 
     const blockLefts =
-      (req.when - roundInfo.current.toNumber()) * roundInfo.length.toNumber() +
-      roundBlockLefts;
+      (req.when - roundInfo.current.toNumber()) * roundInfo.length.toNumber() + roundBlockLefts;
     const timeLeft = blockLefts * 12;
     console.log(
       `#${req.when} (${Math.floor(timeLeft / 60 / 60)
         .toString()
-        .padStart(5)}h): ${req.action.padStart(
-        10
-      )} ${tokenString} by ${req.delegatorId}`
+        .padStart(5)}h): ${req.action.padStart(10)} ${tokenString} by ${req.delegatorId}`
     );
   }
   console.log(`Pending revoke: ${totalRevoked / 10n ** 18n}`);

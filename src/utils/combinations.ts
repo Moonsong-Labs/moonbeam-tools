@@ -14,7 +14,7 @@ export const combineRequestsPerDelegators = (
   specVersion: number,
   delegationScheduledRequests: any,
   delegatorState: any
-): {[delegatorId: string]: DelegatorRequest[]} => {
+): { [delegatorId: string]: DelegatorRequest[] } => {
   return specVersion >= 1500
     ? delegationScheduledRequests.reduce((p, collatorRequests) => {
         const collatorId = `0x${collatorRequests[0].toHex().slice(-40)}`;

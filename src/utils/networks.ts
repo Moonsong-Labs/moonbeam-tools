@@ -5,7 +5,13 @@ import { typesBundlePre900 } from "moonbeam-types-bundle";
 import { listenBlocks, printBlockDetails, RealtimeBlockDetails } from "./monitoring";
 import { Options } from "yargs";
 
-export type MOONBEAM_NETWORK_NAME = "stagenet" | "alphanet" | "moonsama" | "moonsilver" | "moonriver" | "moonbeam";
+export type MOONBEAM_NETWORK_NAME =
+  | "stagenet"
+  | "alphanet"
+  | "moonsama"
+  | "moonsilver"
+  | "moonriver"
+  | "moonbeam";
 export type POLKADOT_NETWORK_NAME = "kusama" | "polkadot";
 
 export type NETWORK_NAME = MOONBEAM_NETWORK_NAME | POLKADOT_NETWORK_NAME;

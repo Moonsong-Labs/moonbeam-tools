@@ -228,7 +228,7 @@ export const getAuthorIdentity = async (
   }
   const { account } = authorMappingCache[author];
 
-  return getAccountIdentity(api, account)
+  return getAccountIdentity(api, account);
 };
 
 const feeMultiplierCache: {
@@ -282,7 +282,7 @@ export const getBlockDetails = async (api: ApiPromise, blockHash: BlockHash) => 
     authorId
       ? getAuthorIdentity(api, authorId)
       : "0x0000000000000000000000000000000000000000000000000000000000000000",
-  ]); 
+  ]);
 
   const feeMultiplier = await getFeeMultiplier(api, block.header.parentHash.toString());
   const txWithEvents = mapExtrinsics(
@@ -297,7 +297,8 @@ export const getBlockDetails = async (api: ApiPromise, blockHash: BlockHash) => 
   }, 0n);
   return {
     block,
-    isAuthorOrbiter: collatorId.unwrapOr(null)?.toString() !=  (await getAuthorAccount(api, authorId)).toString(),
+    isAuthorOrbiter:
+      collatorId.unwrapOr(null)?.toString() != (await getAuthorAccount(api, authorId)).toString(),
     authorName,
     blockTime: blockTime.toNumber(),
     weightPercentage: Number((blockWeight * 10000n) / maxBlockWeight) / 100,
@@ -514,7 +515,7 @@ export function generateBlockDetailsLog(
       ? chalk.green(transferredText)
       : transferredText;
 
-  const authorId = 
+  const authorId =
     blockDetails.authorName.length > 24
       ? `${blockDetails.authorName.substring(0, 9)}..${blockDetails.authorName.substring(
           blockDetails.authorName.length - 6

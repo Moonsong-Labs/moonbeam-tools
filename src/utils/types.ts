@@ -55,9 +55,9 @@ export function mapExtrinsics(
 
     const unadjustedFee = frac.add(integer);
 
-    const adjustedFee = BigInt(unadjustedFee
-      .mul(feeMultiplier.toBn())
-      .div(new BN("1000000000000000000")).toString());
+    const adjustedFee = BigInt(
+      unadjustedFee.mul(feeMultiplier.toBn()).div(new BN("1000000000000000000")).toString()
+    );
 
     computedFees = {
       baseFee: feeDetails.baseFee.toBigInt(),
