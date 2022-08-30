@@ -8,10 +8,7 @@
 
 Ex: ./node_modules/.bin/ts-node-transpile-only src/hotfixes/runtime-1603-fix-orphaned-delegation-request-keys.ts \
    --network alphanet \
-   --send-preimage-hash \
-   --send-proposal-as council-external \
-   --collective-threshold 3 \
-   --account-priv-key <key> \
+   --account-priv-key <key>
 */
 import yargs from "yargs";
 import "@polkadot/api-augment";
@@ -28,7 +25,7 @@ const argv = yargs(process.argv.slice(2))
     ...NETWORK_YARGS_OPTIONS,
     "account-priv-key": {
       type: "string",
-      demandOption: false,
+      demandOption: true,
       alias: "account",
     },
   }).argv;
