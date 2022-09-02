@@ -22,7 +22,6 @@ import * as RLP from "rlp";
 import yargs from "yargs";
 import { AccessListish } from "ethers/lib/utils";
 import {
-  ALITH_ADDRESS,
   ALITH_PRIVATE_KEY,
   BALTATHAR_ADDRESS,
   BALTATHAR_PRIVATE_KEY,
@@ -94,6 +93,13 @@ web3.eth.accounts.wallet.add(ALITH_PRIVATE_KEY);
  *    --rpc-port=25502 \
  *    --ws-port=45502 \
  *    --tmp
+ * 
+ * Examples:
+ *  ts-node ./src/tools/fees.ts --name fees --type compute
+ *  ts-node ./src/tools/fees.ts --name fees --type length-small
+ *  ts-node ./src/tools/fees.ts --name fees --type length-big
+ * 
+ * The result will open in the browser once done
  */
 
 /// === test methods === ///
