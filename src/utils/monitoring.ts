@@ -1,8 +1,11 @@
 import type { ApiPromise } from "@polkadot/api";
 import type { Extrinsic, BlockHash, EventRecord } from "@polkadot/types/interfaces";
-import type { Block } from "@polkadot/types/interfaces/runtime/types";
-import type { Data, GenericEthereumAccountId, Option, u128 } from "@polkadot/types";
-import type { EthereumTransactionTransactionV2 } from "@polkadot/types/lookup";
+import type { Block, Perbill } from "@polkadot/types/interfaces/runtime/types";
+import { Data, GenericEthereumAccountId, Option, u128, u8, bool } from "@polkadot/types";
+import type {
+  EthereumTransactionTransactionV2,
+  FrameSupportWeightsWeightToFeeCoefficient,
+} from "@polkadot/types/lookup";
 import type { EthTransaction } from "@polkadot/types/interfaces/eth";
 import { u8aToString } from "@polkadot/util";
 import { ethereumEncode } from "@polkadot/util-crypto";
@@ -290,7 +293,26 @@ export const getBlockDetails = async (api: ApiPromise, blockHash: BlockHash) => 
     records,
     fees.map((fee) => fee.inclusionFee.unwrapOrDefault()),
     feeMultiplier,
-    api.consts.transactionPayment.weightToFee[0]
+    [
+      {
+        coeffInteger: new u128(
+          api.registry,
+          api.runtimeVersion.specName.toString() == "moonbeam" ? 100_000_000_000 : 1_000_000_000
+        ),
+        coeffFrac: api.registry.createType("Perbill", 0),
+        negative: new bool(api.registry, false),
+        degree: new u8(api.registry, 1),
+      },
+      {
+        coeffInteger: new u128(
+          api.registry,
+          api.runtimeVersion.specName.toString() == "moonbeam" ? 100 : 1
+        ),
+        coeffFrac: api.registry.createType("Perbill", 0),
+        negative: new bool(api.registry, false),
+        degree: new u8(api.registry, 3),
+      },
+    ] as any
   );
   const blockWeight = txWithEvents.reduce((totalWeight, tx, index) => {
     return totalWeight + (tx.dispatchInfo && tx.dispatchInfo.weight.toBigInt());
