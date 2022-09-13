@@ -320,7 +320,7 @@ export const getBlockDetails = async (api: ApiPromise, blockHash: BlockHash) => 
   return {
     block,
     isAuthorOrbiter:
-      collatorId.unwrapOr(null)?.toString() != (await getAuthorAccount(api, authorId)).toString(),
+      collatorId.unwrapOr(null)?.toString() != (await getAuthorAccount(api, authorId))?.toString(),
     authorName,
     blockTime: blockTime.toNumber(),
     weightPercentage: Number((blockWeight * 10000n) / maxBlockWeight) / 100,
