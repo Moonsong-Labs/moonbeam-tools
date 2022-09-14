@@ -488,7 +488,7 @@ export function generateBlockDetailsLog(
           : payload.isEip1559
           ? // If gasPrice is not indicated, we should use the base fee defined in that block
             payload.asEip1559?.maxFeePerGas.toBigInt() || 0n
-          : (payload as any as EthTransaction).gasPrice.toBigInt();
+          : (payload as any as EthTransaction).gasPrice?.unwrapOrDefault().toBigInt();
 
         return p + (BigInt(gasPrice) * dispatchInfo.weight.toBigInt()) / 25000n;
       }
@@ -516,7 +516,7 @@ export function generateBlockDetailsLog(
           : payload.isEip1559
           ? // If gasPrice is not indicated, we should use the base fee defined in that block
             payload.asEip1559?.maxFeePerGas.toBigInt() || 0n
-          : (payload as any as EthTransaction).gasPrice.toBigInt();
+          : (payload as any as EthTransaction).gasPrice?.unwrapOrDefault().toBigInt();
       }
       return tx.events.reduce((total, event) => {
         if (event.section == "balances" && event.method == "Transfer") {
