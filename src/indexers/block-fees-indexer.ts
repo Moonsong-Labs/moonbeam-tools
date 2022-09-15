@@ -1,7 +1,8 @@
 // This script is expected to run against a parachain network (using launch.ts script)
 import yargs from "yargs";
-import { open } from "sqlite";
+import { Knex, knex } from "knex";
 import sqlite3 from "sqlite3";
+
 import "@moonbeam-network/api-augment";
 
 import type { u128 } from "@polkadot/types";
@@ -47,6 +48,16 @@ const argv = yargs(process.argv.slice(2))
       default: 10,
       demandOption: true,
     },
+    client: {
+      type: "string",
+      description: "type of database client",
+      choices: ["sqlite3", "pg"],
+      demandOption: true,
+    },
+    connection: {
+      type: "string",
+      description: "path to the database",
+    },
   }).argv;
 
 const printMOVRs = (value: bigint, decimals = 4) => {
@@ -64,45 +75,49 @@ setTimeout(() => {
 }, 300000);
 
 const main = async () => {
+
+  if (argv.client == "pg" && !argv.connection) {
+    console.log(`Missing connection parameter for pg database`);
+    process.exit(1);
+  }
+
   // Instantiate Api
   const api = await getApiFor(argv);
   await api.isReady;
 
   const runtimeName = api.runtimeVersion.specName.toString();
   const paraId = (await api.query.parachainInfo.parachainId()).toNumber();
-  const db = await open({
-    filename: `./db-fee.${runtimeName}.${paraId}.db`,
-    driver: sqlite3.Database,
-    mode: sqlite3.OPEN_READWRITE | sqlite3.OPEN_CREATE,
-  });
+
+  const config: Knex.Config = {
+    client: argv.client,
+    connection:
+      argv.client == "sqlite3"
+        ? {
+          filename: `./db-fee.${runtimeName}.${paraId}.db`,
+          mode: sqlite3.OPEN_READWRITE | sqlite3.OPEN_CREATE,
+          useNullAsDefault: true,
+        } as any
+        : argv.connection,
+  };
+
+  console.log(`Using database ${argv.client}`);
+  const db = knex(config);
 
   //Initialize
   const createTxDbQuery = `CREATE TABLE IF NOT EXISTS extrinsics (
-    extrinsic_id varchar(255) PRIMARY KEY,
+    extrinsic_id VARCHAR(255) PRIMARY KEY,
     block_number INTEGER,
     bytes INTEGER,
     section TEXT,
     method TEXT,
-    success BOOLEAN,
-    pay_fee BOOLEAN,
+    success BOOL,
+    pay_fee BOOL,
     weight BIGINT,
     partial_fee BIGINT,
     treasury_deposit BIGINT,
     fee BIGINT,
     runtime INTEGER,
     collator_mint BIGINT
-  );`;
-
-  //Initialize
-  const createLogDbQuery = `CREATE TABLE IF NOT EXISTS logs (
-    extrinsic_id varchar(255) PRIMARY KEY,
-    block_number INTEGER,
-    topic1 VARCHAR(66),
-    topic2 VARCHAR(66),
-    topic3 VARCHAR(66),
-    topic4 VARCHAR(66),
-    address VARCHAR(42),
-    data TEXT,
   );`;
 
   const createBlockDbQuery = `CREATE TABLE IF NOT EXISTS blocks (
@@ -116,8 +131,8 @@ const main = async () => {
   );`;
 
   try {
-    await db.run(createTxDbQuery);
-    await db.run(createBlockDbQuery);
+    await db.raw(createTxDbQuery);
+    await db.raw(createBlockDbQuery);
   } catch (e) {
     console.trace(e);
     process.exit(1);
@@ -127,8 +142,8 @@ const main = async () => {
   // If a block was partially processed already, the block table wouldn't be updated and
   // that given block would get processed again (extrinsic are unique so no duplicates)
   const latestKnownBlock =
-    (await db.get(`SELECT block_number FROM blocks ORDER BY block_number DESC LIMIT 1`))
-      ?.block_number || 0;
+    (await db.select("block_number").table("blocks").orderBy('block_number', 'desc').limit(1))?.[0]?.block_number || 0;
+
   console.log(`Latest known block: ${latestKnownBlock}`);
 
   let fromBlockNumber: number;
@@ -264,20 +279,20 @@ const main = async () => {
               let gasPriceParam = payload.isLegacy
                 ? payload.asLegacy?.gasPrice.toBigInt()
                 : payload.isEip2930
-                ? payload.asEip2930?.gasPrice.toBigInt()
-                : payload.isEip1559
-                ? // If gasPrice is not indicated, we should use the base fee defined in that block
-                  payload.asEip1559?.maxFeePerGas.toBigInt() || baseFeePerGas
-                : (payload as any as EthTransaction).gasPrice.toBigInt();
+                  ? payload.asEip2930?.gasPrice.toBigInt()
+                  : payload.isEip1559
+                    ? // If gasPrice is not indicated, we should use the base fee defined in that block
+                    payload.asEip1559?.maxFeePerGas.toBigInt() || baseFeePerGas
+                    : (payload as any as EthTransaction).gasPrice.toBigInt();
 
               let gasLimitParam =
                 (payload.isLegacy
                   ? payload.asLegacy?.gasLimit.toBigInt()
                   : payload.isEip2930
-                  ? payload.asEip2930?.gasLimit.toBigInt()
-                  : payload.isEip1559
-                  ? payload.asEip1559?.gasLimit.toBigInt()
-                  : (payload as any as EthTransaction)?.gasLimit.toBigInt()) || 15000000n;
+                    ? payload.asEip2930?.gasLimit.toBigInt()
+                    : payload.isEip1559
+                      ? payload.asEip1559?.gasLimit.toBigInt()
+                      : (payload as any as EthTransaction)?.gasLimit.toBigInt()) || 15000000n;
 
               let gasBaseFee = payload.isEip1559 ? baseFeePerGas : gasPriceParam;
               let gasTips = payload.isEip1559
@@ -325,29 +340,26 @@ const main = async () => {
                 if (collatorDeposit !== extraFees * gasUsed) {
                   console.log(
                     `[Bug] Collator Mint Discrepancy: [${blockDetails.block.header.number.toString()}-${index}:` +
-                      ` ${extrinsic.method.section.toString()}.${extrinsic.method.method.toString()} (${
-                        payload.type
-                      })- ${runtimeVersion}]`
+                    ` ${extrinsic.method.section.toString()}.${extrinsic.method.method.toString()} (${payload.type
+                    })- ${runtimeVersion}]`
                   );
                   console.log(`collator deposit : ${collatorDeposit.toString().padStart(30, " ")}`);
                   console.log(`         gasCost : ${gasBaseFee.toString().padStart(30, " ")}`);
                   console.log(`          gasFee : ${gasFee.toString().padStart(30, " ")}`);
                   console.log(` gasPrice(param) : ${gasPriceParam.toString().padStart(30, " ")}`);
                   console.log(
-                    `    priority fee : ${
-                      payload.isEip1559
-                        ? payload.asEip1559.maxPriorityFeePerGas
-                            .toBigInt()
-                            .toString()
-                            .padStart(30, " ")
-                        : ""
+                    `    priority fee : ${payload.isEip1559
+                      ? payload.asEip1559.maxPriorityFeePerGas
+                        .toBigInt()
+                        .toString()
+                        .padStart(30, " ")
+                      : ""
                     }`
                   );
                   console.log(
-                    `         max fee : ${
-                      payload.isEip1559
-                        ? payload.asEip1559.maxFeePerGas.toBigInt().toString().padStart(30, " ")
-                        : ""
+                    `         max fee : ${payload.isEip1559
+                      ? payload.asEip1559.maxFeePerGas.toBigInt().toString().padStart(30, " ")
+                      : ""
                     }`
                   );
                   console.log(`         gasUsed : ${gasUsed.toString().padStart(30, " ")}`);
@@ -449,7 +461,7 @@ const main = async () => {
           if (txFees - txBurnt !== treasureDeposit) {
             console.log(
               `Desposit Amount Discrepancy: [${blockDetails.block.header.number.toString()}-${index}:` +
-                ` ${extrinsic.method.section.toString()}.${extrinsic.method.method.toString()} - ${runtimeVersion}]`
+              ` ${extrinsic.method.section.toString()}.${extrinsic.method.method.toString()} - ${runtimeVersion}]`
             );
             console.log(`     base fees : ${fees.baseFee.toString().padStart(30, " ")}`);
             console.log(` +    len fees : ${fees.lenFee.toString().padStart(30, " ")}`);
@@ -461,25 +473,25 @@ const main = async () => {
             process.exit();
           }
 
-          const values = [
-            `${blockDetails.block.header.number.toNumber()}-${index}`,
-            blockDetails.block.header.number.toNumber(),
-            extrinsic.toU8a().length,
-            extrinsic.method.section,
-            extrinsic.method.method,
-            isSuccess,
-            dispatchInfo.paysFee.isYes,
-            dispatchInfo.weight.toBigInt().toString(),
-            fees.totalFees.toString(),
-            treasureDeposit.toString(),
-            txFees.toString(),
-            runtimeVersion,
-            collatorDeposit.toString(),
-          ];
-          await db.get(
-            `INSERT OR IGNORE INTO extrinsics values(${values.map(() => `?`).join(",")})`,
-            values
-          );
+          await db("extrinsics")
+            .insert({
+              extrinsic_id: `${blockDetails.block.header.number.toNumber()}-${index}`,
+              block_number: blockDetails.block.header.number.toNumber(),
+              bytes: extrinsic.toU8a().length,
+              section: extrinsic.method.section,
+              method: extrinsic.method.method,
+              success: isSuccess,
+              pay_fee: dispatchInfo.paysFee.isYes,
+              weight: dispatchInfo.weight.toBigInt().toString(),
+              partial_fee: fees.totalFees.toString(),
+              treasury_deposit: treasureDeposit.toString(),
+              fee: txFees.toString(),
+              runtime: runtimeVersion,
+              collator_mint: collatorDeposit.toString(),
+            })
+            .onConflict("extrinsic_id")
+            .ignore();
+
         }
 
         sumBlockFees += blockFees;
@@ -505,20 +517,18 @@ const main = async () => {
           );
           console.log(`    block deposit: ${blockTreasure.toString().padStart(30, " ")}`);
         }
-        const values = [
-          blockDetails.block.header.number.toNumber(),
-          blockWeight.toString(),
-          blockTreasure.toString(),
-          treasure.toString(),
-          issuance.toString(),
-          blockFees.toString(),
-          runtimeVersion,
-        ];
 
-        await db.get(`INSERT INTO blocks values(${values.map(() => `?`).join(",")})`, values);
-        // console.log(
-        //   `                         Ending ${blockDetails.block.header.number.toNumber()}`
-        // );
+        await db("blocks")
+          .insert({
+            block_number: blockDetails.block.header.number.toNumber(),
+            weight: blockWeight.toString(),
+            treasury_deposit: blockTreasure.toString(),
+            treasury_amount: treasure.toString(),
+            total_issuance: issuance.toString(),
+            fee: blockFees.toString(),
+            runtime: runtimeVersion,
+          });
+
       } catch (e) {
         console.log(e);
         process.exit(1);
@@ -542,7 +552,7 @@ const main = async () => {
   console.log(`  burnt fees : ${sumBlockBurnt.toString().padStart(30, " ")}`);
   console.log(`  total fees : ${sumBlockFees.toString().padStart(30, " ")}`);
 
-  await db.close();
+  await db.destroy();
   await api.disconnect();
 };
 
