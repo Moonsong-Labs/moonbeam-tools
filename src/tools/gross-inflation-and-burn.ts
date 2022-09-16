@@ -27,15 +27,6 @@ const argv = yargs(process.argv.slice(2))
     },
   }).argv;
 
-const printDOTs = (value: bigint, decimals = 4) => {
-  const power = 10n ** (10n - BigInt(decimals));
-  const decimal_power = 10 ** decimals;
-  if (decimals > 0) {
-    return (Number(value / power) / decimal_power).toFixed(decimals).padStart(5 + decimals, " ");
-  }
-  return (value / power).toString().padStart(5, " ");
-};
-
 const main = async () => {
   const api = await getApiFor(argv);
 
@@ -81,7 +72,6 @@ const main = async () => {
 
   const burntFees = new BN(theoreticalSupplyIncrease).sub(toSupply);
 
-  // Log difference in supply, we should be equal to the burnt fees
   console.log(
     `  supply diff: ${(fromPreSupply.toBigInt() - toSupply.toBigInt())
       .toString()
