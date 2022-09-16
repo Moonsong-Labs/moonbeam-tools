@@ -297,20 +297,11 @@ export const getBlockDetails = async (api: ApiPromise, blockHash: BlockHash) => 
       {
         coeffInteger: new u128(
           api.registry,
-          api.runtimeVersion.specName.toString() == "moonbeam" ? 100_000_000_000 : 1_000_000_000
+          api.runtimeVersion.specName.toString() == "moonbeam" ? 5_000_000 : 50_000
         ),
         coeffFrac: api.registry.createType("Perbill", 0),
         negative: new bool(api.registry, false),
         degree: new u8(api.registry, 1),
-      },
-      {
-        coeffInteger: new u128(
-          api.registry,
-          api.runtimeVersion.specName.toString() == "moonbeam" ? 100 : 1
-        ),
-        coeffFrac: api.registry.createType("Perbill", 0),
-        negative: new bool(api.registry, false),
-        degree: new u8(api.registry, 3),
       },
     ] as any
   );
