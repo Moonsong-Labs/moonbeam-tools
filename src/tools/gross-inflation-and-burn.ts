@@ -27,6 +27,7 @@ const argv = yargs(process.argv.slice(2))
     },
   }).argv;
 
+
 const main = async () => {
   const api = await getApiFor(argv);
 
@@ -64,7 +65,6 @@ const main = async () => {
       for (const event of events) {
         const [account, amount] = event.event.data as any;
         theoreticalSupplyIncrease = theoreticalSupplyIncrease.add(new BN(amount));
-        onlyRewards = onlyRewards.add(new BN(amount))
       }
     },
     blockNumbers
