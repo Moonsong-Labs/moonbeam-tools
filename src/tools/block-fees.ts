@@ -68,7 +68,7 @@ const main = async () => {
       let blockBurnt = 0n;
 
       // iterate over every extrinsic
-      for (const { events, extrinsic, fee } of blockDetails.txWithEvents) {
+      for (const { events, extrinsic, fees } of blockDetails.txWithEvents) {
         // This hash will only exist if the transaction was executed through ethereum.
         let ethereumAddress = "";
 
@@ -108,7 +108,7 @@ const main = async () => {
                 txFees = gasFee * (extrinsic.method.args[0] as any).gasPrice.toBigInt();
               } else {
                 // For a regular substrate tx, we use the partialFee
-                txFees = fee.partialFee.toBigInt();
+                txFees = fees.totalFees;
               }
               txBurnt += (txFees * 80n) / 100n; // 20% goes to treasury
 
