@@ -112,21 +112,21 @@ const main = async () => {
     method TEXT,
     success BOOL,
     pay_fee BOOL,
-    weight BIGINT,
-    partial_fee BIGINT,
-    treasury_deposit BIGINT,
-    fee BIGINT,
+    weight NUMERIC,
+    partial_fee NUMERIC,
+    treasury_deposit NUMERIC,
+    fee NUMERIC,
     runtime INTEGER,
-    collator_mint BIGINT
+    collator_mint NUMERIC
   );`;
 
   const createBlockDbQuery = `CREATE TABLE IF NOT EXISTS blocks (
     block_number INTEGER PRIMARY KEY,
-    weight BIGINT,
-    treasury_deposit BIGINT,
-    treasury_amount BIGINT,
-    total_issuance BIGINT,
-    fee BIGINT,
+    weight NUMERIC,
+    treasury_deposit NUMERIC,
+    treasury_amount NUMERIC,
+    total_issuance NUMERIC,
+    fee NUMERIC,
     runtime INTEGER
   );`;
 
@@ -458,7 +458,7 @@ const main = async () => {
           );
           blockTreasure += treasureDeposit;
 
-          if (txFees - txBurnt !== treasureDeposit) {
+          if (txFees - txBurnt !== treasureDeposit && runtimeVersion >= 1400) {
             console.log(
               `Desposit Amount Discrepancy: [${blockDetails.block.header.number.toString()}-${index}:` +
               ` ${extrinsic.method.section.toString()}.${extrinsic.method.method.toString()} - ${runtimeVersion}]`
@@ -470,7 +470,7 @@ const main = async () => {
             console.log(`fees not burnt : ${(txFees - txBurnt).toString().padStart(30, " ")}`);
             console.log(`       deposit : ${treasureDeposit.toString().padStart(30, " ")}`);
             console.log(extrinsic.toHex());
-            process.exit();
+            //process.exit();
           }
 
           await db("extrinsics")
