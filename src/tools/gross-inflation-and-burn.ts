@@ -39,12 +39,19 @@ const main = async () => {
   const fromTreasuryPre = (await (await api.at(fromPreBlockHash)).query.system.account(TREASURY)).data.free;
 
   let theoreticalSupplyIncrease = new BN(fromPreSupply);
-  let onlyRewards = new BN(0);
 
   // Get to block hash and totalSupply
   const toBlockHash = (await api.rpc.chain.getBlockHash(toBlockNumber)).toString();
   const toSupply = await (await api.at(toBlockHash)).query.balances.totalIssuance();
-  const toTreasuryPre = (await (await api.at(toBlockHash)).query.system.account(TREASURY)).data.free;
+  let trappedAmount = new BN(0);
+
+  // Get Pallet balances index
+  const metadata = await api.rpc.state.getMetadata();
+  const balancesPalletIndex = (metadata.asLatest.toHuman().pallets as Array<any>).find(
+    (pallet) => {
+      return pallet.name === "Balances";
+    }
+  ).index;
 
   console.log(`========= Checking block ${fromBlockNumber}...${toBlockNumber}`);
   let blockNumbers = [];
@@ -62,15 +69,28 @@ const main = async () => {
       const events = records.filter(
         ({ event }) => event.section == "parachainStaking" && (event.method == "Rewarded" || event.method == "ReservedForParachainBond")
       );
+      // AssetTrap events will burn issuance. Hence we need to track them
+      const assetTrapEvents = records.filter(
+        ({ event }) => event.section == "polkadotXcm" && event.method == "AssetsTrapped"
+      );
+
       for (const event of events) {
         const [account, amount] = event.event.data as any;
         theoreticalSupplyIncrease = theoreticalSupplyIncrease.add(new BN(amount));
+      }
+
+      for (const event of assetTrapEvents) {
+        const [hash, origin, multiasset] = event.event.data as any;
+        // V1 only, we didnt work with v0
+        if (multiasset.isV1 && multiasset.asV1[0].id.toString() == `{"concrete":{"parents":0,"interior":{"x1":{"palletInstance":${balancesPalletIndex}}}}}`) {
+          trappedAmount = trappedAmount.add(new BN(multiasset.asV1[0].fun.asFungible.toBigInt()))
+        }
       }
     },
     blockNumbers
   );
 
-  const burntFees = new BN(theoreticalSupplyIncrease).sub(toSupply);
+  const burntFees = new BN(theoreticalSupplyIncrease).sub(toSupply).sub(trappedAmount);
 
   console.log(
     `  supply diff: ${(fromPreSupply.toBigInt() - toSupply.toBigInt())
@@ -78,6 +98,7 @@ const main = async () => {
       .padStart(30, " ")}`
   );
   console.log(`  burnt fees : ${burntFees.toString().padStart(30, " ")}`);
+  console.log(`  Trapped amount : ${trappedAmount.toString().padStart(30, " ")}`);
   console.log(`  gross inflation : ${theoreticalSupplyIncrease.toString().padStart(30, " ")}`);
   await api.disconnect();  
 };
