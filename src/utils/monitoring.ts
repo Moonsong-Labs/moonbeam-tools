@@ -1,8 +1,11 @@
 import type { ApiPromise } from "@polkadot/api";
 import type { Extrinsic, BlockHash, EventRecord } from "@polkadot/types/interfaces";
-import type { Block } from "@polkadot/types/interfaces/runtime/types";
-import type { Data, GenericEthereumAccountId, Option, u128 } from "@polkadot/types";
-import type { EthereumTransactionTransactionV2 } from "@polkadot/types/lookup";
+import type { Block, Perbill } from "@polkadot/types/interfaces/runtime/types";
+import { Data, GenericEthereumAccountId, Option, u128, u8, bool } from "@polkadot/types";
+import type {
+  EthereumTransactionTransactionV2,
+  FrameSupportWeightsWeightToFeeCoefficient,
+} from "@polkadot/types/lookup";
 import type { EthTransaction } from "@polkadot/types/interfaces/eth";
 import { u8aToString } from "@polkadot/util";
 import { ethereumEncode } from "@polkadot/util-crypto";
@@ -290,7 +293,17 @@ export const getBlockDetails = async (api: ApiPromise, blockHash: BlockHash) => 
     records,
     fees.map((fee) => fee.inclusionFee.unwrapOrDefault()),
     feeMultiplier,
-    api.consts.transactionPayment.weightToFee[0]
+    [
+      {
+        coeffInteger: new u128(
+          api.registry,
+          api.runtimeVersion.specName.toString() == "moonbeam" ? 5_000_000 : 50_000
+        ),
+        coeffFrac: api.registry.createType("Perbill", 0),
+        negative: new bool(api.registry, false),
+        degree: new u8(api.registry, 1),
+      },
+    ] as any
   );
   const blockWeight = txWithEvents.reduce((totalWeight, tx, index) => {
     return totalWeight + (tx.dispatchInfo && tx.dispatchInfo.weight.toBigInt());
@@ -298,7 +311,7 @@ export const getBlockDetails = async (api: ApiPromise, blockHash: BlockHash) => 
   return {
     block,
     isAuthorOrbiter:
-      collatorId.unwrapOr(null)?.toString() != (await getAuthorAccount(api, authorId)).toString(),
+      collatorId.unwrapOr(null)?.toString() != (await getAuthorAccount(api, authorId))?.toString(),
     authorName,
     blockTime: blockTime.toNumber(),
     weightPercentage: Number((blockWeight * 10000n) / maxBlockWeight) / 100,
@@ -466,7 +479,7 @@ export function generateBlockDetailsLog(
           : payload.isEip1559
           ? // If gasPrice is not indicated, we should use the base fee defined in that block
             payload.asEip1559?.maxFeePerGas.toBigInt() || 0n
-          : (payload as any as EthTransaction).gasPrice.toBigInt();
+          : (payload as any as EthTransaction).gasPrice?.toBigInt();
 
         return p + (BigInt(gasPrice) * dispatchInfo.weight.toBigInt()) / 25000n;
       }
@@ -494,7 +507,7 @@ export function generateBlockDetailsLog(
           : payload.isEip1559
           ? // If gasPrice is not indicated, we should use the base fee defined in that block
             payload.asEip1559?.maxFeePerGas.toBigInt() || 0n
-          : (payload as any as EthTransaction).gasPrice.toBigInt();
+          : (payload as any as EthTransaction).gasPrice?.toBigInt();
       }
       return tx.events.reduce((total, event) => {
         if (event.section == "balances" && event.method == "Transfer") {
