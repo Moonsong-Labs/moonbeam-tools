@@ -27,6 +27,13 @@ const argv = yargs(process.argv.slice(2))
     },
   }).argv;
 
+type TrapInfo = {
+    amount: BN;
+    times: number;
+};
+
+// Refers to trapped amount
+let trapMap = new Map<string,TrapInfo>();
 
 const main = async () => {
   const api = await getApiFor(argv);
@@ -43,6 +50,12 @@ const main = async () => {
   // Get to block hash and totalSupply
   const toBlockHash = (await api.rpc.chain.getBlockHash(toBlockNumber)).toString();
   const toSupply = await (await api.at(toBlockHash)).query.balances.totalIssuance();
+
+  // If we are querying a to block in which asset traps exist, then fethc info
+  let toAssetTraps;
+  if ((await api.at(toBlockHash)).query.polkadotXcm != undefined) {
+    toAssetTraps = await (await api.at(toBlockHash)).query.polkadotXcm.assetTraps.entries();
+  }
   let trappedAmount = new BN(0);
 
   // Get Pallet balances index
@@ -60,7 +73,7 @@ const main = async () => {
   }
 
   await promiseConcurrent(
-    80,
+    100,
     async (blockNumber) => {
       const blockHash = await api.rpc.chain.getBlockHash(blockNumber);
       const apiAt = await api.at(blockHash);
@@ -81,16 +94,48 @@ const main = async () => {
 
       for (const event of assetTrapEvents) {
         const [hash, origin, multiasset] = event.event.data as any;
+        
         // V1 only, we didnt work with v0
         if (multiasset.isV1 && multiasset.asV1[0].id.toString() == `{"concrete":{"parents":0,"interior":{"x1":{"palletInstance":${balancesPalletIndex}}}}}`) {
           trappedAmount = trappedAmount.add(new BN(multiasset.asV1[0].fun.asFungible.toBigInt()))
+          if (trapMap.has(hash.toString()))  {
+            let info = trapMap.get(hash.toString());
+            info!.amount =  info!.amount.mul(new BN(2));
+            info!.times += 1;
+            trapMap.set(hash.toString(), info!);
+          }
+          else {
+            trapMap.set(hash.toString(), {
+              amount: new BN(multiasset.asV1[0].fun.asFungible.toBigInt()),
+              times: 1
+            });
+  
+          }
         }
       }
     },
     blockNumbers
   );
 
-  const burntFees = new BN(theoreticalSupplyIncrease).sub(toSupply).sub(trappedAmount);
+  // Important, post processing of claimed traps
+  let supplyToBeIncreased = new BN(0);
+
+  if (toAssetTraps.length > 0) {
+    for (var trap of toAssetTraps) {
+      let hash = trap[0].toHuman();
+      let times = trap[1].toNumber();
+      let recordedTrap = trapMap.get(hash.toString());
+      if (recordedTrap) {
+        for (let i = 0; i < recordedTrap.times - times; i++) {
+          supplyToBeIncreased.add(recordedTrap.amount)
+        }
+      }
+    }
+  }
+
+  // Correcting through: burned by xcm - claimed
+  const burntFees = new BN(theoreticalSupplyIncrease).sub(toSupply).sub(trappedAmount.sub(supplyToBeIncreased));
+
 
   console.log(
     `  supply diff: ${(fromPreSupply.toBigInt() - toSupply.toBigInt())
@@ -100,6 +145,8 @@ const main = async () => {
   console.log(`  burnt fees : ${burntFees.toString().padStart(30, " ")}`);
   console.log(`  Trapped amount : ${trappedAmount.toString().padStart(30, " ")}`);
   console.log(`  gross inflation : ${theoreticalSupplyIncrease.toString().padStart(30, " ")}`);
+  console.log(`  correction from claimed assets : ${supplyToBeIncreased.toString().padStart(30, " ")}`);
+
   await api.disconnect();  
 };
 
