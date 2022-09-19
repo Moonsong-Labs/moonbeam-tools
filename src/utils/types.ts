@@ -50,12 +50,8 @@ export function mapExtrinsics(
     let computedFees: ComputedFees;
     const feeDetails = fees[index];
 
-    const frac = weightToFees[0].coeffFrac.toRawType().toString() == "u128" ?
-      weightToFees[0].coeffFrac.mul(dispatchInfo.weight).div(new BN("1000000000")) :
-      weightToFees[0].coeffFrac.mul(dispatchInfo.weight);
-    const integer = weightToFees[0].coeffInteger.toRawType().toString() == "u128" ?
-      weightToFees[0].coeffInteger.mul(dispatchInfo.weight).div(new BN("1000000000")) :
-      weightToFees[0].coeffInteger.mul(dispatchInfo.weight);
+    const frac = weightToFees[0].coeffFrac.mul(dispatchInfo.weight);
+    const integer = weightToFees[0].coeffInteger.mul(dispatchInfo.weight);
 
     const unadjustedFee = frac.add(integer);
 

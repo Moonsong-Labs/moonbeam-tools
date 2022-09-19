@@ -293,7 +293,7 @@ export const getBlockDetails = async (api: ApiPromise, blockHash: BlockHash) => 
     records,
     fees.map((fee) => fee.inclusionFee.unwrapOrDefault()),
     feeMultiplier,
-    api.consts.transactionPayment?.weightToFee || [
+    apiAt.consts.transactionPayment?.weightToFee || [
       {
         coeffInteger: new u128(
           api.registry,
