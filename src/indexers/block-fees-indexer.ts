@@ -75,7 +75,6 @@ setTimeout(() => {
 }, 300000);
 
 const main = async () => {
-
   if (argv.client == "pg" && !argv.connection) {
     console.log(`Missing connection parameter for pg database`);
     process.exit(1);
@@ -92,11 +91,11 @@ const main = async () => {
     client: argv.client,
     connection:
       argv.client == "sqlite3"
-        ? {
-          filename: `./db-fee.${runtimeName}.${paraId}.db`,
-          mode: sqlite3.OPEN_READWRITE | sqlite3.OPEN_CREATE,
-          useNullAsDefault: true,
-        } as any
+        ? ({
+            filename: `./db-fee.${runtimeName}.${paraId}.db`,
+            mode: sqlite3.OPEN_READWRITE | sqlite3.OPEN_CREATE,
+            useNullAsDefault: true,
+          } as any)
         : argv.connection,
   };
 
@@ -142,7 +141,8 @@ const main = async () => {
   // If a block was partially processed already, the block table wouldn't be updated and
   // that given block would get processed again (extrinsic are unique so no duplicates)
   const latestKnownBlock =
-    (await db.select("block_number").table("blocks").orderBy('block_number', 'desc').limit(1))?.[0]?.block_number || 0;
+    (await db.select("block_number").table("blocks").orderBy("block_number", "desc").limit(1))?.[0]
+      ?.block_number || 0;
 
   console.log(`Latest known block: ${latestKnownBlock}`);
 
@@ -279,20 +279,20 @@ const main = async () => {
               let gasPriceParam = payload.isLegacy
                 ? payload.asLegacy?.gasPrice.toBigInt()
                 : payload.isEip2930
-                  ? payload.asEip2930?.gasPrice.toBigInt()
-                  : payload.isEip1559
-                    ? // If gasPrice is not indicated, we should use the base fee defined in that block
-                    payload.asEip1559?.maxFeePerGas.toBigInt() || baseFeePerGas
-                    : (payload as any as EthTransaction).gasPrice.toBigInt();
+                ? payload.asEip2930?.gasPrice.toBigInt()
+                : payload.isEip1559
+                ? // If gasPrice is not indicated, we should use the base fee defined in that block
+                  payload.asEip1559?.maxFeePerGas.toBigInt() || baseFeePerGas
+                : (payload as any as EthTransaction).gasPrice.toBigInt();
 
               let gasLimitParam =
                 (payload.isLegacy
                   ? payload.asLegacy?.gasLimit.toBigInt()
                   : payload.isEip2930
-                    ? payload.asEip2930?.gasLimit.toBigInt()
-                    : payload.isEip1559
-                      ? payload.asEip1559?.gasLimit.toBigInt()
-                      : (payload as any as EthTransaction)?.gasLimit.toBigInt()) || 15000000n;
+                  ? payload.asEip2930?.gasLimit.toBigInt()
+                  : payload.isEip1559
+                  ? payload.asEip1559?.gasLimit.toBigInt()
+                  : (payload as any as EthTransaction)?.gasLimit.toBigInt()) || 15000000n;
 
               let gasBaseFee = payload.isEip1559 ? baseFeePerGas : gasPriceParam;
               let gasTips = payload.isEip1559
@@ -340,26 +340,29 @@ const main = async () => {
                 if (collatorDeposit !== extraFees * gasUsed) {
                   console.log(
                     `[Bug] Collator Mint Discrepancy: [${blockDetails.block.header.number.toString()}-${index}:` +
-                    ` ${extrinsic.method.section.toString()}.${extrinsic.method.method.toString()} (${payload.type
-                    })- ${runtimeVersion}]`
+                      ` ${extrinsic.method.section.toString()}.${extrinsic.method.method.toString()} (${
+                        payload.type
+                      })- ${runtimeVersion}]`
                   );
                   console.log(`collator deposit : ${collatorDeposit.toString().padStart(30, " ")}`);
                   console.log(`         gasCost : ${gasBaseFee.toString().padStart(30, " ")}`);
                   console.log(`          gasFee : ${gasFee.toString().padStart(30, " ")}`);
                   console.log(` gasPrice(param) : ${gasPriceParam.toString().padStart(30, " ")}`);
                   console.log(
-                    `    priority fee : ${payload.isEip1559
-                      ? payload.asEip1559.maxPriorityFeePerGas
-                        .toBigInt()
-                        .toString()
-                        .padStart(30, " ")
-                      : ""
+                    `    priority fee : ${
+                      payload.isEip1559
+                        ? payload.asEip1559.maxPriorityFeePerGas
+                            .toBigInt()
+                            .toString()
+                            .padStart(30, " ")
+                        : ""
                     }`
                   );
                   console.log(
-                    `         max fee : ${payload.isEip1559
-                      ? payload.asEip1559.maxFeePerGas.toBigInt().toString().padStart(30, " ")
-                      : ""
+                    `         max fee : ${
+                      payload.isEip1559
+                        ? payload.asEip1559.maxFeePerGas.toBigInt().toString().padStart(30, " ")
+                        : ""
                     }`
                   );
                   console.log(`         gasUsed : ${gasUsed.toString().padStart(30, " ")}`);
@@ -461,7 +464,7 @@ const main = async () => {
           if (txFees - txBurnt !== treasureDeposit && runtimeVersion >= 1400) {
             console.log(
               `Desposit Amount Discrepancy: [${blockDetails.block.header.number.toString()}-${index}:` +
-              ` ${extrinsic.method.section.toString()}.${extrinsic.method.method.toString()} - ${runtimeVersion}]`
+                ` ${extrinsic.method.section.toString()}.${extrinsic.method.method.toString()} - ${runtimeVersion}]`
             );
             console.log(`     base fees : ${fees.baseFee.toString().padStart(30, " ")}`);
             console.log(` +    len fees : ${fees.lenFee.toString().padStart(30, " ")}`);
@@ -491,7 +494,6 @@ const main = async () => {
             })
             .onConflict("extrinsic_id")
             .ignore();
-
         }
 
         sumBlockFees += blockFees;
@@ -518,17 +520,15 @@ const main = async () => {
           console.log(`    block deposit: ${blockTreasure.toString().padStart(30, " ")}`);
         }
 
-        await db("blocks")
-          .insert({
-            block_number: blockDetails.block.header.number.toNumber(),
-            weight: blockWeight.toString(),
-            treasury_deposit: blockTreasure.toString(),
-            treasury_amount: treasure.toString(),
-            total_issuance: issuance.toString(),
-            fee: blockFees.toString(),
-            runtime: runtimeVersion,
-          });
-
+        await db("blocks").insert({
+          block_number: blockDetails.block.header.number.toNumber(),
+          weight: blockWeight.toString(),
+          treasury_deposit: blockTreasure.toString(),
+          treasury_amount: treasure.toString(),
+          total_issuance: issuance.toString(),
+          fee: blockFees.toString(),
+          runtime: runtimeVersion,
+        });
       } catch (e) {
         console.log(e);
         process.exit(1);
