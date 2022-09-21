@@ -252,7 +252,7 @@ const main = async () => {
             // XCM transaction are not extrinsic but consume fees.
 
             const payload = extrinsic.method.args[0] as ParachainInherentData;
-            if (runtimeVersion < 1700) {
+            if (runtimeVersion < 1900) {
               // There is no precise way to compute fees for now:
               events
                 .filter((event, index) => event.section == "treasury" && event.method == "Deposit")
@@ -473,7 +473,7 @@ const main = async () => {
             console.log(`fees not burnt : ${(txFees - txBurnt).toString().padStart(30, " ")}`);
             console.log(`       deposit : ${treasureDeposit.toString().padStart(30, " ")}`);
             console.log(extrinsic.toHex());
-            //process.exit();
+            process.exit();
           }
 
           await db("extrinsics")
