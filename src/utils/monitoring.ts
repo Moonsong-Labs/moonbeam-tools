@@ -1,12 +1,11 @@
 import type { ApiPromise } from "@polkadot/api";
 import type { Extrinsic, BlockHash, EventRecord } from "@polkadot/types/interfaces";
-import type { Block, Perbill } from "@polkadot/types/interfaces/runtime/types";
+import type { Block } from "@polkadot/types/interfaces/runtime/types";
 import { Data, GenericEthereumAccountId, Option, u128, u8, bool } from "@polkadot/types";
 import type {
   EthereumTransactionTransactionV2,
-  FrameSupportWeightsWeightToFeeCoefficient,
 } from "@polkadot/types/lookup";
-import type { EthTransaction } from "@polkadot/types/interfaces/eth";
+import type { LegacyTransaction } from "@polkadot/types/interfaces/eth";
 import { u8aToString } from "@polkadot/util";
 import { ethereumEncode } from "@polkadot/util-crypto";
 import { mapExtrinsics, TxWithEventAndFee } from "./types";
@@ -480,7 +479,7 @@ export function generateBlockDetailsLog(
           : payload.isEip1559
           ? // If gasPrice is not indicated, we should use the base fee defined in that block
             payload.asEip1559?.maxFeePerGas.toBigInt() || 0n
-          : (payload as any as EthTransaction).gasPrice?.toBigInt();
+          : (payload as any as LegacyTransaction).gasPrice?.toBigInt();
 
         return p + (BigInt(gasPrice) * dispatchInfo.weight.toBigInt()) / 25000n;
       }
@@ -508,7 +507,7 @@ export function generateBlockDetailsLog(
           : payload.isEip1559
           ? // If gasPrice is not indicated, we should use the base fee defined in that block
             payload.asEip1559?.maxFeePerGas.toBigInt() || 0n
-          : (payload as any as EthTransaction).gasPrice?.toBigInt();
+          : (payload as any as LegacyTransaction).gasPrice?.toBigInt();
       }
       return tx.events.reduce((total, event) => {
         if (event.section == "balances" && event.method == "Transfer") {

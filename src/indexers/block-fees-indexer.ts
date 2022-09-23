@@ -12,8 +12,9 @@ import type {
 } from "@polkadot/types/lookup";
 import type {
   DispatchInfo,
-  EthTransaction,
+LegacyTransaction,
   ParachainInherentData,
+  AccountId20,
 } from "@polkadot/types/interfaces";
 
 import { exploreBlockRange, getApiFor, NETWORK_YARGS_OPTIONS } from "..";
@@ -283,7 +284,7 @@ const main = async () => {
                 : payload.isEip1559
                 ? // If gasPrice is not indicated, we should use the base fee defined in that block
                   payload.asEip1559?.maxFeePerGas.toBigInt() || baseFeePerGas
-                : (payload as any as EthTransaction).gasPrice.toBigInt();
+                : (payload as any as LegacyTransaction).gasPrice.toBigInt();
 
               let gasLimitParam =
                 (payload.isLegacy
@@ -292,7 +293,7 @@ const main = async () => {
                   ? payload.asEip2930?.gasLimit.toBigInt()
                   : payload.isEip1559
                   ? payload.asEip1559?.gasLimit.toBigInt()
-                  : (payload as any as EthTransaction)?.gasLimit.toBigInt()) || 15000000n;
+                  : (payload as any as LegacyTransaction)?.gasLimit.toBigInt()) || 15000000n;
 
               let gasBaseFee = payload.isEip1559 ? baseFeePerGas : gasPriceParam;
               let gasTips = payload.isEip1559
@@ -415,7 +416,7 @@ const main = async () => {
                 }
                 if (extrinsic.method.method == "vote") {
                   const votedEvent = events.find((event) => event.method == "Voted");
-                  const account = votedEvent.data[0].toString();
+                  const account = votedEvent.data[0] as AccountId20;
                   const hash = (extrinsic.method.args[0] as any).toString();
                   // combine the committee type with the hash to make it unique.
                   const hashKey = `${extrinsic.method.section}_${hash}`;
@@ -426,14 +427,14 @@ const main = async () => {
                   const firstVote =
                     !votes.ayes.includes(account) &&
                     !votes.nays.includes(account) &&
-                    !hasMemberVoted[account]?.proposal[hashKey];
+                    !hasMemberVoted[account.toString()]?.proposal[hashKey];
 
-                  if (!hasMemberVoted[account]) {
-                    hasMemberVoted[account] = {
+                  if (!hasMemberVoted[account.toString()]) {
+                    hasMemberVoted[account.toString()] = {
                       proposal: {},
                     };
                   }
-                  hasMemberVoted[account].proposal[hashKey] = true;
+                  hasMemberVoted[account.toString()].proposal[hashKey] = true;
 
                   payFees = !firstVote;
                 }
