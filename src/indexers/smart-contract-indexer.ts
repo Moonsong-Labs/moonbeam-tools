@@ -128,7 +128,7 @@ const main = async () => {
       const bytecode = accountCode[1].toHex();
       const key = accountCode[0].toString();
 
-      const sourceData = await axios.get(`https://api-moonbeam.moonscan.io/api?module=contract&action=getsourcecode&address=${address}`)
+      const sourceData = await axios.get(`https://api-${runtimeName}.moonscan.io/api?module=contract&action=getsourcecode&address=${address}`)
         .then(res => {
           const jsonResp = res.data;
           if (res.status !== 200 || jsonResp.message != "OK") {
