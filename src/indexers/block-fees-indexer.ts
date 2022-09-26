@@ -387,13 +387,6 @@ const main = async () => {
             ) {
               // No fees to pay if successfully enacting an authorized upgrade
               payFees = false;
-            } else if (
-              extrinsic.method.section == "evm" &&
-              extrinsic.method.method == "hotfixIncAccountSufficientsif" &&
-              isSuccess
-            ) {
-              // No fees to pay if successfully enacting an authorized upgrade
-              payFees = false;
             } else if (extrinsic.method.section == "sudo") {
               // No fees to pay if sudo
               payFees = false;
@@ -401,8 +394,7 @@ const main = async () => {
               extrinsic.method.section == "evm" &&
               extrinsic.method.method == "hotfixIncAccountSufficients"
             ) {
-              // No fees to pay if sudo
-              payFees = runtimeVersion < 1500;
+              payFees = runtimeVersion < 1600;
             } else if (
               // Vote for collective doesn't pay fee if it is the first vote for an account for the given proposal
               ["councilCollective", "techCommitteeCollective", "techComitteeCollective"].includes(
