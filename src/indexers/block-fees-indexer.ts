@@ -387,6 +387,13 @@ const main = async () => {
             ) {
               // No fees to pay if successfully enacting an authorized upgrade
               payFees = false;
+            } else if (
+              extrinsic.method.section == "evm" &&
+              extrinsic.method.method == "hotfixIncAccountSufficientsif" &&
+              isSuccess
+            ) {
+              // No fees to pay if successfully enacting an authorized upgrade
+              payFees = false;
             } else if (extrinsic.method.section == "sudo") {
               // No fees to pay if sudo
               payFees = false;
