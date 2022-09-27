@@ -514,6 +514,13 @@ const main = async () => {
         console.log(`    block deposit: ${blockTreasure.toString().padStart(30, " ")}`);
       }
 
+      const timestamp = apiAt.registry.createType(
+        "Compact<u64>",
+        blockDetails.block.extrinsics.find(
+          (e) => e.method.section == "timestamp" && e.method.method == "set"
+        ).data
+      );
+
       await db("blocks").insert({
         block_number: blockDetails.block.header.number.toNumber(),
         weight: blockWeight.toString(),
@@ -522,6 +529,7 @@ const main = async () => {
         total_issuance: issuance.toString(),
         fee: blockFees.toString(),
         runtime: runtimeVersion,
+        created_at: new Date(timestamp.toNumber()).toISOString(),
       });
     } catch (e) {
       console.log(e);
