@@ -17,7 +17,16 @@ import type {
   AccountId20,
 } from "@polkadot/types/interfaces";
 
-import { printTokens, promiseWhile, getBlockDetails, getApiFor, NETWORK_YARGS_OPTIONS } from "..";
+import {
+  printTokens,
+  promiseWhile,
+  getBlockDetails,
+  getApiFor,
+  NETWORK_YARGS_OPTIONS,
+  BlockDetails,
+  extractAuthorNimbusKey,
+  getAccountFromNimbusKey
+} from "..";
 
 const debug = require("debug")("indexer:fee");
 
@@ -182,7 +191,7 @@ const main = async () => {
 
   // fetch block information for all blocks in the range
 
-  const indexBlock = async (blockDetails) => {
+  const indexBlock = async (blockDetails: BlockDetails) => {
     try {
       blockCount++;
       let blockFees = 0n;
@@ -202,16 +211,8 @@ const main = async () => {
         runtimeVersion >= 1200 ? (await apiAt.query.baseFee.baseFeePerGas()).toBigInt() : 0n;
 
       // Might not work on first moonbase runtimes
-      const authorId =
-        blockDetails.block.extrinsics
-          .find((tx) => tx.method.section == "authorInherent" && tx.method.method == "setAuthor")
-          ?.args[0]?.toString() ||
-        blockDetails.block.header.digest.logs
-          .find(
-            (l) =>
-              l.isPreRuntime && l.asPreRuntime.length > 0 && l.asPreRuntime[0].toString() == "nmbs"
-          )
-          ?.asPreRuntime[1]?.toString();
+      const nmbsKey = extractAuthorNimbusKey(blockDetails.block);
+      const authorId = await getAccountFromNimbusKey(apiPreviousAt, nmbsKey);
 
       // Stores if a member did vote for the same proposal in the same block
       const hasMemberVoted: {
@@ -326,11 +327,19 @@ const main = async () => {
                 event.method == "Deposit" &&
                 authorId == event.data[0].toString()
             );
+            console.log(`authorId: ${authorId}`);
+            console.log(
+              JSON.stringify(
+                events.filter((event) => event.section == "balances" && event.method == "Deposit")
+              ),
+              null,
+              2
+            );
 
             if (collatorDepositEvent) {
               const extraFees = payload.isEip1559 ? gasTips : gasFee - baseFeePerGas;
               collatorDeposit = (collatorDepositEvent.data[1] as any).toBigInt();
-              // console.log(`collator deposit : ${collatorDeposit.toString().padStart(30, " ")}`);
+              console.log(`collator deposit : ${collatorDeposit.toString().padStart(30, " ")}`);
 
               if (collatorDeposit !== extraFees * gasUsed) {
                 console.log(

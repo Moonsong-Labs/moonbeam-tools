@@ -2,11 +2,9 @@ import type { ApiPromise } from "@polkadot/api";
 import type { Extrinsic, BlockHash, EventRecord } from "@polkadot/types/interfaces";
 import type { Block } from "@polkadot/types/interfaces/runtime/types";
 import { Data, GenericEthereumAccountId, Option, u128, u8, bool } from "@polkadot/types";
-import type {
-  EthereumTransactionTransactionV2,
-} from "@polkadot/types/lookup";
+import type { EthereumTransactionTransactionV2 } from "@polkadot/types/lookup";
 import type { LegacyTransaction } from "@polkadot/types/interfaces/eth";
-import { u8aToString } from "@polkadot/util";
+import { stringToU8a, u8aToString } from "@polkadot/util";
 import { ethereumEncode } from "@polkadot/util-crypto";
 import { mapExtrinsics, TxWithEventAndFee } from "./types";
 
@@ -214,22 +212,45 @@ export const getAuthorAccount = async (
   return account;
 };
 
-export const getAuthorIdentity = async (
+export const getAccountFromNimbusKey = async (
   api: ApiPromise | ApiDecoration<"promise">,
-  author: string
+  nmbsKey: string
 ): Promise<string> => {
   if (
-    !authorMappingCache[author] ||
-    authorMappingCache[author].lastUpdate < Date.now() - 3600 * 1000
+    !authorMappingCache[nmbsKey] ||
+    authorMappingCache[nmbsKey].lastUpdate < Date.now() - 3600 * 1000
   ) {
-    const mappingData = (await api.query.authorMapping.mappingWithDeposit(author)) as Option<any>;
-    authorMappingCache[author] = {
+    const mappingData = (await api.query.authorMapping.mappingWithDeposit(nmbsKey)) as Option<any>;
+    console.log(nmbsKey);
+    console.log(mappingData.toString());
+    authorMappingCache[nmbsKey] = {
       lastUpdate: Date.now(),
       account: mappingData.isEmpty ? null : ethereumEncode(mappingData.unwrap().account.toString()),
     };
   }
-  const { account } = authorMappingCache[author];
+  const { account } = authorMappingCache[nmbsKey];
+  return account;
+};
 
+export const extractAuthorNimbusKey = (block: Block): string => {
+  const authorId =
+    block.extrinsics
+      .find((tx) => tx.method.section == "authorInherent" && tx.method.method == "setAuthor")
+      ?.args[0]?.toString() ||
+    block.header.digest.logs
+      .find(
+        (l) => l.isPreRuntime && l.asPreRuntime.length > 0 && l.asPreRuntime[0].toString() == "nmbs"
+      )
+      ?.asPreRuntime[1]?.toString();
+
+  return authorId;
+};
+
+export const getAuthorIdentity = async (
+  api: ApiPromise | ApiDecoration<"promise">,
+  nmbsKey: string
+): Promise<string> => {
+  const account = await getAccountFromNimbusKey(api, nmbsKey);
   return getAccountIdentity(api, account);
 };
 
@@ -257,15 +278,7 @@ export const getBlockDetails = async (api: ApiPromise, blockHash: BlockHash) => 
     apiAt.query.authorInherent.author(),
   ]);
 
-  const authorId =
-    block.extrinsics
-      .find((tx) => tx.method.section == "authorInherent" && tx.method.method == "setAuthor")
-      ?.args[0]?.toString() ||
-    block.header.digest.logs
-      .find(
-        (l) => l.isPreRuntime && l.asPreRuntime.length > 0 && l.asPreRuntime[0].toString() == "nmbs"
-      )
-      ?.asPreRuntime[1]?.toString();
+  const authorId = extractAuthorNimbusKey(block);
 
   const [fees, authorName] = await Promise.all([
     promiseConcurrent(
