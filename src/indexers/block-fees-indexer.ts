@@ -73,7 +73,7 @@ const argv = yargs(process.argv.slice(2))
 // Prevent getting stuck
 setTimeout(() => {
   process.exit(1); // exit=true;
-}, 1800000);
+}, 18000000);
 
 const main = async () => {
   if (argv.client == "pg" && !argv.connection) {
