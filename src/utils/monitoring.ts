@@ -161,21 +161,25 @@ export const getAccountIdentity = async (
     return "";
   }
   if (!identityCache[account] || identityCache[account].lastUpdate < Date.now() - 3600 * 1000) {
-    const [identity, superOfIdentity] = await Promise.all([
-      api.query.identity.identityOf(account.toString()).then((a) => (a.isSome ? a.unwrap() : null)),
-      api.query.identity.superOf(account.toString()).then(async (superOfOpt) => {
-        const superOf = (superOfOpt.isSome && superOfOpt.unwrap()) || null;
-        if (!superOf) {
-          return null;
-        }
-        const identityOpt = await api.query.identity.identityOf(superOf[0].toString());
-        const identity = (identityOpt.isSome && identityOpt.unwrap()) || null;
-        return {
-          identity,
-          data: superOf[1],
-        };
-      }),
-    ]);
+    const [identity, superOfIdentity] = api.query.identity
+      ? await Promise.all([
+          api.query.identity
+            .identityOf(account.toString())
+            .then((a) => (a.isSome ? a.unwrap() : null)),
+          api.query.identity.superOf(account.toString()).then(async (superOfOpt) => {
+            const superOf = (superOfOpt.isSome && superOfOpt.unwrap()) || null;
+            if (!superOf) {
+              return null;
+            }
+            const identityOpt = await api.query.identity.identityOf(superOf[0].toString());
+            const identity = (identityOpt.isSome && identityOpt.unwrap()) || null;
+            return {
+              identity,
+              data: superOf[1],
+            };
+          }),
+        ])
+      : [null, null];
     identityCache[account] = {
       lastUpdate: Date.now(),
       identity,
@@ -303,7 +307,8 @@ export const getBlockDetails = async (api: ApiPromise, blockHash: BlockHash) => 
   return {
     block,
     isAuthorOrbiter:
-      collatorId.unwrapOr(null)?.toString() != (await getAccountFromNimbusKey(apiAt, nmbsKey))?.toString(),
+      collatorId.unwrapOr(null)?.toString() !=
+      (await getAccountFromNimbusKey(apiAt, nmbsKey))?.toString(),
     authorName,
     blockTime: blockTime.toNumber(),
     weightPercentage: Number((blockWeight * 10000n) / maxBlockWeight) / 100,
