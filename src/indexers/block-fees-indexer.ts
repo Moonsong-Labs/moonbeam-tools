@@ -212,7 +212,7 @@ const main = async () => {
 
       // Might not work on first moonbase runtimes
       const nmbsKey = extractAuthorNimbusKey(blockDetails.block);
-      const authorId = await getAccountFromNimbusKey(apiPreviousAt, nmbsKey);
+      const authorId = await getAccountFromNimbusKey(apiAt, nmbsKey);
 
       // Stores if a member did vote for the same proposal in the same block
       const hasMemberVoted: {
@@ -326,14 +326,6 @@ const main = async () => {
                 event.section == "balances" &&
                 event.method == "Deposit" &&
                 authorId == event.data[0].toString()
-            );
-            console.log(`authorId: ${authorId}`);
-            console.log(
-              JSON.stringify(
-                events.filter((event) => event.section == "balances" && event.method == "Deposit")
-              ),
-              null,
-              2
             );
 
             if (collatorDepositEvent) {

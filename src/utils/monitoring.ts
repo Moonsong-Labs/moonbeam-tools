@@ -193,25 +193,6 @@ export const getAccountIdentity = async (
     : account?.toString();
 };
 
-export const getAuthorAccount = async (
-  api: ApiPromise | ApiDecoration<"promise">,
-  author: string
-): Promise<string> => {
-  if (
-    !authorMappingCache[author] ||
-    authorMappingCache[author].lastUpdate < Date.now() - 3600 * 1000
-  ) {
-    const mappingData = (await api.query.authorMapping.mappingWithDeposit(author)) as Option<any>;
-    authorMappingCache[author] = {
-      lastUpdate: Date.now(),
-      account: mappingData.isEmpty ? null : ethereumEncode(mappingData.unwrap().account.toString()),
-    };
-  }
-  const { account } = authorMappingCache[author];
-
-  return account;
-};
-
 export const getAccountFromNimbusKey = async (
   api: ApiPromise | ApiDecoration<"promise">,
   nmbsKey: string
@@ -221,8 +202,6 @@ export const getAccountFromNimbusKey = async (
     authorMappingCache[nmbsKey].lastUpdate < Date.now() - 3600 * 1000
   ) {
     const mappingData = (await api.query.authorMapping.mappingWithDeposit(nmbsKey)) as Option<any>;
-    console.log(nmbsKey);
-    console.log(mappingData.toString());
     authorMappingCache[nmbsKey] = {
       lastUpdate: Date.now(),
       account: mappingData.isEmpty ? null : ethereumEncode(mappingData.unwrap().account.toString()),
@@ -278,7 +257,7 @@ export const getBlockDetails = async (api: ApiPromise, blockHash: BlockHash) => 
     apiAt.query.authorInherent.author(),
   ]);
 
-  const authorId = extractAuthorNimbusKey(block);
+  const nmbsKey = extractAuthorNimbusKey(block);
 
   const [fees, authorName] = await Promise.all([
     promiseConcurrent(
@@ -294,8 +273,8 @@ export const getBlockDetails = async (api: ApiPromise, blockHash: BlockHash) => 
       },
       block.extrinsics
     ),
-    authorId
-      ? getAuthorIdentity(api, authorId)
+    nmbsKey
+      ? getAuthorIdentity(apiAt, nmbsKey)
       : "0x0000000000000000000000000000000000000000000000000000000000000000",
   ]);
 
@@ -324,7 +303,7 @@ export const getBlockDetails = async (api: ApiPromise, blockHash: BlockHash) => 
   return {
     block,
     isAuthorOrbiter:
-      collatorId.unwrapOr(null)?.toString() != (await getAuthorAccount(api, authorId))?.toString(),
+      collatorId.unwrapOr(null)?.toString() != (await getAccountFromNimbusKey(apiAt, nmbsKey))?.toString(),
     authorName,
     blockTime: blockTime.toNumber(),
     weightPercentage: Number((blockWeight * 10000n) / maxBlockWeight) / 100,
