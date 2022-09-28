@@ -489,7 +489,8 @@ const main = async () => {
         });
       }
 
-      await db("extrinsics").insert(inserts);
+      await db("extrinsics").insert(inserts).onConflict("extrinsic_id")
+        .ignore();
 
       sumBlockFees += blockFees;
       sumBlockBurnt += blockBurnt;
