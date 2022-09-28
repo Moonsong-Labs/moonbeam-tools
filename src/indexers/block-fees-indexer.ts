@@ -331,7 +331,7 @@ const main = async () => {
             if (collatorDepositEvent) {
               const extraFees = payload.isEip1559 ? gasTips : gasFee - baseFeePerGas;
               collatorDeposit = (collatorDepositEvent.data[1] as any).toBigInt();
-              console.log(`collator deposit : ${collatorDeposit.toString().padStart(30, " ")}`);
+              debug(`collator deposit : ${collatorDeposit.toString().padStart(30, " ")}`);
 
               if (collatorDeposit !== extraFees * gasUsed) {
                 console.log(
