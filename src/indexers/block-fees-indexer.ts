@@ -370,7 +370,6 @@ const main = async () => {
                   `   expected mint : ${(extraFees * gasUsed).toString().padStart(30, " ")}`
                 );
                 console.log(extrinsic.toHex());
-                process.exit(1);
               }
             }
 
