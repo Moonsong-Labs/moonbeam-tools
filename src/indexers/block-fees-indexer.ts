@@ -25,7 +25,7 @@ import {
   NETWORK_YARGS_OPTIONS,
   BlockDetails,
   extractAuthorNimbusKey,
-  getAccountFromNimbusKey
+  getAccountFromNimbusKey,
 } from "..";
 
 const debug = require("debug")("indexer:fee");
@@ -218,6 +218,8 @@ const main = async () => {
       const hasMemberVoted: {
         [accountId: string]: { proposal: { [proposalKey: string]: true } };
       } = {};
+
+      const inserts = [];
 
       // iterate over every extrinsic
       for (const index of blockDetails.txWithEvents.keys()) {
@@ -470,25 +472,24 @@ const main = async () => {
           process.exit();
         }
 
-        await db("extrinsics")
-          .insert({
-            extrinsic_id: `${blockDetails.block.header.number.toNumber()}-${index}`,
-            block_number: blockDetails.block.header.number.toNumber(),
-            bytes: extrinsic.toU8a().length,
-            section: extrinsic.method.section,
-            method: extrinsic.method.method,
-            success: isSuccess,
-            pay_fee: dispatchInfo.paysFee.isYes,
-            weight: dispatchInfo.weight.toBigInt().toString(),
-            partial_fee: fees.totalFees.toString(),
-            treasury_deposit: treasureDeposit.toString(),
-            fee: txFees.toString(),
-            runtime: runtimeVersion,
-            collator_mint: collatorDeposit.toString(),
-          })
-          .onConflict("extrinsic_id")
-          .ignore();
+        inserts.push({
+          extrinsic_id: `${blockDetails.block.header.number.toNumber()}-${index}`,
+          block_number: blockDetails.block.header.number.toNumber(),
+          bytes: extrinsic.toU8a().length,
+          section: extrinsic.method.section,
+          method: extrinsic.method.method,
+          success: isSuccess,
+          pay_fee: dispatchInfo.paysFee.isYes,
+          weight: dispatchInfo.weight.toBigInt().toString(),
+          partial_fee: fees.totalFees.toString(),
+          treasury_deposit: treasureDeposit.toString(),
+          fee: txFees.toString(),
+          runtime: runtimeVersion,
+          collator_mint: collatorDeposit.toString(),
+        });
       }
+
+      await db("extrinsics").insert(inserts);
 
       sumBlockFees += blockFees;
       sumBlockBurnt += blockBurnt;
