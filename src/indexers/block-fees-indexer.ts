@@ -396,7 +396,7 @@ const main = async () => {
               extrinsic.method.section == "evm" &&
               extrinsic.method.method == "hotfixIncAccountSufficients"
             ) {
-              payFees = runtimeVersion < 1600;
+              payFees = runtimeVersion < 1401;
             } else if (
               // Vote for collective doesn't pay fee if it is the first vote for an account for the given proposal
               ["councilCollective", "techCommitteeCollective", "techComitteeCollective"].includes(
