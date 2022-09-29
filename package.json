@@ -1,6 +1,6 @@
 {
   "name": "moonbeam-tools",
-  "version": "0.0.28",
+  "version": "0.0.29",
   "description": "Set of tools for Moonbeam blockchain",
   "exports": {
     ".": {
@@ -11,7 +11,7 @@
   "main": "dist/index.cjs.js",
   "module": "dist/index.esm.js",
   "browser": "dist/index.umd.js",
-  "types": "dist/index.d.ts",
+  "types": "src/index.ts",
   "dependencies": {
     "@moonbeam-network/api-augment": "^0.1700.0",
     "@polkadot/api": "^9.4.1",
