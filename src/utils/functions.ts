@@ -15,7 +15,7 @@ export const numberWithCommas = (x: number | bigint | string) => {
 // This is effective for very long list where the result is not required
 // as it will free the memory over time
 // Stops adding new items once a task return false/null/undefined/0
-// This can lead to additional items being added 
+// This can lead to additional items being added
 // until the finishing task is complete
 export const promiseWhile = async (
   concurrency: number,
@@ -27,7 +27,7 @@ export const promiseWhile = async (
   const queue = new pQueue({ concurrency });
 
   const addTask = () => {
-    if (end) { 
+    if (end) {
       return;
     }
     const task = taskGenerator(index++);
@@ -36,7 +36,7 @@ export const promiseWhile = async (
       return;
     }
     queue.add(task);
-  }
+  };
   queue.on("next", addTask);
 
   new Array(concurrency).fill(0).map(addTask);

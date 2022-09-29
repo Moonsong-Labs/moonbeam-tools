@@ -70,10 +70,10 @@ const main = async () => {
     connection:
       argv.client == "sqlite3"
         ? ({
-          filename: `./db-smart-contract.${runtimeName}.${paraId}.at-${atBlockNumber}.db`,
-          mode: sqlite3.OPEN_READWRITE | sqlite3.OPEN_CREATE,
-          useNullAsDefault: true,
-        } as any)
+            filename: `./db-smart-contract.${runtimeName}.${paraId}.at-${atBlockNumber}.db`,
+            mode: sqlite3.OPEN_READWRITE | sqlite3.OPEN_CREATE,
+            useNullAsDefault: true,
+          } as any)
         : argv.connection,
   };
 
@@ -100,13 +100,12 @@ const main = async () => {
     process.exit(1);
   }
 
-  const apiAt = await api.at(
-    await api.rpc.chain.getBlockHash(atBlockNumber)
-  );
+  const apiAt = await api.at(await api.rpc.chain.getBlockHash(atBlockNumber));
 
-  let last_key = argv.reindex ? undefined :
-    (await db.select("key").table("smart_contracts").orderBy("key", "desc").limit(1))?.[0]
-      ?.key || undefined;
+  let last_key = argv.reindex
+    ? undefined
+    : (await db.select("key").table("smart_contracts").orderBy("key", "desc").limit(1))?.[0]?.key ||
+      undefined;
 
   const limit = 100;
   console.log(`Querying smart contract from ${last_key || "0"} [limit: ${limit}]`);
@@ -128,8 +127,11 @@ const main = async () => {
       const bytecode = accountCode[1].toHex();
       const key = accountCode[0].toString();
 
-      const sourceData = await axios.get(`https://api-${runtimeName}.moonscan.io/api?module=contract&action=getsourcecode&address=${address}`)
-        .then(res => {
+      const sourceData = await axios
+        .get(
+          `https://api-${runtimeName}.moonscan.io/api?module=contract&action=getsourcecode&address=${address}`
+        )
+        .then((res) => {
           const jsonResp = res.data;
           if (res.status !== 200 || jsonResp.message != "OK") {
             throw new Error(`Error returned: ${jsonResp.message}`);
@@ -151,20 +153,17 @@ const main = async () => {
           //   "Implementation":"",
           //   "SwarmSource":""
           // }
-          const { SourceCode,
-            ContractName,
-            CompilerVersion,
-            ConstructorArguments, } = codeData;
+          const { SourceCode, ContractName, CompilerVersion, ConstructorArguments } = codeData;
 
           return {
             name: ContractName,
             compiler_version: CompilerVersion,
             constructor_arguments: ConstructorArguments,
             source: SourceCode,
-          }
+          };
         })
-        .catch(err => {
-          console.log('Error: ', err.message);
+        .catch((err) => {
+          console.log("Error: ", err.message);
           process.exit(1);
         });
 
@@ -179,7 +178,7 @@ const main = async () => {
         .onConflict("key")
         .merge();
       console.log(`${address}: ${sourceData.name}`);
-      await new Promise(resolve => setTimeout(resolve, 200));
+      await new Promise((resolve) => setTimeout(resolve, 200));
 
       last_key = key;
     }
@@ -206,9 +205,7 @@ const main = async () => {
   });
 
   // Print total and average for the block range
-  console.log(
-    `Total smart contracts : ${count}`
-  );
+  console.log(`Total smart contracts : ${count}`);
 
   await db.destroy();
   await api.disconnect();

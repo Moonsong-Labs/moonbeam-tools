@@ -163,7 +163,9 @@ const main = async () => {
   console.log(` Starting at block: ${fromBlockNumber}`);
 
   // Set to and from block numbers
-  const toBlockNumber = argv.blocks ? fromBlockNumber + argv.blocks - 1 : (await api.rpc.chain.getBlock()).block.header.number.toNumber() - 1;
+  const toBlockNumber = argv.blocks
+    ? fromBlockNumber + argv.blocks - 1
+    : (await api.rpc.chain.getBlock()).block.header.number.toNumber() - 1;
 
   if (toBlockNumber < fromBlockNumber) {
     return;
@@ -486,8 +488,7 @@ const main = async () => {
         });
       }
 
-      await db("extrinsics").insert(inserts).onConflict("extrinsic_id")
-        .ignore();
+      await db("extrinsics").insert(inserts).onConflict("extrinsic_id").ignore();
 
       sumBlockFees += blockFees;
       sumBlockBurnt += blockBurnt;
@@ -568,7 +569,7 @@ const main = async () => {
   console.log(
     `Total blocks : ${blockCount}, ${printTokens(
       api,
-      blockCount ? sumBlockFees / BigInt(blockCount): 0n,
+      blockCount ? sumBlockFees / BigInt(blockCount) : 0n,
       4
     )}/block, ${printTokens(api, sumBlockFees, 4)} Total`
   );
