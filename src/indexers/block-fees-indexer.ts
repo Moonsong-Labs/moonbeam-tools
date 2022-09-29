@@ -568,7 +568,7 @@ const main = async () => {
   console.log(
     `Total blocks : ${blockCount}, ${printTokens(
       api,
-      sumBlockFees / BigInt(blockCount),
+      blockCount ? sumBlockFees / BigInt(blockCount): 0n,
       4
     )}/block, ${printTokens(api, sumBlockFees, 4)} Total`
   );
