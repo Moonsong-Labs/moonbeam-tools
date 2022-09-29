@@ -191,7 +191,6 @@ const main = async () => {
 
   const indexBlock = async (blockDetails: BlockDetails) => {
     try {
-      blockCount++;
       let blockFees = 0n;
       let blockBurnt = 0n;
       let blockWeight = 0n;
@@ -541,6 +540,7 @@ const main = async () => {
     if (fromBlockNumber + index > toBlockNumber) {
       return;
     }
+    blockCount++;
     return async () => {
       const current = index + fromBlockNumber;
 
