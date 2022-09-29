@@ -165,7 +165,7 @@ const main = async () => {
   console.log(` Starting at block: ${fromBlockNumber}`);
 
   // Set to and from block numbers
-  const toBlockNumber = (await api.rpc.chain.getBlock()).block.header.number.toNumber() - 1;
+  const toBlockNumber = argv.blocks ? fromBlockNumber + argv.blocks - 1 : (await api.rpc.chain.getBlock()).block.header.number.toNumber() - 1;
 
   if (toBlockNumber < fromBlockNumber) {
     return;
