@@ -49,8 +49,6 @@ const argv = yargs(process.argv.slice(2))
     blocks: {
       type: "number",
       description: "Number of block",
-      default: 2000,
-      demandOption: true,
     },
     concurrency: {
       type: "number",
