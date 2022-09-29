@@ -1,13 +1,10 @@
 import type { ApiPromise } from "@polkadot/api";
 import type { Extrinsic, BlockHash, EventRecord } from "@polkadot/types/interfaces";
-import type { Block, Perbill } from "@polkadot/types/interfaces/runtime/types";
+import type { Block } from "@polkadot/types/interfaces/runtime/types";
 import { Data, GenericEthereumAccountId, Option, u128, u8, bool } from "@polkadot/types";
-import type {
-  EthereumTransactionTransactionV2,
-  FrameSupportWeightsWeightToFeeCoefficient,
-} from "@polkadot/types/lookup";
-import type { EthTransaction } from "@polkadot/types/interfaces/eth";
-import { u8aToString } from "@polkadot/util";
+import type { EthereumTransactionTransactionV2 } from "@polkadot/types/lookup";
+import type { LegacyTransaction } from "@polkadot/types/interfaces/eth";
+import { stringToU8a, u8aToString } from "@polkadot/util";
 import { ethereumEncode } from "@polkadot/util-crypto";
 import { mapExtrinsics, TxWithEventAndFee } from "./types";
 
@@ -164,21 +161,25 @@ export const getAccountIdentity = async (
     return "";
   }
   if (!identityCache[account] || identityCache[account].lastUpdate < Date.now() - 3600 * 1000) {
-    const [identity, superOfIdentity] = await Promise.all([
-      api.query.identity.identityOf(account.toString()).then((a) => (a.isSome ? a.unwrap() : null)),
-      api.query.identity.superOf(account.toString()).then(async (superOfOpt) => {
-        const superOf = (superOfOpt.isSome && superOfOpt.unwrap()) || null;
-        if (!superOf) {
-          return null;
-        }
-        const identityOpt = await api.query.identity.identityOf(superOf[0].toString());
-        const identity = (identityOpt.isSome && identityOpt.unwrap()) || null;
-        return {
-          identity,
-          data: superOf[1],
-        };
-      }),
-    ]);
+    const [identity, superOfIdentity] = api.query.identity
+      ? await Promise.all([
+          api.query.identity
+            .identityOf(account.toString())
+            .then((a) => (a.isSome ? a.unwrap() : null)),
+          api.query.identity.superOf(account.toString()).then(async (superOfOpt) => {
+            const superOf = (superOfOpt.isSome && superOfOpt.unwrap()) || null;
+            if (!superOf) {
+              return null;
+            }
+            const identityOpt = await api.query.identity.identityOf(superOf[0].toString());
+            const identity = (identityOpt.isSome && identityOpt.unwrap()) || null;
+            return {
+              identity,
+              data: superOf[1],
+            };
+          }),
+        ])
+      : [null, null];
     identityCache[account] = {
       lastUpdate: Date.now(),
       identity,
@@ -196,41 +197,43 @@ export const getAccountIdentity = async (
     : account?.toString();
 };
 
-export const getAuthorAccount = async (
+export const getAccountFromNimbusKey = async (
   api: ApiPromise | ApiDecoration<"promise">,
-  author: string
+  nmbsKey: string
 ): Promise<string> => {
   if (
-    !authorMappingCache[author] ||
-    authorMappingCache[author].lastUpdate < Date.now() - 3600 * 1000
+    !authorMappingCache[nmbsKey] ||
+    authorMappingCache[nmbsKey].lastUpdate < Date.now() - 3600 * 1000
   ) {
-    const mappingData = (await api.query.authorMapping.mappingWithDeposit(author)) as Option<any>;
-    authorMappingCache[author] = {
+    const mappingData = (await api.query.authorMapping.mappingWithDeposit(nmbsKey)) as Option<any>;
+    authorMappingCache[nmbsKey] = {
       lastUpdate: Date.now(),
       account: mappingData.isEmpty ? null : ethereumEncode(mappingData.unwrap().account.toString()),
     };
   }
-  const { account } = authorMappingCache[author];
-
+  const { account } = authorMappingCache[nmbsKey];
   return account;
+};
+
+export const extractAuthorNimbusKey = (block: Block): string => {
+  const authorId =
+    block.extrinsics
+      .find((tx) => tx.method.section == "authorInherent" && tx.method.method == "setAuthor")
+      ?.args[0]?.toString() ||
+    block.header.digest.logs
+      .find(
+        (l) => l.isPreRuntime && l.asPreRuntime.length > 0 && l.asPreRuntime[0].toString() == "nmbs"
+      )
+      ?.asPreRuntime[1]?.toString();
+
+  return authorId;
 };
 
 export const getAuthorIdentity = async (
   api: ApiPromise | ApiDecoration<"promise">,
-  author: string
+  nmbsKey: string
 ): Promise<string> => {
-  if (
-    !authorMappingCache[author] ||
-    authorMappingCache[author].lastUpdate < Date.now() - 3600 * 1000
-  ) {
-    const mappingData = (await api.query.authorMapping.mappingWithDeposit(author)) as Option<any>;
-    authorMappingCache[author] = {
-      lastUpdate: Date.now(),
-      account: mappingData.isEmpty ? null : ethereumEncode(mappingData.unwrap().account.toString()),
-    };
-  }
-  const { account } = authorMappingCache[author];
-
+  const account = await getAccountFromNimbusKey(api, nmbsKey);
   return getAccountIdentity(api, account);
 };
 
@@ -258,15 +261,7 @@ export const getBlockDetails = async (api: ApiPromise, blockHash: BlockHash) => 
     apiAt.query.authorInherent.author(),
   ]);
 
-  const authorId =
-    block.extrinsics
-      .find((tx) => tx.method.section == "authorInherent" && tx.method.method == "setAuthor")
-      ?.args[0]?.toString() ||
-    block.header.digest.logs
-      .find(
-        (l) => l.isPreRuntime && l.asPreRuntime.length > 0 && l.asPreRuntime[0].toString() == "nmbs"
-      )
-      ?.asPreRuntime[1]?.toString();
+  const nmbsKey = extractAuthorNimbusKey(block);
 
   const [fees, authorName] = await Promise.all([
     promiseConcurrent(
@@ -282,8 +277,8 @@ export const getBlockDetails = async (api: ApiPromise, blockHash: BlockHash) => 
       },
       block.extrinsics
     ),
-    authorId
-      ? getAuthorIdentity(api, authorId)
+    nmbsKey
+      ? getAuthorIdentity(apiAt, nmbsKey)
       : "0x0000000000000000000000000000000000000000000000000000000000000000",
   ]);
 
@@ -293,17 +288,18 @@ export const getBlockDetails = async (api: ApiPromise, blockHash: BlockHash) => 
     records,
     fees.map((fee) => fee.inclusionFee.unwrapOrDefault()),
     feeMultiplier,
-    [
-      {
-        coeffInteger: new u128(
-          api.registry,
-          api.runtimeVersion.specName.toString() == "moonbeam" ? 5_000_000 : 50_000
-        ),
-        coeffFrac: api.registry.createType("Perbill", 0),
-        negative: new bool(api.registry, false),
-        degree: new u8(api.registry, 1),
-      },
-    ] as any
+    apiAt.consts.transactionPayment?.weightToFee ||
+      ([
+        {
+          coeffInteger: new u128(
+            api.registry,
+            api.runtimeVersion.specName.toString() == "moonbeam" ? 5_000_000 : 50_000
+          ),
+          coeffFrac: api.registry.createType("Perbill", 0),
+          negative: new bool(api.registry, false),
+          degree: new u8(api.registry, 1),
+        },
+      ] as any)
   );
   const blockWeight = txWithEvents.reduce((totalWeight, tx, index) => {
     return totalWeight + (tx.dispatchInfo && tx.dispatchInfo.weight.toBigInt());
@@ -311,7 +307,8 @@ export const getBlockDetails = async (api: ApiPromise, blockHash: BlockHash) => 
   return {
     block,
     isAuthorOrbiter:
-      collatorId.unwrapOr(null)?.toString() != (await getAuthorAccount(api, authorId))?.toString(),
+      collatorId.unwrapOr(null)?.toString() !=
+      (await getAccountFromNimbusKey(apiAt, nmbsKey))?.toString(),
     authorName,
     blockTime: blockTime.toNumber(),
     weightPercentage: Number((blockWeight * 10000n) / maxBlockWeight) / 100,
@@ -479,7 +476,7 @@ export function generateBlockDetailsLog(
           : payload.isEip1559
           ? // If gasPrice is not indicated, we should use the base fee defined in that block
             payload.asEip1559?.maxFeePerGas.toBigInt() || 0n
-          : (payload as any as EthTransaction).gasPrice?.toBigInt();
+          : (payload as any as LegacyTransaction).gasPrice?.toBigInt();
 
         return p + (BigInt(gasPrice) * dispatchInfo.weight.toBigInt()) / 25000n;
       }
@@ -507,7 +504,7 @@ export function generateBlockDetailsLog(
           : payload.isEip1559
           ? // If gasPrice is not indicated, we should use the base fee defined in that block
             payload.asEip1559?.maxFeePerGas.toBigInt() || 0n
-          : (payload as any as EthTransaction).gasPrice?.toBigInt();
+          : (payload as any as LegacyTransaction).gasPrice?.toBigInt();
       }
       return tx.events.reduce((total, event) => {
         if (event.section == "balances" && event.method == "Transfer") {

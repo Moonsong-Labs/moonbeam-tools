@@ -72,7 +72,7 @@ async function main() {
         .hotfixRemoveDelegationRequestsExitedCandidates(chunk)
         .signAsync(signer);
 
-      console.log(`batch ${(i % (chunkSize-1)) + 1}: ${chunk.join(", ")}`);
+      console.log(`batch ${(i % (chunkSize - 1)) + 1}: ${chunk.join(", ")}`);
       await waitTxDone(api, tx);
     }
   } finally {
