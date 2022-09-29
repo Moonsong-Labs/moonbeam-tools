@@ -69,7 +69,7 @@ const argv = yargs(process.argv.slice(2))
   }).argv;
 
 // Prevent getting stuck
-setTimeout(() => {
+const runTimer = setTimeout(() => {
   process.exit(1); // exit=true;
 }, 18000000);
 
@@ -584,6 +584,7 @@ const main = async () => {
 
   await db.destroy();
   await api.disconnect();
+  clearTimeout(runTimer);
 };
 
 main();
