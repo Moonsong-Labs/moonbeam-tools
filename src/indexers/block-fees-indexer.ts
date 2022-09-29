@@ -327,7 +327,7 @@ const main = async () => {
                 authorId == event.data[0].toString()
             );
 
-            if (collatorDepositEvent) {
+            if (collatorDepositEvent && runtimeVersion < 1600) {
               const extraFees = payload.isEip1559 ? gasTips : gasFee - baseFeePerGas;
               collatorDeposit = (collatorDepositEvent.data[1] as any).toBigInt();
               debug(`collator deposit : ${collatorDeposit.toString().padStart(30, " ")}`);
