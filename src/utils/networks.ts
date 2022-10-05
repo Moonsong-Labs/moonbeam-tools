@@ -111,6 +111,7 @@ export const getWsProviderFor = (argv: Argv) => {
 export const getApiFor = async (argv: Argv) => {
   const wsProvider = getWsProviderFor(argv);
   return await ApiPromise.create({
+    noInitWarn: true,
     provider: wsProvider,
     typesBundle: typesBundlePre900 as any,
   });
@@ -119,6 +120,7 @@ export const getApiFor = async (argv: Argv) => {
 export const getMonitoredApiFor = async (argv: Argv) => {
   const wsProvider = getWsProviderFor(argv);
   const api = await ApiPromise.create({
+    noInitWarn: true,
     provider: wsProvider,
     typesBundle: typesBundlePre900 as any,
   });
