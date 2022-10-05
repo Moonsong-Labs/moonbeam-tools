@@ -40,7 +40,7 @@ Options:
 <html>
   <head>
     <title>Monitoring</title>
-    <script src="https://unpkg.com/moonbeam-tools@0.0.30/dist/index.umd.js" charset="UTF-8" integrity="sha384-NDqHAWRUndqTzpmF+5h678LMPkZJ6h2jjiZ8axC+RdTciQPsvG9LCfP27+kVo/iz" crossorigin="anonymous"></script>
+    <script src="https://unpkg.com/moonbeam-tools@0.0.31/dist/index.umd.js" charset="UTF-8" integrity="sha384-NDqHAWRUndqTzpmF+5h678LMPkZJ6h2jjiZ8axC+RdTciQPsvG9LCfP27+kVo/iz" crossorigin="anonymous"></script>
     <style>
       body {
         padding: 2rem;
