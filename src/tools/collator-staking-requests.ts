@@ -64,7 +64,7 @@ const main = async () => {
       const delegatorId = stateData.id.toHex();
 
       totalDelegations += stateData.delegations.length;
-      // console.log(stateData.toJSON());
+      // @ts-ignore Types doesn't exist for delegatorState with requests
       const request = stateData.requests.requests.toJSON()[formattedCollator] as any;
       if (request) {
         requests.push({

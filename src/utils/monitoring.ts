@@ -4,7 +4,7 @@ import type { Block } from "@polkadot/types/interfaces/runtime/types";
 import { Data, GenericEthereumAccountId, Option, u128, u8, bool } from "@polkadot/types";
 import type { EthereumTransactionTransactionV2 } from "@polkadot/types/lookup";
 import type { LegacyTransaction } from "@polkadot/types/interfaces/eth";
-import { stringToU8a, u8aToString } from "@polkadot/util";
+import { u8aToString } from "@polkadot/util";
 import { ethereumEncode } from "@polkadot/util-crypto";
 import { mapExtrinsics, TxWithEventAndFee } from "./types";
 
@@ -293,8 +293,8 @@ export const getBlockDetails = async (api: ApiPromise, blockHash: BlockHash) => 
         {
           coeffInteger: new u128(
             api.registry,
-            api.runtimeVersion.specName.toString() == "moonbeam" ? 5_000_000 : 50_000
-          ),
+            api.runtimeVersion.specName.toString() == "moonbeam" ? 1_000_000 : 10_000
+          ).muln(apiAt.consts.transactionPayment.operationalFeeMultiplier.toNumber() || 5),
           coeffFrac: api.registry.createType("Perbill", 0),
           negative: new bool(api.registry, false),
           degree: new u8(api.registry, 1),
