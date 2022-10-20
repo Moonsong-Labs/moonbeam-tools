@@ -128,7 +128,9 @@ async function main() {
           ", "
         )}`
       );
-      const toPropose = api.tx.scheduler.schedule(nextScheduleAt, null, 0, { Value: txKillStorage });
+      const toPropose = await api.tx.scheduler
+        .schedule(nextScheduleAt, null, 0, { Value: txKillStorage })
+        .signAsync(account);
       let encodedProposal = toPropose?.method.toHex() || "";
       let encodedHash = blake2AsHex(encodedProposal);
       console.log("Encoded proposal after schedule is", encodedProposal);
