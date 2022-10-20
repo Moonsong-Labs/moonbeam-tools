@@ -13,7 +13,7 @@ import { SubmittableExtrinsic as SubmittableExtrinsicPromise } from "@polkadot/a
 import { DispatchError, EventRecord } from "@polkadot/types/interfaces";
 import Keyring from "@polkadot/keyring";
 import { ApiPromise, WsProvider } from "@polkadot/api";
-import { u8aToHex, BN, BN_BILLION, BN_MILLION } from "@polkadot/util";
+import { u8aToHex, BN } from "@polkadot/util";
 import { JsonRpcResponse } from "web3-core-helpers";
 import { ethers } from "ethers";
 import { Contract } from "web3-eth-contract";
@@ -22,11 +22,13 @@ import * as RLP from "rlp";
 import yargs from "yargs";
 import { AccessListish } from "ethers/lib/utils";
 import {
+  ALITH_ADDRESS,
   ALITH_PRIVATE_KEY,
   BALTATHAR_ADDRESS,
   BALTATHAR_PRIVATE_KEY,
   CHARLETH_ADDRESS,
   CHARLETH_PRIVATE_KEY,
+  DOROTHY_PRIVATE_KEY,
 } from "../utils/constants";
 
 const httpUrl = "http://127.0.0.1:9933";
@@ -38,6 +40,7 @@ const keyringEth = new Keyring({ type: "ethereum" });
 export const alith = keyringEth.addFromUri(ALITH_PRIVATE_KEY);
 export const baltathar = keyringEth.addFromUri(BALTATHAR_PRIVATE_KEY);
 export const charleth = keyringEth.addFromUri(CHARLETH_PRIVATE_KEY);
+export const dorothy = keyringEth.addFromUri(DOROTHY_PRIVATE_KEY);
 const web3 = new Web3(wssUrl);
 web3.eth.accounts.wallet.add(ALITH_PRIVATE_KEY);
 
@@ -48,6 +51,8 @@ web3.eth.accounts.wallet.add(ALITH_PRIVATE_KEY);
  *        NormalFilter - Call::EVM(_) => true
  *    - EVM origin is allowed for all.
  *        type CallOrigin = EnsureAddressAlways;
+ *
+ *        pub struct EnsureAddressAlways;
  *        impl<OuterOrigin> EnsureAddressOrigin<OuterOrigin> for EnsureAddressAlways {
  *           type Success = ();
  *
@@ -89,17 +94,23 @@ web3.eth.accounts.wallet.add(ALITH_PRIVATE_KEY);
  *    --sealing=manual \
  *    --in-peers=0 \
  *    --out-peers=0 -linfo \
- *    --port=5502 \
- *    --rpc-port=25502 \
- *    --ws-port=45502 \
  *    --tmp
- * 
+ *
  * Examples:
  *  ts-node ./src/tools/fees.ts --name fees --type compute
+ *  ts-node ./src/tools/fees.ts --name fees --type compute --multiplier 300000000
  *  ts-node ./src/tools/fees.ts --name fees --type length-small
  *  ts-node ./src/tools/fees.ts --name fees --type length-big
- * 
+ *
  * The result will open in the browser once done
+ */
+
+/**
+ * Observations
+ * - The first EVM call causes the SmartContract storage to be initialized and costs around 20,000 gas (we avoid this by pre-initializing the storage)
+ * - The fees sometime jump abruptly and stay at that level, this is due to nonce going from 1 byte to 2 bytes and so on
+ * - The block fill ratio is computed differently by transaction-payment; the multiplier is updated only due to `Normal` weight class (actual / max).
+ *   The actual weight also contains some extra weight that doesn't belong to extrinsics (maybe coming from on_initialize/on_finalize)
  */
 
 /// === test methods === ///
@@ -130,14 +141,67 @@ const TESTER_CONTRACT = `// SPDX-License-Identifier: GPL-3.0-only
 const TESTER_JSON = compileSolidity(TESTER_CONTRACT);
 const TESTER_INTERFACE = new ethers.utils.Interface(TESTER_JSON.contract.abi);
 
-async function runTest(api: ApiPromise, callType: "compute" | "length-small" | "length-big") {
+async function runTest(
+  api: ApiPromise,
+  options: { callType: "compute" | "length-small" | "length-big"; multiplier: BN | null }
+) {
   const result = [];
-  console.log("callType", callType);
+  console.log(`options: ${JSON.stringify(options)}`);
   let contractAddr = "0xc01Ee7f10EA4aF4673cFff62710E1D7792aBa8f3";
 
+  // deploy contract
+  const maxBlockWeight = api.consts.system.blockWeights.maxBlock.toBn();
+  const blockNumber = (await api.rpc.chain.getBlock()).block.header.number.toNumber();
+  const nextFeeMultiplierOriginal = await api.query.transactionPayment.nextFeeMultiplier();
+  if (blockNumber === 0) {
+    const { contract, rawTx } = await createContract(TESTER_JSON, {
+      ...ALITH_TRANSACTION_TEMPLATE,
+      gas: 900_000,
+      gasPrice: 1_250_000_000,
+    });
+
+    const results = await createBlock(api, rawTx);
+    assert.equal(results, true, "failure during block creation");
+    await expectEVMSuccess(api);
+    console.log(`contractAddress: ${contract.options.address.toString()}`);
+    contractAddr = contract.options.address;
+  }
+
+  // use the specified call type
+  const contractCall = (() => {
+    switch (options.callType) {
+      case "compute":
+        return TESTER_INTERFACE.encodeFunctionData("incrementalLoop", [10]);
+      case "length-small":
+        return TESTER_INTERFACE.encodeFunctionData("bigData", [new Array(100).fill(0x01)]);
+      case "length-big":
+        return TESTER_INTERFACE.encodeFunctionData("bigData", [new Array(50 * 1024).fill(0x01)]);
+      default:
+        throw new Error(`invalid options.callType ${options.callType}`);
+    }
+  })();
+
+  // init the smart contract storage, if not done then the first tx has a storage initialization cost of around 20,000
+  await createBlock(api, [
+    await api.tx.evm
+      .call(
+        dorothy.address,
+        contractAddr,
+        contractCall,
+        0,
+        900_000n,
+        2_000_000_000n,
+        null,
+        null,
+        []
+      )
+      .signAsync(dorothy),
+  ]);
+
   // override nextFeeMultiplier if needed, note that its value will change immediately after block creation
-  const nextFeeMultiplierOverride = null;
+  const nextFeeMultiplierOverride = options.multiplier || nextFeeMultiplierOriginal;
   if (nextFeeMultiplierOverride) {
+    console.log(`overriding nextFeeMultiplier to ${nextFeeMultiplierOverride}`);
     await createBlock(api, [
       await api.tx.balances.transfer(contractAddr, 0).signAsync(alith),
       await api.tx.sudo
@@ -153,51 +217,44 @@ async function runTest(api: ApiPromise, callType: "compute" | "length-small" | "
         )
         .signAsync(alith),
     ]);
-  } else {
-    const nextFeeMultiplier = await api.query.transactionPayment.nextFeeMultiplier();
-    assert.equal(
-      nextFeeMultiplier.toString(),
-      "1000000000000000000",
-      "nextFeeMultiplier is not at its base value"
-    );
-    console.log("nextFeeMul", nextFeeMultiplier.toString());
   }
-
-  // deploy contract
-  const maxBlockWeight = api.consts.system.blockWeights.maxBlock.toBn();
-  const blockNumber = (await api.rpc.chain.getBlock()).block.header.number.toNumber();
-  if (blockNumber === 0) {
-    const { contract, rawTx } = await createContract(TESTER_JSON, {
-      ...ALITH_TRANSACTION_TEMPLATE,
-      gas: 900_000,
-      gasPrice: 1_250_000_000,
-    });
-    assert.equal(await createBlock(api, rawTx), true, "failure during block creation");
-    await expectEVMSuccess(api);
-    console.log("addr", contract.options.address);
-    contractAddr = contract.options.address;
-  }
-
-  // use the specified call type
-  const contractCall = (() => {
-    switch (callType) {
-      case "compute":
-        return TESTER_INTERFACE.encodeFunctionData("incrementalLoop", [1000]);
-      case "length-small":
-        return TESTER_INTERFACE.encodeFunctionData("bigData", [new Array(100).fill(0x01)]);
-      case "length-big":
-        return TESTER_INTERFACE.encodeFunctionData("bigData", [new Array(50 * 1024).fill(0x01)]);
-      default:
-        throw new Error(`invalid callType ${callType}`);
-    }
-  })();
 
   // start load test
-  const loadFactors = [...generateLoad(60, 2), ...Array(10).fill(0)];
+  // const loadFactors = [...generateLoad(60, 1), ...Array(10).fill(0)];
+  // const loadFactors = [...Array(183).fill(19)];
+  const loadFactors = [...Array(183).fill(55)];
+  // const loadFactors = [...Array(1).fill(0)];
   const repsPerLoad = 30;
-  for await (const loadFactor of loadFactors) {
-    console.log(`load: ${loadFactor} (${repsPerLoad} reps)`);
+  for await (const [loadFactorIndex, loadFactor] of loadFactors.entries()) {
+    console.log(
+      `load: ${loadFactor} (${repsPerLoad} reps)  ${loadFactorIndex + 1}/${loadFactors.length}`
+    );
     for await (const rep of new Array(repsPerLoad).keys()) {
+      // uncomment the following code to reduce feeMultiplier by 10 each 100 blocks
+      //   if (blockN % 100 === 0) {
+      //     console.log(`feeMultiplier ${feeMultiplier.toString()}`);
+      //     await createBlock(api, [
+      //       await api.tx.sudo
+      //         .sudo(
+      //           await api.tx.system
+      //             .setStorage([
+      //               [
+      //                 "0x3f1467a096bcd71a5b6a0c8155e208103f2edf3bdf381debe331ab7446addfdc",
+      //                 u8aToHex(api.createType("u128", feeMultiplier).toU8a()),
+      //               ],
+      //             ])
+      //             .signAsync(alith)
+      //         )
+      //         .signAsync(alith),
+      //     ]);
+      //     if (feeMultiplier.eqn(1)) {
+      //       feeMultiplier = BN_ZERO;
+      //       break;
+      //     }
+      //     feeMultiplier = feeMultiplier.divn(10);
+      //   }
+      //   blockN++;
+
       const multiplierBefore = await api.query.transactionPayment.nextFeeMultiplier();
       const fees = await txObserveFeeDiff(api, async () => {
         const txs = [
@@ -208,8 +265,8 @@ async function runTest(api: ApiPromise, callType: "compute" | "length-small" | "
 
           // charge substrate fees
           await api.tx.evm
-            .call(baltathar.address, contractAddr, contractCall, 0, 900_000n, 0n, null, null, [])
-            .signAsync(baltathar),
+            .call(baltathar.address, contractAddr, contractCall, 0, 11_000_000n, 0n, null, null, [])
+            .signAsync(baltathar, {tip: 1n * 10n ** 15n}),
 
           // charge EVM fees
           await api.tx.evm
@@ -218,47 +275,135 @@ async function runTest(api: ApiPromise, callType: "compute" | "length-small" | "
               contractAddr,
               contractCall,
               0,
-              900_000n,
-              2_000_000_000n,
+              11_000_000n,
+              2_000_000_000_000_000n,
               null,
               null,
               []
             )
-            .signAsync(charleth),
+            .signAsync(charleth, {tip: 1n * 10n ** 15n}),
         ];
+
+        txs.forEach(t => {
+          console.log(t.hash.toString());
+        });
 
         return txs;
       });
 
-      // compute block weight, from events
-      const events = await api.query.system.events();
-      let totalBlockWeight = new BN(0);
-      for (const event of events) {
-        if (api.events.system.ExtrinsicSuccess.is(event.event)) {
-          totalBlockWeight = totalBlockWeight.add(event.event.data.dispatchInfo.weight.toBn());
+     
+
+      // get block details
+      const transactions = {
+        substrate: null,
+        evm: null,
+      };
+      const block = await api.rpc.chain.getBlock();
+      for (const [i, ext] of block.block.extrinsics.entries()) {
+        if (ext.signer.eq(BALTATHAR_ADDRESS)) {
+          transactions.substrate = {
+            index: i,
+            extrinsicLength: ext.encodedLength,
+            extrinsic: ext,
+          };
+        } else if (ext.signer.eq(CHARLETH_ADDRESS)) {
+          transactions.evm = {
+            index: i,
+            extrinsicLength: ext.encodedLength,
+            extrinsic: ext,
+          };
         }
       }
+
+      // compute block weight, from events
+      const weights = {};
+      const events = await api.query.system.events();
+      let totalBlockWeight = new BN(0);
+      for (const { phase, event } of events) {
+        if (phase.isApplyExtrinsic) {
+          if (
+            api.events.system.ExtrinsicSuccess.is(event) ||
+            api.events.system.ExtrinsicFailed.is(event)
+          ) {
+            weights[phase.asApplyExtrinsic.toNumber()] = event.data.dispatchInfo.weight.toBn();
+          }
+        }
+      }
+      if (!transactions.substrate || transactions.evm) {
+      }
+      for (const i of Object.keys(weights)) {
+        const key = parseInt(i);
+        if (transactions.substrate && transactions.substrate.index === key) {
+          transactions.substrate.weight = weights[i].toString();
+        } else if (transactions.evm && transactions.evm.index === key) {
+          transactions.evm.weight = weights[i].toString();
+        }
+        switch (parseInt(i)) {
+          case transactions.substrate.index:
+            transactions.substrate.weight = weights[i].toString();
+            break;
+          case transactions.evm.index:
+            transactions.evm.weight = weights[i].toString();
+            break;
+        }
+        totalBlockWeight = totalBlockWeight.add(weights[i]);
+      }
+
+      // get feeDetails
+
+      const feeDetails = (
+        await api.rpc.payment.queryFeeDetails(transactions.substrate.extrinsic.toHex())
+      ).inclusionFee.unwrap();
+      const supplyFactor = 1; // 100 for moonbeam, 1 otherwise
+      const substrateFeeDetails = {
+        baseFee: feeDetails.baseFee.toString(),
+        lengthFee: feeDetails.lenFee.toString(),
+        adjustedWeightFee: multiplierBefore
+          .mul(new BN(transactions.substrate.weight).muln(50_000 * supplyFactor))
+          .div(new BN("1000000000000000000"))
+          .toString(),
+        total: null,
+      };
+      substrateFeeDetails.total = Object.values(substrateFeeDetails)
+        .reduce((acc, v) => acc.add(new BN(v)), new BN(0))
+        .toString();
+
       const multiplierAfter = await api.query.transactionPayment.nextFeeMultiplier();
 
-      result.push({
+      delete transactions.substrate.extrinsic;
+      delete transactions.evm.extrinsic;
+      const data = {
         fullPercent: totalBlockWeight.muln(100).div(maxBlockWeight).toNumber(),
         ...fees,
+        transactions,
+        substrateFeeDetails,
         multiplier: {
           before: multiplierBefore.toString(),
           after: multiplierAfter.toString(),
         },
         block: (await api.rpc.chain.getBlock()).block.header.number.toNumber(),
-      });
+      };
+      result.push(data);
+      if (data.block === 4) {
+        throw Error("FOUR!");
+      }
     }
   }
 
-  return result;
+  return {
+    multiplier: nextFeeMultiplierOverride.toString(),
+    callType: options.callType,
+    result,
+  };
 }
 
 function generateLoad(middle: number, inc: number = 1): number[] {
   const load = [];
   for (let i = 0; i <= middle; i += inc) {
     load.push(i);
+  }
+  for (let i = 0; i <= 50; i++) {
+    load.push(middle);
   }
   for (let i = middle; i >= 0; i -= inc) {
     load.push(i);
@@ -602,10 +747,21 @@ function compileSolidity(fileContents: string): Compiled {
 
 async function view(input: string, output: string, open: boolean) {
   const data = JSON.parse(fs.readFileSync(input).toString("utf-8"));
-  const labels = data.map((x: any, i: number) => i);
-  const fullPercent = data.map((x: any) => x["fullPercent"]);
-  const substrateFees = data.map((x: any) => new BN(x["substrate"]).toNumber());
-  const evmFees = data.map((x: any) => new BN(x["evm"]).toNumber());
+  const labels = data.result.map((x: any) => x["block"]);
+  const fullPercent = data.result.map((x: any) => x["fullPercent"]);
+  const substrateFees = data.result.map((x: any) => new BN(x["substrate"]).toString());
+  const evmFees = data.result.map((x: any) => new BN(x["evm"]).toString());
+  const multiplier = data.result.map((x: any) => new BN(x["multiplier"]["before"]).toString());
+  const diff = data.result.map((x: any) => {
+    const a = new BN(x["substrate"]);
+    const b = new BN(x["evm"]);
+    return a.sub(b).abs().muln(100).div(a.add(b).divn(2)).toString();
+  });
+  const diffSubstrate = data.result.map((x: any) => {
+    const a = new BN(x["substrate"]);
+    const b = new BN(x["evm"]);
+    return a.sub(b).toString();
+  });
 
   // editorconfig-checker-disable
   fs.writeFileSync(
@@ -613,6 +769,8 @@ async function view(input: string, output: string, open: boolean) {
     `<html>
     <head>
       <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.1/chart.min.js" integrity="sha512-QSkVNOCYLtj73J4hbmVoOV6KVZuMluZlioC+trLpewV8qMjsWqlIQvkn1KGX2StWvPMdWGBqim1xlC8krl1EKQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+      <script src="https://cdn.jsdelivr.net/combine/npm/hammerjs@2.0.8"></script>
+      <script src="https://cdn.jsdelivr.net/combine/npm/chartjs-plugin-zoom@1.2.1"></script>
       <style>
         .chart {
           display: inline-block;
@@ -623,23 +781,29 @@ async function view(input: string, output: string, open: boolean) {
       </style>
     </head>
     <body>
-      <div class="chart">
-        <canvas id="fees-substrate"></canvas>
-      </div>  
-      <div class="chart">
-        <canvas id="fees-evm"></canvas>
-      </div>
-      <div class="chart">
-        <canvas id="fees-all"></canvas>
-      </div>  
+      <div class="chart"><canvas id="fees-substrate"></canvas></div>  
+      <div class="chart"><canvas id="fees-evm"></canvas></div>
+
+      <div class="chart"><canvas id="fees-substrate-log"></canvas></div>  
+      <div class="chart"><canvas id="fees-evm-log"></canvas></div>
+      
+      <div class="chart"><canvas id="fees-all"></canvas></div>
+      <div class="chart"><canvas id="fees-diff"></canvas></div>
+      
+      <div class="chart"><canvas id="fees-multiplier"></canvas></div>
+      <div class="chart"><canvas id="fees-multiplier-log"></canvas></div>
+
+      <div class="chart"><canvas id="fees-diff-substrate"></canvas></div>
+      <div class="chart"><canvas id="placeholder"></canvas></div>
+      
       <script>
         const up = (ctx, value) => ctx.p0.parsed.y < ctx.p1.parsed.y ? value : undefined;
         const down = (ctx, value) => ctx.p0.parsed.y > ctx.p1.parsed.y ? value : undefined;
 
         const rawData = ${JSON.stringify(data)};
 
-        drawChart('fees-substrate', 'Fees Substrate', [{
-          label: "Substrate Fees",
+        drawChart('fees-substrate', 'Substrate Fees', [{
+          label: "Fees",
           data: ${JSON.stringify(substrateFees)},
           fill: false,
           borderColor: "rgb(6, 87, 7)",
@@ -650,21 +814,53 @@ async function view(input: string, output: string, open: boolean) {
             borderColor: ctx => up(ctx, 'rgb(52, 235, 73)') || down(ctx, 'rgb(235, 64, 52)'),
           },
         }]);
-        drawChart('fees-evm', 'Fees EVM', [{
-          label: "EVM Fees",
+        drawChart('fees-evm', 'EVM Fees', [{
+          label: "Fees",
           data: ${JSON.stringify(evmFees)},
           fill: false,
           borderColor: "rgb(115, 23, 145)",
           tension: 0.4,
-          // cubicInterpolationMode: 'monotone',
+          cubicInterpolationMode: 'monotone',
           yAxisID: 'y',
           segment: {
             borderColor: ctx => up(ctx, 'rgb(52, 235, 211)') || down(ctx, 'rgb(235, 52, 174)'),
           },
         }]);
-        drawChart('fees-all', 'Fees Combined', [
+        drawChart('fees-substrate-log', 'Substrate Fees (log)', [{
+          label: "Fees",
+          data: ${JSON.stringify(substrateFees)},
+          fill: false,
+          borderColor: "rgb(6, 87, 7)",
+          tension: 0.4,
+          cubicInterpolationMode: 'monotone',
+          yAxisID: 'y',
+          segment: {
+            borderColor: ctx => up(ctx, 'rgb(52, 235, 73)') || down(ctx, 'rgb(235, 64, 52)'),
+          },
+        }], {
+          y: {
+            type: 'logarithmic',
+          }
+        });
+        drawChart('fees-evm-log', 'EVM Fees (log)', [{
+          label: "Fees",
+          data: ${JSON.stringify(evmFees)},
+          fill: false,
+          borderColor: "rgb(115, 23, 145)",
+          tension: 0.4,
+          cubicInterpolationMode: 'monotone',
+          yAxisID: 'y',
+          segment: {
+            borderColor: ctx => up(ctx, 'rgb(52, 235, 211)') || down(ctx, 'rgb(235, 52, 174)'),
+          },
+        }], {
+          y: {
+            type: 'logarithmic',
+          }
+        });
+        drawChart('fees-all', 'Combined Fees (log)', [
           {
-            label: "Substrate Fees",
+            label: "Substrate",
             data: ${JSON.stringify(substrateFees)},
             fill: false,
             borderColor: "rgb(6, 87, 7)",
@@ -676,20 +872,106 @@ async function view(input: string, output: string, open: boolean) {
             },
           },
           {
-            label: "EVM Fees",
+            label: "EVM",
             data: ${JSON.stringify(evmFees)},
             fill: false,
             borderColor: "rgb(115, 23, 145)",
             tension: 0.4,
-            // cubicInterpolationMode: 'monotone',
+            cubicInterpolationMode: 'monotone',
             yAxisID: 'y',
             segment: {
               borderColor: ctx => up(ctx, 'rgb(52, 235, 211)') || down(ctx, 'rgb(235, 52, 174)'),
             },
           }
-        ]);
+        ], {
+          y: {
+            type: 'logarithmic',
+          }
+        });
+        drawChart('fees-multiplier', 'Multiplier', [{
+          label: "Multiplier",
+          data: ${JSON.stringify(multiplier)},
+          fill: false,
+          borderColor: "rgb(66, 245, 215)",
+          tension: 0.4,
+          cubicInterpolationMode: 'monotone',
+          yAxisID: 'y',
+          segment: {
+            borderColor: ctx => up(ctx, 'rgb(52, 235, 73)') || down(ctx, 'rgb(235, 64, 52)'),
+          },
+        }], {
+          y: {
+            title: {
+              text: "Value",
+            }
+          }
+        });
+        drawChart('fees-multiplier-log', 'Multiplier (log)', [{
+          label: "Multiplier",
+          data: ${JSON.stringify(multiplier)},
+          fill: false,
+          borderColor: "rgb(66, 245, 215)",
+          tension: 0.4,
+          cubicInterpolationMode: 'monotone',
+          yAxisID: 'y',
+          segment: {
+            borderColor: ctx => up(ctx, 'rgb(52, 235, 73)') || down(ctx, 'rgb(235, 64, 52)'),
+          },
+        }], {
+          y: {
+            type: 'logarithmic',
+            title: {
+              text: "Value",
+            }
+          }
+        });
+        drawChart('fees-diff', 'Diff %', [{
+          label: "Percentage",
+          data: ${JSON.stringify(diff)},
+          fill: false,
+          borderColor: "rgb(66, 245, 215)",
+          tension: 0.4,
+          cubicInterpolationMode: 'monotone',
+          yAxisID: 'y',
+          segment: {
+            borderColor: ctx => up(ctx, 'rgb(52, 235, 73)') || down(ctx, 'rgb(235, 64, 52)'),
+          },
+        }], {
+          y: {
+            title: {
+              text: "Percent",
+            }
+          }
+        });
+        drawChart('fees-diff-substrate', 'Substrate Excess', [{
+          label: "Fees",
+          data: ${JSON.stringify(diffSubstrate)},
+          fill: false,
+          borderColor: "rgb(66, 245, 215)",
+          tension: 0.4,
+          cubicInterpolationMode: 'monotone',
+          yAxisID: 'y',
+          segment: {
+            borderColor: ctx => up(ctx, 'rgb(52, 235, 73)') || down(ctx, 'rgb(235, 64, 52)'),
+          },
+        }], {
+          y: {
+            title: {
+              text: "Extra Fees",
+            }
+          }
+        });
 
-        function drawChart(id, title, data) {
+        function drawChart(id, title, data, options) {
+          const yAxis = Object.assign({
+            title: {
+              display: true,
+              text: "Fees",
+              font: { weight: "bold" },
+            }
+          }, options && options.y || {});
+          
+          console.log(title, yAxis);
           new Chart(
             document.getElementById(id).getContext('2d'), 
             {
@@ -721,13 +1003,7 @@ async function view(input: string, output: string, open: boolean) {
                       font: { weight: "bold" },
                     }
                   },
-                  y: {
-                    title: {
-                      display: true,
-                      text: "Fees Charged",
-                      font: { weight: "bold" },
-                    }
-                  },
+                  y: yAxis,
                   y1: {
                     title: {
                       display: true,
@@ -748,6 +1024,23 @@ async function view(input: string, output: string, open: boolean) {
                     display: true,
                     text: title,
                   },
+                  zoom: {
+                    pan: {
+                      enabled: true,
+                      modifierKey: 'ctrl',
+                      mode: 'y',
+                    },
+                    zoom: {
+                      wheel: {
+                        enabled: true,
+                        modifierKey: 'ctrl',
+                      },
+                      pinch: {
+                        enabled: true
+                      },
+                      mode: 'y',
+                    }
+                  }
                 },
               },
             });
@@ -783,6 +1076,11 @@ const argv = yargs(process.argv.slice(2))
       description: "The output file name",
       demandOption: true,
     },
+    multiplier: {
+      type: "string",
+      description: "The multiplier override",
+      default: "",
+    },
     view: {
       type: "boolean",
       description: "View existing file",
@@ -809,7 +1107,10 @@ async function main() {
   });
 
   try {
-    const results = await runTest(api, argv.type as any);
+    const results = await runTest(api, {
+      callType: argv.type as any,
+      multiplier: argv.multiplier.length === 0 ? null : new BN(argv.multiplier),
+    });
     fs.writeFileSync(`${name}.json`, JSON.stringify(results, null, 2));
     await view(`${name}.json`, `${name}.html`, true);
   } finally {
