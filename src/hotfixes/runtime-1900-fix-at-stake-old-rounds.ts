@@ -72,27 +72,36 @@ async function main() {
     for await (const key of await apiAt.query.parachainStaking.atStake.keys()) {
       const [round, candidate] = key.args;
       const checkKey = round.toString();
+
+      // skip if unpaid round
       if (round >= maxUnpaidRound) {
         continue;
       }
+
+      // skip if round was checked already and flagged as "cannot remove"
       if (checkedRounds[checkKey] === false) {
         continue;
-      } else if (!(round.toString() in checkedRounds)) {
+      }
+
+      // check if round can be removed (Points & DelayedPayout entries do not exist)
+      if (!(checkKey in checkedRounds)) {
         if (!(await apiAt.query.parachainStaking.points.size(round)).isZero()) {
           console.warn(
             `Storage "Points" is not empty for round ${round.toString()}, entries will not be cleaned`
           );
-          checkedRounds[round.toString()] = false;
+          checkedRounds[checkKey] = false;
           continue;
         }
+
         if (!(await apiAt.query.parachainStaking.delayedPayouts.size(round)).isZero()) {
           console.warn(
             `Storage "DelayedPayouts" is not empty for round ${round.toString()}, entries will not be cleaned`
           );
-          checkedRounds[round.toString()] = false;
+          checkedRounds[checkKey] = false;
           continue;
         }
-        checkedRounds[round.toString()] = true;
+
+        checkedRounds[checkKey] = true;
       }
 
       keysToRemove.push({
