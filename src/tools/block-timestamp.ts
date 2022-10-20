@@ -1,15 +1,7 @@
 // This script is expected to run against a parachain network (using launch.ts script)
 import yargs from "yargs";
-import { Compact } from "@polkadot/types";
 
-import {
-  exploreBlockRange,
-  printBlockDetails,
-  getApiFor,
-  isKnownNetwork,
-  NETWORK_COLORS,
-  NETWORK_YARGS_OPTIONS,
-} from "..";
+import { getApiFor, NETWORK_YARGS_OPTIONS } from "..";
 
 const argv = yargs(process.argv.slice(2))
   .usage("Usage: $0")

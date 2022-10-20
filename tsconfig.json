@@ -1,14 +1,12 @@
 {
   "compilerOptions": {
-    "target": "es2020",
-    "module": "commonjs",
+    "target": "esnext",
+    "module": "CommonJS",
     "moduleResolution": "node",
-    "noImplicitAny": false,
-    "removeComments": true,
-    "preserveConstEnums": true,
-    "sourceMap": true,
     "esModuleInterop": true,
-    "forceConsistentCasingInFileNames": true
+    "skipLibCheck": true,
+    "baseUrl": ".",
+    "composite": true,
   },
   "include": ["src/**/*.ts"],
   "exclude": ["src/**/*.spec.ts", "node_modules"]

@@ -112,7 +112,7 @@ const KNOWN_PRECOMPILES = [
   },
   {
     index: 2056,
-    name: "BatchPrecompile",
+    name: "Batch",
   },
   {
     index: 2057,
@@ -120,7 +120,31 @@ const KNOWN_PRECOMPILES = [
   },
   {
     index: 2058,
-    name: "CallPermitPrecompile",
+    name: "CallPermit",
+  },
+  {
+    index: 2059,
+    name: "ProxyWrapper",
+  },
+  {
+    index: 2060,
+    name: "XcmUtilsWrapper",
+  },
+  {
+    index: 2061,
+    name: "XcmTransactorWrapperV2",
+  },
+  {
+    index: 2062,
+    name: "CouncilInstance",
+  },
+  {
+    index: 2063,
+    name: "TechCommitteeInstance",
+  },
+  {
+    index: 2064,
+    name: "TreasuryCouncilInstance",
   },
 ];
 

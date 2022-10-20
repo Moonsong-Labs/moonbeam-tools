@@ -7,7 +7,6 @@ import type {
 } from "@polkadot/types/interfaces";
 import type { u128 } from "@polkadot/types";
 import { BN } from "@polkadot/util";
-import type { FrameSupportWeightsWeightToFeeCoefficient } from "@polkadot/types/lookup";
 
 import type { TxWithEvent } from "@polkadot/api-derive/types";
 
@@ -26,7 +25,7 @@ export function mapExtrinsics(
   records: EventRecord[],
   fees: InclusionFee[],
   feeMultiplier: u128,
-  weightToFee: FrameSupportWeightsWeightToFeeCoefficient
+  weightToFees: any[]
 ): TxWithEventAndFee[] {
   return extrinsics.map((extrinsic, index): TxWithEventAndFee => {
     let dispatchError: DispatchError | undefined;
@@ -50,8 +49,8 @@ export function mapExtrinsics(
     let computedFees: ComputedFees;
     const feeDetails = fees[index];
 
-    const frac = weightToFee.coeffFrac.mul(dispatchInfo.weight);
-    const integer = weightToFee.coeffInteger.mul(dispatchInfo.weight);
+    const frac = weightToFees[0].coeffFrac.mul(dispatchInfo.weight);
+    const integer = weightToFees[0].coeffInteger.mul(dispatchInfo.weight);
 
     const unadjustedFee = frac.add(integer);
 
