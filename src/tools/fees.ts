@@ -266,7 +266,7 @@ async function runTest(
           // charge substrate fees
           await api.tx.evm
             .call(baltathar.address, contractAddr, contractCall, 0, 11_000_000n, 0n, null, null, [])
-            .signAsync(baltathar, {tip: 1n * 10n ** 15n}),
+            .signAsync(baltathar, { tip: 1n * 10n ** 15n }),
 
           // charge EVM fees
           await api.tx.evm
@@ -281,17 +281,15 @@ async function runTest(
               null,
               []
             )
-            .signAsync(charleth, {tip: 1n * 10n ** 15n}),
+            .signAsync(charleth, { tip: 1n * 10n ** 15n }),
         ];
 
-        txs.forEach(t => {
+        txs.forEach((t) => {
           console.log(t.hash.toString());
         });
 
         return txs;
       });
-
-     
 
       // get block details
       const transactions = {
