@@ -186,42 +186,42 @@ async function main() {
     );
 
     // We make batches of maxium ${maxAccountPerBatch} by adding 1 by 1
-    const batches = Object.keys(roundsToRemove).reduce((p, index: any) => {
-      const round = roundsToRemove[index];
+    const batches = Object.keys(roundsToRemove).reduce((p, roundNumber: any) => {
+      const round = roundsToRemove[roundNumber];
       if (
         p.length == 0 ||
         p[p.length - 1].storageSize + round.storageSize > maxStorageSize ||
         p[p.length - 1].rounds.length == maxCall
       ) {
-        p.push({ candidates: 0, storageSize: 0, rounds: [] });
+        p.push({ totalCandidates: 0, storageSize: 0, rounds: [] });
       }
-      p[p.length - 1].candidates += round.candidates;
+      p[p.length - 1].totalCandidates += round.candidates;
       p[p.length - 1].storageSize += round.storageSize;
-      p[p.length - 1].rounds.push(index);
+      p[p.length - 1].rounds.push({ round: roundNumber, candidates: round.candidates });
       return p;
-    }, [] as { candidates: number; storageSize: number; rounds: number[] }[]);
+    }, [] as { totalCandidates: number; storageSize: number; rounds: { round: number; candidates: number }[] }[]);
 
     for (const [i, batch] of batches.entries()) {
       // console.log(`using key: ${api.query.parachainStaking.atStake.keyPrefix(batch.rounds[0])}`);
 
       const txKillStorage =
         batch.rounds.length > 1
-          ? await api.tx.utility.batchAll(
-              batch.rounds.map((round) =>
+          ? api.tx.utility.batchAll(
+              batch.rounds.map(({ round, candidates }) =>
                 api.tx.system.killPrefix(
                   api.query.parachainStaking.atStake.keyPrefix(round),
-                  batch.candidates + 1
+                  candidates + 1
                 )
               )
             )
-          : await api.tx.system.killPrefix(
+          : api.tx.system.killPrefix(
               api.query.parachainStaking.atStake.keyPrefix(batch.rounds[0]),
-              batch.candidates + 1
+              batch.totalCandidates + 1
             );
       // prepare the proposals
       console.log(
         `propose batch ${i} for block +${i + 1}: [Rounds: ${batch.rounds.length} - Candidates: ${
-          batch.candidates
+          batch.totalCandidates
         } - Storage: ${Math.floor(batch.storageSize / 1024)}kb]`
       );
       const toPropose = api.tx.scheduler.scheduleAfter(i + 1, null, 0, {
