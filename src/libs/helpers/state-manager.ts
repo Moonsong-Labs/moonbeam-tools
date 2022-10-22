@@ -36,6 +36,7 @@ export async function downloadExportedState(network: NetworkName, outPath: strin
   const stateFileName = `${network}-state.json`;
   const stateFile = path.join(outPath, stateFileName);
 
+  debug(`Checking ${STORAGE_NAMES[network]} in ${stateInfoFile}`);
   const downloadedStateInfo = await (
     await request(
       `https://s3.us-east-2.amazonaws.com/` +
@@ -51,7 +52,7 @@ export async function downloadExportedState(network: NetworkName, outPath: strin
     .then((d) => JSON.parse(d.toString()))
     .catch(() => null);
   if (stateInfo && stateInfo.best_hash == downloadedStateInfo.best_hash) {
-    return;
+    return stateFile;
   }
 
   const fileStream = (await fs.open(stateFile, "w")).createWriteStream();
@@ -64,7 +65,10 @@ export async function downloadExportedState(network: NetworkName, outPath: strin
     { method: "GET" },
     () => fileStream
   );
+  await fs.writeFile(stateInfoFile, JSON.stringify(downloadedStateInfo));
   debug(`Downloaded ${stateFileName} to ${stateFile}`);
+
+
   return stateFile;
 }
 
@@ -80,6 +84,6 @@ export async function neutralizeExportedState(inFile: string, outFile: string) {
     new CollectiveManipulator("CouncilCollective", [ALITH_ADDRESS]),
     new ValidationManipulator(),
     new XCMPManipulator(),
-    new BalancesManipulator([{ account: ALITH_ADDRESS, amount: 10_000_000n * 10n ** 18n }]),
+    new BalancesManipulator([{ account: ALITH_ADDRESS, amount: 10_000n * 10n ** 18n }]),
   ]);
 }

@@ -39,6 +39,10 @@ export function encodeStorageBlake128MapKey(module, name, key) {
   );
 }
 
+export interface ParserOptions {
+  clearBootnodes: boolean;
+}
+
 // Read, and parse line by line the raw state file.
 // Parsing has 2 passes:
 // - first, to read only (allowing to prepare data) calling processRead
@@ -46,8 +50,13 @@ export function encodeStorageBlake128MapKey(module, name, key) {
 export async function processState(
   inputFile: string,
   destFile: string,
-  manipulators: Manipulator[]
+  manipulators: Manipulator[],
+  options?: ParserOptions
 ) {
+  const opt = {
+    clearBootnodes: true,
+    ...(options || {}),
+  };
   if (!inputFile || !destFile) {
     throw new Error("Missing input and destination file");
   }
@@ -140,6 +149,9 @@ export async function processState(
             .join("");
         }
       });
+    } else if (opt.clearBootnodes && line.startsWith(`    "/`)) {
+      debug(`      - ${chalk.red("remove".padStart(6, " "))} bootnode: ${line.slice(5, -1)}`);
+      keepLine = false;
     }
     if (keepLine) {
       lineBuffer[lineSize++] = `${line}\n`;
