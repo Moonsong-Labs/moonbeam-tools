@@ -17,7 +17,7 @@ export type POLKADOT_NETWORK_NAME = "kusama" | "polkadot";
 export type NETWORK_NAME = MOONBEAM_NETWORK_NAME | POLKADOT_NETWORK_NAME;
 
 export const NETWORK_WS_URLS: { [name in NETWORK_NAME]: string } = {
-  stagenet: "wss://wss.api.stagenet.gcp.purestake.run",
+  stagenet: "wss://wss.api.moondev.network",
   alphanet: "wss://wss.api.moonbase.moonbeam.network",
   moonsama: "wss://wss.moonsama.gcp.purestake.run",
   moonsilver: "wss://wss.moonsilver.moonbeam.network",
@@ -27,7 +27,7 @@ export const NETWORK_WS_URLS: { [name in NETWORK_NAME]: string } = {
   polkadot: "wss://rpc.polkadot.io",
 };
 export const NETWORK_HTTP_URLS: { [name in NETWORK_NAME]: string } = {
-  stagenet: "https://rpc.stagenet.moonbeam.gcp.purestake.run",
+  stagenet: "https://frag-stagenet-relay-rpc-ws.g.moondev.network",
   alphanet: "https://rpc.api.moonbase.moonbeam.network",
   moonsama: "https://rpc.moonsama.gcp.purestake.run",
   moonsilver: "https://rpc.moonsilver.moonbeam.network",
