@@ -14,6 +14,7 @@ Ex: ./node_modules/.bin/ts-node-transpile-only src/hotfixes/runtime-1900-fix-at-
    --account-priv-key <key> \
 */
 import yargs from "yargs";
+import Debug from "debug";
 import "@polkadot/api-augment";
 import "@moonbeam-network/api-augment";
 import { Keyring } from "@polkadot/api";
@@ -21,6 +22,7 @@ import { getApiFor, NETWORK_YARGS_OPTIONS } from "../utils/networks";
 import { BN } from "@polkadot/util";
 import { blake2AsHex } from "@polkadot/util-crypto";
 import { promiseConcurrent } from "../utils/functions";
+const debug = Debug("hotfix:1900-at-stake");
 
 const argv = yargs(process.argv.slice(2))
   .usage("Usage: $0")
@@ -81,7 +83,7 @@ async function main() {
 
   try {
     const currentRound = await apiAt.query.parachainStaking.round();
-    console.log(`Starting: ${currentRound}`);
+    console.log(`[#${atBlock}] Starting: ${currentRound}`);
     const maxUnpaidRound = currentRound.current.sub(
       apiAt.consts.parachainStaking.rewardPaymentDelay
     );
@@ -118,7 +120,10 @@ async function main() {
           const checkKey = round.toString();
 
           // skip if unpaid round
-          if (round >= maxUnpaidRound) {
+          if (round.gte(maxUnpaidRound)) {
+            debug(
+              `Skipping round ${round} (current: ${currentRound.current.toNumber()}): ${candidate.toString()}`
+            );
             return;
           }
 
@@ -149,6 +154,11 @@ async function main() {
           }
           // Cannot use atStake(...) directly because of different types in 1900
           const storageSize = await api.rpc.state.getStorageSize(key, blockHash);
+          debug(
+            `Round ${round.toString().padStart(5, " ")} [${storageSize
+              .toString()
+              .padStart(5, " ")} Bytes]: ${candidate.toString()}`
+          );
 
           return {
             round: round.toNumber(),
@@ -215,14 +225,14 @@ async function main() {
               )
             )
           : api.tx.system.killPrefix(
-              api.query.parachainStaking.atStake.keyPrefix(batch.rounds[0]),
-              batch.totalCandidates + 1
+              api.query.parachainStaking.atStake.keyPrefix(batch.rounds[0].round),
+              batch.rounds[0].candidates + 1
             );
       // prepare the proposals
       console.log(
         `propose batch ${i} for block +${i + 1}: [Rounds: ${batch.rounds.length} - Candidates: ${
           batch.totalCandidates
-        } - Storage: ${Math.floor(batch.storageSize / 1024)}kb]`
+        } - Storage: ${Math.floor(batch.storageSize / 1024)}kB]`
       );
       const toPropose = api.tx.scheduler.scheduleAfter(i + 1, null, 0, {
         Value: txKillStorage,
