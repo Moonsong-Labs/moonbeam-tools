@@ -9,7 +9,6 @@ const debug = Debug("helper:state-manipulator");
 // Buffer size in lines used to write to the file
 const BUFFER_LINE_SIZE = 200;
 
-
 // Represent the hex values of a given line
 export interface StateLine {
   key: string;
@@ -98,7 +97,6 @@ export async function processState(
     });
   });
 
-  
   manipulators.forEach((manipulator) => {
     manipulator.prepareWrite();
   });

@@ -68,7 +68,7 @@ const main = async () => {
   const delegatorsToFix = [];
   let totalRequests = 0;
   for (const state of delegatorState) {
-    const stateData = state[1].unwrap(); 
+    const stateData = state[1].unwrap();
     // @ts-ignore ParachainStakingDelegator removed requests in runtime 1700
     const requestData = stateData.requests.requests;
     requestData.forEach((request, collator) => {
