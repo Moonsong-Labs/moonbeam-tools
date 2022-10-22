@@ -1,5 +1,5 @@
 import Debug from "debug";
-import { Action, encodeStorageKey, Manipulator } from "../state-manipulator";
+import { Action, encodeStorageKey, Manipulator } from "../genesis-parser";
 import { hexToBn, nToHex } from "@polkadot/util";
 const debug = Debug("helper:round-manipulator");
 

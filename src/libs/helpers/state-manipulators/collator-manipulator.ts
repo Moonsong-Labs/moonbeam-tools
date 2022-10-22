@@ -5,7 +5,7 @@ import {
   encodeStorageKey,
   Manipulator,
   StateLine,
-} from "../state-manipulator";
+} from "../genesis-parser";
 const debug = Debug("helper:collator-manipulator");
 
 export class CollatorManipulator implements Manipulator {
