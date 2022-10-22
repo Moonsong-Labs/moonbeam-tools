@@ -3,12 +3,12 @@ import {
   Action,
   encodeStorageBlake128MapKey,
   encodeStorageKey,
-  Manipulator,
+  StateManipulator,
   StateLine,
 } from "../genesis-parser";
 const debug = Debug("helper:collator-manipulator");
 
-export class CollatorManipulator implements Manipulator {
+export class CollatorManipulator implements StateManipulator {
   private readonly newCollator: string;
   private readonly newSessionKey: string;
 
@@ -80,17 +80,11 @@ export class CollatorManipulator implements Manipulator {
   processWrite = ({ key, value }) => {
     if (key.startsWith(this.newAuthorMappingKey)) {
       debug(`Found new collator already existing session key: ${value}`);
-      return {
-        action: "remove" as Action,
-        extraLines: [],
-      };
+      return { action: "remove" as Action };
     }
     if (key.startsWith(this.newAuthorMappingKey)) {
       debug(`Found new collator already existing session key: ${value}`);
-      return {
-        action: "remove" as Action,
-        extraLines: [],
-      };
+      return { action: "remove" as Action };
     }
     if (key.startsWith(this.replacedAuthorMappingCollatorKey)) {
       debug(`Found replaced collator mapping key: ${value}`);

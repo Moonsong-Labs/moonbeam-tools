@@ -1,8 +1,8 @@
 import Debug from "debug";
-import { Action, encodeStorageKey, Manipulator } from "../genesis-parser";
+import { Action, encodeStorageKey, StateManipulator } from "../genesis-parser";
 const debug = Debug("helper:hrmp-manipulator");
 
-export class HRMPManipulator implements Manipulator {
+export class HRMPManipulator implements StateManipulator {
   private readonly revelantMessagingKey: string;
   private readonly lastDmqMqcHeadKey: string;
 

@@ -12,12 +12,26 @@ const BUFFER_LINE_SIZE = 200;
 // Represent the hex values of a given line
 export interface StateLine {
   key: string;
-  value: string;
+  value: any;
+}
+export interface LineMeta {
+  endWithComma: boolean;
+  indentSpaces: number;
 }
 
 export type Action = "remove" | "keep";
 
-export interface Manipulator {
+// The State Manipulator is called for everyline having a value, using the last known key
+// Ex:
+//   "bootNodes": [
+//     "/ip4/127.0.0.1/tcp/30333/p2p/12D3KooWC7wPZMC44rnA9X132J6uAudNQyARQq2rRpmvguD4oz2U",
+//     "/ip4/127.0.0.1/tcp/30334/ws/p2p/QmSk5HQbn6LhUwDiNMseVUjuRYhEtYj4aUZ6WfWoGURpdV"
+//   ],
+// Will execute twice with stateLine: {key: "bootNodes", value: "/ip4/127.0.0.1/...."}
+//
+// Ex:"0xa686a3043d0adcf2fa655e57bc595": "0x000040bd8b5b936b6c00000000000000"
+// Will execute with {key: "0xa686a3043d0adcf2fa655e57bc595", value: "0x000040bd8b5b936b6c00000000000000"}
+export interface StateManipulator {
   // Will get executed for each line of the state file during the read phase
   processRead: (line: StateLine) => void;
 
@@ -26,7 +40,7 @@ export interface Manipulator {
 
   // Will get executed for each line of the state file during the write phase
   // Can decide to remove/keep the original line and also add extra lines
-  processWrite: (line: StateLine) => { action: Action; extraLines: StateLine[] } | undefined;
+  processWrite: (line: StateLine) => { action: Action; extraLines?: StateLine[] } | undefined;
 }
 
 export function encodeStorageKey(module, name) {
@@ -39,24 +53,19 @@ export function encodeStorageBlake128MapKey(module, name, key) {
   );
 }
 
-export interface ParserOptions {
-  clearBootnodes: boolean;
-}
-
-// Read, and parse line by line the raw state file.
+// Read, and parse line by line the raw state file, in a fast way
 // Parsing has 2 passes:
 // - first, to read only (allowing to prepare data) calling processRead
 // - second, to delete/write/update the line calling processWrite
+//
+// It contains a lot of assumptions about the json file related to
+// how substrate output the export-state
+// (json is 2-spaces indexed, maximum of 1 key or value per line...)
 export async function processState(
   inputFile: string,
   destFile: string,
-  manipulators: Manipulator[],
-  options?: ParserOptions
+  manipulators: StateManipulator[]
 ) {
-  const opt = {
-    clearBootnodes: true,
-    ...(options || {}),
-  };
   if (!inputFile || !destFile) {
     throw new Error("Missing input and destination file");
   }
@@ -66,7 +75,7 @@ export async function processState(
   // Read each line and callback with the line and extracted key/value if available
   const processLines = async (
     inputFile: string,
-    callback: (line: string, stateLine?: StateLine) => void
+    callback: (line: string, stateLine?: StateLine, meta?: LineMeta) => void
   ) => {
     const inFile = await fs.open(inputFile, "r");
     const lineReaderPass = readline.createInterface({
@@ -74,25 +83,47 @@ export async function processState(
       crlfDelay: Infinity,
     });
 
-    let enteredRawState = false;
-    let exitedRawState = false;
+    let lastKnownKey = "";
     for await (const line of lineReaderPass) {
-      if (enteredRawState && exitedRawState) {
-        callback(line, null);
-        continue;
+      const keyValue = line.split('": ');
+      let value: string = null;
+      if (keyValue.length == 1) {
+        // line is not a traditional key:value (but can be an array value)
+        let i = 0;
+        for (; i < line.length; i += 2) {
+          if (line[i] != " ") {
+            break;
+          }
+        }
+        if (line[i] == "]" || line[i] == "}" || line[i] == "{" || line[i] == "[") {
+          callback(line, null);
+          continue;
+        }
+        if (line[i] == '"') {
+          // string value
+          value = line.split('"')[1];
+        } else {
+          value = line[line.length - 1] == "," ? line.slice(-1).trim() : line.trim();
+        }
+      } else {
+        // Where we have key:value line
+        lastKnownKey = keyValue[0].split('"')[1];
+        value =
+          keyValue[1][0] == '"'
+            ? keyValue[1].split('"')[1]
+            : keyValue[1][0] == "{" || keyValue[1][0] == "["
+            ? null
+            : keyValue[1].split(",")[0];
       }
-      if (!enteredRawState) {
-        enteredRawState = line.startsWith(`      "top"`);
-        callback(line, null);
-        continue;
+      const endWithComma = line[line.length - 1] == ",";
+      let indentSpaces;
+      for (indentSpaces = 0; indentSpaces < line.length; indentSpaces += 2) {
+        if (line[indentSpaces] != " ") {
+          break;
+        }
       }
-      if (enteredRawState && line.startsWith(`      }`)) {
-        exitedRawState = true;
-        callback(line, null);
-        continue;
-      }
-      const [, key, , value] = line.split('"');
-      callback(line, { key, value });
+
+      callback(line, { key: lastKnownKey, value }, { endWithComma, indentSpaces });
     }
     await inFile.close();
   };
@@ -116,9 +147,9 @@ export async function processState(
   // Adds extra to the buffer for each manipulator adding lines
   const lineBuffer = new Array(BUFFER_LINE_SIZE + manipulators.length + 1).fill(0);
   let lineSize = 0;
-  await processLines(inputFile, (line, stateLine) => {
+  await processLines(inputFile, (line, stateLine, lineMeta) => {
     let keepLine = true;
-    if (stateLine) {
+    if (stateLine && stateLine.value) {
       manipulators.map((manipulator) => {
         const result = manipulator.processWrite(stateLine);
         if (!result) {
@@ -134,24 +165,25 @@ export async function processState(
         if (action == "remove") {
           keepLine = false;
         }
-        if (extraLines.length > 0) {
+        if (extraLines && extraLines.length > 0) {
           for (const line of extraLines) {
             debug(
-              `      - ${chalk.green("add".padStart(6, " "))} ${line.key}: ${line.value.slice(
-                0,
-                100
-              )}`
+              `      - ${chalk.green("add".padStart(6, " "))} ${line.key}: ${line.value
+                .toString()
+                .slice(0, 100)}`
             );
           }
 
           lineBuffer[lineSize++] = extraLines
-            .map((extraLine) => `        "${extraLine.key}": "${extraLine.value}",\n`)
+            .map(
+              (extraLine) =>
+                `${new Array(lineMeta.indentSpaces).fill(" ").join("")}"${extraLine.key}": ${
+                  typeof extraLine.value == "string" ? `"${extraLine.value}"` : `${extraLine.value}`
+                },\n`
+            )
             .join("");
         }
       });
-    } else if (opt.clearBootnodes && line.startsWith(`    "/`)) {
-      debug(`      - ${chalk.red("remove".padStart(6, " "))} bootnode: ${line.slice(5, -1)}`);
-      keepLine = false;
     }
     if (keepLine) {
       lineBuffer[lineSize++] = `${line}\n`;

@@ -6,6 +6,7 @@ import { AuthorFilteringManipulator } from "../src/libs/helpers/state-manipulato
 import { BalancesManipulator } from "../src/libs/helpers/state-manipulators/balances-manipulator";
 import { CollatorManipulator } from "../src/libs/helpers/state-manipulators/collator-manipulator";
 import { HRMPManipulator } from "../src/libs/helpers/state-manipulators/hrmp-manipulator";
+import { SpecManipulator } from "../src/libs/helpers/state-manipulators/spec-manipulator";
 import { XCMPManipulator } from "../src/libs/helpers/state-manipulators/xcmp-manipulator";
 import { CollectiveManipulator } from "../src/libs/helpers/state-manipulators/collective-manipulator";
 import { ValidationManipulator } from "../src/libs/helpers/state-manipulators/validation-manipulator";
@@ -36,6 +37,13 @@ describe("State Manipulation", () => {
       new CollectiveManipulator("CouncilCollective", [JUDITH_ADDRESS]),
       new ValidationManipulator(),
       new XCMPManipulator(),
+      new SpecManipulator({
+        name: "My chain",
+        protocolId: "unk",
+        paraId: 1002,
+        clearBootnodes: true,
+        relayChain: "rococo-local",
+      }),
       new BalancesManipulator([
         { account: BALTATHAR_ADDRESS, amount: 10n * 10n ** 18n },
         { account: CHARLETH_ADDRESS, amount: 10_000_000n * 10n ** 18n },
@@ -181,5 +189,12 @@ describe("State Manipulation", () => {
         bitLength: 128,
       })
     );
+  });
+
+  it("Should have updated the chain specs", async () => {
+    expect(genesis.name).toEqual("My chain");
+    expect(genesis.protocolId).toEqual("unk");
+    expect(genesis.relayChain).toEqual("rococo-local");
+    expect(genesis.paraId).toEqual(1002);
   });
 });

@@ -1,9 +1,9 @@
 import { nToHex } from "@polkadot/util";
 import Debug from "debug";
-import { Action, encodeStorageKey, Manipulator } from "../genesis-parser";
+import { Action, encodeStorageKey, StateManipulator } from "../genesis-parser";
 const debug = Debug("helper:validation-manipulator");
 
-export class ValidationManipulator implements Manipulator {
+export class ValidationManipulator implements StateManipulator {
   private readonly validationDataKey: string;
   private readonly lastRelayChainBlockNumberKey: string;
   private readonly parentNumber: number;

@@ -1,9 +1,9 @@
 import { nToHex } from "@polkadot/util";
 import Debug from "debug";
-import { Action, encodeStorageKey, Manipulator } from "../genesis-parser";
+import { Action, encodeStorageKey, StateManipulator } from "../genesis-parser";
 const debug = Debug("helper:collective-manipulator");
 
-export class CollectiveManipulator implements Manipulator {
+export class CollectiveManipulator implements StateManipulator {
   private readonly collectiveName: string;
   private readonly collectiveMembersKey: string;
   private readonly newMembers: string[];

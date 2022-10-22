@@ -4,11 +4,11 @@ import {
   Action,
   encodeStorageBlake128MapKey,
   encodeStorageKey,
-  Manipulator,
+  StateManipulator,
 } from "../genesis-parser";
 const debug = Debug("helper:balances-manipulator");
 
-export class BalancesManipulator implements Manipulator {
+export class BalancesManipulator implements StateManipulator {
   private readonly balancesData: {
     account: string;
     targetAmount: bigint;

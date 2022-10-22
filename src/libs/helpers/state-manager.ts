@@ -12,6 +12,7 @@ import { ValidationManipulator } from "./state-manipulators/validation-manipulat
 import { XCMPManipulator } from "./state-manipulators/xcmp-manipulator";
 import { BalancesManipulator } from "./state-manipulators/balances-manipulator";
 import { ALITH_ADDRESS, ALITH_SESSION_ADDRESS } from "../../utils/constants";
+import { SpecManipulator } from "./state-manipulators/spec-manipulator";
 const debug = Debug("helper:state-manager");
 
 export type NetworkName = "moonbeam" | "moonriver" | "alphanet";
@@ -57,7 +58,9 @@ export async function downloadExportedState(network: NetworkName, outPath: strin
 
   const fileStream = (await fs.open(stateFile, "w")).createWriteStream();
 
-  debug(`Preparing to download ${stateFileName} to ${stateFile}`);
+  debug(
+    `Preparing to download ${stateFileName} (best-hash: ${downloadedStateInfo.best_hash}) to ${stateFile}`
+  );
   await stream(
     `https://s3.us-east-2.amazonaws.com/` +
       `snapshots.moonbeam.network/${STORAGE_NAMES[network]}/` +
@@ -67,7 +70,6 @@ export async function downloadExportedState(network: NetworkName, outPath: strin
   );
   await fs.writeFile(stateInfoFile, JSON.stringify(downloadedStateInfo));
   debug(`Downloaded ${stateFileName} to ${stateFile}`);
-
 
   return stateFile;
 }
@@ -80,6 +82,10 @@ export async function neutralizeExportedState(inFile: string, outFile: string) {
     new AuthorFilteringManipulator(100),
     new CollatorManipulator(ALITH_ADDRESS, ALITH_SESSION_ADDRESS),
     new HRMPManipulator(),
+    new SpecManipulator({
+      name: `Fork Network`,
+      relayChain: `rococo-local`,
+    }),
     new CollectiveManipulator("TechCommitteeCollective", [ALITH_ADDRESS]),
     new CollectiveManipulator("CouncilCollective", [ALITH_ADDRESS]),
     new ValidationManipulator(),
