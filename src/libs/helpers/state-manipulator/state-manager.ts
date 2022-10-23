@@ -3,16 +3,16 @@ import fs from "node:fs/promises";
 import { request, stream } from "undici";
 import path from "node:path";
 import { processState } from "./genesis-parser";
-import { RoundManipulator } from "./state-manipulators/round-manipulator";
-import { AuthorFilteringManipulator } from "./state-manipulators/author-filtering-manipulator";
-import { CollatorManipulator } from "./state-manipulators/collator-manipulator";
-import { HRMPManipulator } from "./state-manipulators/hrmp-manipulator";
-import { CollectiveManipulator } from "./state-manipulators/collective-manipulator";
-import { ValidationManipulator } from "./state-manipulators/validation-manipulator";
-import { XCMPManipulator } from "./state-manipulators/xcmp-manipulator";
-import { BalancesManipulator } from "./state-manipulators/balances-manipulator";
-import { ALITH_ADDRESS, ALITH_SESSION_ADDRESS } from "../../utils/constants";
-import { SpecManipulator } from "./state-manipulators/spec-manipulator";
+import { RoundManipulator } from "./round-manipulator";
+import { AuthorFilteringManipulator } from "./author-filtering-manipulator";
+import { CollatorManipulator } from "./collator-manipulator";
+import { HRMPManipulator } from "./hrmp-manipulator";
+import { CollectiveManipulator } from "./collective-manipulator";
+import { ValidationManipulator } from "./validation-manipulator";
+import { XCMPManipulator } from "./xcmp-manipulator";
+import { BalancesManipulator } from "./balances-manipulator";
+import { ALITH_ADDRESS, ALITH_SESSION_ADDRESS } from "../../../utils/constants";
+import { SpecManipulator } from "./spec-manipulator";
 const debug = Debug("helper:state-manager");
 
 export type NetworkName = "moonbeam" | "moonriver" | "alphanet";
@@ -74,6 +74,8 @@ export async function downloadExportedState(network: NetworkName, outPath: strin
   return stateFile;
 }
 
+// Customize a Moonbeam exported state spec to make it usable locally
+// It makes Alith the main collator and restore XCMP/HRMP data.
 export async function neutralizeExportedState(inFile: string, outFile: string) {
   await processState(inFile, outFile, [
     new RoundManipulator((current, first, length) => {

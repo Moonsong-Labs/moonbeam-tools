@@ -1,5 +1,5 @@
 import Debug from "debug";
-import { Action, encodeStorageKey, StateManipulator } from "../genesis-parser";
+import { Action, encodeStorageKey, StateManipulator } from "./genesis-parser";
 const debug = Debug("helper:xcmp-manipulator");
 
 export class XCMPManipulator implements StateManipulator {

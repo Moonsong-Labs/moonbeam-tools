@@ -5,7 +5,7 @@ import {
   encodeStorageBlake128MapKey,
   encodeStorageKey,
   StateManipulator,
-} from "../genesis-parser";
+} from "./genesis-parser";
 const debug = Debug("helper:balances-manipulator");
 
 export class BalancesManipulator implements StateManipulator {

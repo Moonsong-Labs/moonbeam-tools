@@ -1,1 +1,9 @@
-./scripts/
+/scripts
+/test
+/bins
+
+.vscode
+.github
+
+*.log
+*.bak
