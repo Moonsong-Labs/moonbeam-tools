@@ -92,107 +92,47 @@ async function main() {
     const storageHashDelegator = xxhashAsU8a(delegatorReserveToLockMigrations, 128);
     const storageHashCollator = xxhashAsU8a(collatorReserveToLockMigrations, 128);
 
-    const keyDelegator = u8aToHex(new Uint8Array([...palletHash, ...storageHashDelegator]));
-    const keyCollator = u8aToHex(new Uint8Array([...palletHash, ...storageHashCollator]));
+    const keyDelegator = new Uint8Array([...palletHash, ...storageHashDelegator]);
+    const keyCollator = new Uint8Array([...palletHash, ...storageHashCollator]);
     console.log(
-      `DelegatorReserveToLockMigrations ${keyDelegator}\nCollatorReserveToLockMigrations  ${keyCollator}`
+      `DelegatorReserveToLockMigrations ${u8aToHex(
+        keyDelegator
+      )}\nCollatorReserveToLockMigrations  ${u8aToHex(keyCollator)}`
     );
 
-    const keysToRemove: { key: StorageKey<AnyTuple>; storageSize: number }[] = [];
-    for (const keyPrefix of [
-      u8aToHex(new Uint8Array([...palletHash, ...storageHashDelegator])),
-      u8aToHex(new Uint8Array([...palletHash, ...storageHashCollator])),
-    ]) {
-      const keys = await promiseConcurrent(
-        10,
-        async (key: any) => {
-          return {
-            key: key,
-            storageSize:
-              (await api.rpc.state.getStorageSize(key, blockHash)).toNumber() + key.toU8a().length,
-          };
-        },
-        await api.rpc.state.getKeys(keyPrefix, blockHash)
-      );
-
-      keysToRemove.push(...keys);
-    }
-
-    const maxStorageSize = 100_000; // 100 kB
-    const maxKeys = 100000;
-    const batches: { storageSize: number; keys: StorageKey<AnyTuple>[] }[] = keysToRemove.reduce(
-      (acc, item) => {
-        // skip if item doesn't exist
-        if (item.storageSize === 0) {
-          return acc;
-        }
-
-        if (
-          acc.length == 0 ||
-          acc[acc.length - 1].storageSize + item.storageSize > maxStorageSize ||
-          acc[acc.length - 1].keys.length == maxKeys
-        ) {
-          if (acc.length !== 0) {
-            console.log(`batch[${acc.length}] ${acc[acc.length - 1].storageSize / 1024}kB`);
-          }
-          acc.push({ keys: [], storageSize: 0 });
-        }
-
-        acc[acc.length - 1].storageSize += item.storageSize;
-        acc[acc.length - 1].keys.push(item.key);
-        return acc;
-      },
-      [] as { storageSize: number; keys: StorageKey<AnyTuple>[] }[]
+    const txKillStorage = api.tx.utility.batch(
+      [keyDelegator, keyCollator].map((k) =>
+        api.tx.system.killPrefix(api.query.parachainStaking.atStake.keyPrefix(k), 1)
+      )
     );
+    const toPropose = api.tx.scheduler.scheduleAfter(0, null, 0, {
+      Value: txKillStorage,
+    });
+    let encodedProposal = toPropose?.method.toHex() || "";
+    let encodedHash = blake2AsHex(encodedProposal);
+    // console.log("Encoded proposal after schedule is", encodedProposal);
+    // console.log("Encoded proposal hash after schedule is", encodedHash);
+    // console.log("Encoded length", encodedProposal.length);
 
-    // console.log(batches);
-    for (const [i, batch] of batches.entries()) {
-      const txKillStorage =
-        batch.keys.length > 1
-          ? api.tx.utility.batchAll(
-              batch.keys.map((k) =>
-                api.tx.system.killPrefix(api.query.parachainStaking.atStake.keyPrefix(k), 1)
-              )
-            )
-          : api.tx.system.killPrefix(
-              api.query.parachainStaking.atStake.keyPrefix(batch.keys[0]),
-              1
-            );
-      // prepare the proposals
-      console.log(
-        `propose batch ${i} for block +${i + 1}: [Keys: ${
-          batch.keys.length
-        } - Storage: ${Math.floor(batch.storageSize / 1024)}kb]`
-      );
-      const toPropose = api.tx.scheduler.scheduleAfter(i + 1, null, 0, {
-        Value: txKillStorage,
-      });
-      let encodedProposal = toPropose?.method.toHex() || "";
-      let encodedHash = blake2AsHex(encodedProposal);
-      // console.log("Encoded proposal after schedule is", encodedProposal);
-      // console.log("Encoded proposal hash after schedule is", encodedHash);
-      // console.log("Encoded length", encodedProposal.length);
+    if (argv["sudo"]) {
+      await api.tx.sudo.sudo(toPropose).signAndSend(account, { nonce: nonce++ });
+    } else {
+      if (argv["send-preimage-hash"]) {
+        await api.tx.democracy
+          .notePreimage(encodedProposal)
+          .signAndSend(account, { nonce: nonce++ });
+      }
 
-      if (argv["sudo"]) {
-        await api.tx.sudo.sudo(toPropose).signAndSend(account, { nonce: nonce++ });
-      } else {
-        if (argv["send-preimage-hash"]) {
-          await api.tx.democracy
-            .notePreimage(encodedProposal)
-            .signAndSend(account, { nonce: nonce++ });
-        }
+      if (argv["send-proposal-as"] == "democracy") {
+        await api.tx.democracy
+          .propose(encodedHash, proposalAmount)
+          .signAndSend(account, { nonce: nonce++ });
+      } else if (argv["send-proposal-as"] == "council-external") {
+        let external = api.tx.democracy.externalProposeMajority(encodedHash);
 
-        if (argv["send-proposal-as"] == "democracy") {
-          await api.tx.democracy
-            .propose(encodedHash, proposalAmount)
-            .signAndSend(account, { nonce: nonce++ });
-        } else if (argv["send-proposal-as"] == "council-external") {
-          let external = api.tx.democracy.externalProposeMajority(encodedHash);
-
-          await api.tx.councilCollective
-            .propose(collectiveThreshold, external, external.length)
-            .signAndSend(account, { nonce: nonce++ });
-        }
+        await api.tx.councilCollective
+          .propose(collectiveThreshold, external, external.length)
+          .signAndSend(account, { nonce: nonce++ });
       }
     }
   } finally {
