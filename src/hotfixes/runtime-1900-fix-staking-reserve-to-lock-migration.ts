@@ -102,7 +102,7 @@ async function main() {
 
     const txKillStorage = api.tx.utility.batch(
       [keyDelegator, keyCollator].map((k) =>
-        api.tx.system.killPrefix(api.query.parachainStaking.atStake.keyPrefix(k), 1)
+        api.tx.system.killPrefix(k, 1)
       )
     );
     const toPropose = api.tx.scheduler.scheduleAfter(0, null, 0, {
