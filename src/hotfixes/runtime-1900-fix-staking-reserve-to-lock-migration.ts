@@ -18,6 +18,7 @@ import "@moonbeam-network/api-augment";
 import { ApiPromise, Keyring } from "@polkadot/api";
 import { getApiFor, NETWORK_YARGS_OPTIONS } from "../utils/networks";
 import { blake2AsHex, xxhashAsHex } from "@polkadot/util-crypto";
+import { numberToHex } from "@polkadot/util";
 
 const argv = yargs(process.argv.slice(2))
   .usage("Usage: $0")
@@ -86,57 +87,64 @@ async function main() {
       return keys.concat(await getAllKeys(api, prefix, keys[keys.length - 1]));
     }
 
-    const delegatorPrefix =
+    const delegatorPrefixBase =
       xxhashAsHex("ParachainStaking", 128) +
       xxhashAsHex("DelegatorReserveToLockMigrations", 128).slice(2);
-    const collatorPrefix =
+    const collatorPrefixBase =
       xxhashAsHex("ParachainStaking", 128) +
       xxhashAsHex("CollatorReserveToLockMigrations", 128).slice(2);
 
-    const delegatorKeys = await getAllKeys(api, delegatorPrefix);
-    const collatorKeys = await getAllKeys(api, collatorPrefix);
+    for (let i = 0; i < 256; i++) {
+      const delegatorPrefix = `${delegatorPrefixBase}${numberToHex(i).slice(2)}`;
+      const collatorPrefix = `${collatorPrefixBase}${numberToHex(i).slice(2)}`;
 
-    console.log(
-      `DelegatorReserveToLockMigrations: ${delegatorKeys.length
-        .toString()
-        .padStart(6, " ")} (prefix: ${delegatorPrefix})`
-    );
-    console.log(
-      ` CollatorReserveToLockMigrations: ${collatorKeys.length
-        .toString()
-        .padStart(6, " ")} (prefix: ${collatorPrefix})`
-    );
+      const delegatorKeys = await getAllKeys(api, delegatorPrefix);
+      const collatorKeys = await getAllKeys(api, collatorPrefix);
 
-    const toPropose = api.tx.utility.batch([
-      api.tx.system.remarkWithEvent("State cleanup: reserve-to-lock storage items 1/1"),
-      api.tx.system.killPrefix(delegatorPrefix, delegatorKeys.length),
-      api.tx.system.killPrefix(collatorPrefix, collatorKeys.length),
-    ]);
-    let encodedProposal = toPropose?.method.toHex() || "";
-    let encodedHash = blake2AsHex(encodedProposal);
-    console.log("Encoded proposal after schedule is", encodedProposal);
-    console.log("Encoded proposal hash after schedule is", encodedHash);
-    console.log("Encoded length", encodedProposal.length);
+      console.log(
+        `DelegatorReserveToLockMigrations: ${delegatorKeys.length
+          .toString()
+          .padStart(6, " ")} (prefix: ${delegatorPrefix})`
+      );
+      console.log(
+        ` CollatorReserveToLockMigrations: ${collatorKeys.length
+          .toString()
+          .padStart(6, " ")} (prefix: ${collatorPrefix})`
+      );
 
-    if (argv["sudo"]) {
-      await api.tx.sudo.sudo(toPropose).signAndSend(account, { nonce: nonce++ });
-    } else {
-      if (argv["send-preimage-hash"]) {
-        await api.tx.democracy
-          .notePreimage(encodedProposal)
-          .signAndSend(account, { nonce: nonce++ });
-      }
+      const toPropose = api.tx.scheduler.scheduleAfter(i + 1, null, 0, {
+        Value: api.tx.utility.batch([
+          api.tx.system.remarkWithEvent("State cleanup: reserve-to-lock storage items 1/1"),
+          api.tx.system.killPrefix(delegatorPrefix, delegatorKeys.length),
+          api.tx.system.killPrefix(collatorPrefix, collatorKeys.length),
+        ]),
+      });
+      let encodedProposal = toPropose?.method.toHex() || "";
+      let encodedHash = blake2AsHex(encodedProposal);
+      console.log("Encoded proposal after schedule is", encodedProposal);
+      console.log("Encoded proposal hash after schedule is", encodedHash);
+      console.log("Encoded length", encodedProposal.length);
 
-      if (argv["send-proposal-as"] == "democracy") {
-        await api.tx.democracy
-          .propose(encodedHash, proposalAmount)
-          .signAndSend(account, { nonce: nonce++ });
-      } else if (argv["send-proposal-as"] == "council-external") {
-        let external = api.tx.democracy.externalProposeMajority(encodedHash);
+      if (argv["sudo"]) {
+        await api.tx.sudo.sudo(toPropose).signAndSend(account, { nonce: nonce++ });
+      } else {
+        if (argv["send-preimage-hash"]) {
+          await api.tx.democracy
+            .notePreimage(encodedProposal)
+            .signAndSend(account, { nonce: nonce++ });
+        }
 
-        await api.tx.councilCollective
-          .propose(collectiveThreshold, external, external.length)
-          .signAndSend(account, { nonce: nonce++ });
+        if (argv["send-proposal-as"] == "democracy") {
+          await api.tx.democracy
+            .propose(encodedHash, proposalAmount)
+            .signAndSend(account, { nonce: nonce++ });
+        } else if (argv["send-proposal-as"] == "council-external") {
+          let external = api.tx.democracy.externalProposeMajority(encodedHash);
+
+          await api.tx.councilCollective
+            .propose(collectiveThreshold, external, external.length)
+            .signAndSend(account, { nonce: nonce++ });
+        }
       }
     }
   } finally {
