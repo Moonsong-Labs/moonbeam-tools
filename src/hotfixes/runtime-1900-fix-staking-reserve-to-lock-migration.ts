@@ -16,6 +16,7 @@ import yargs from "yargs";
 import "@polkadot/api-augment";
 import "@moonbeam-network/api-augment";
 import { ApiPromise, Keyring } from "@polkadot/api";
+import { KeyringPair } from "@polkadot/keyring/types";
 import { getApiFor, NETWORK_YARGS_OPTIONS } from "../utils/networks";
 import { blake2AsHex, xxhashAsHex } from "@polkadot/util-crypto";
 
@@ -65,7 +66,7 @@ async function main() {
     const collectiveThreshold = argv["collective-threshold"] || 1;
     const proposalAmount = api.consts.democracy.minimumDeposit;
 
-    let account;
+    let account: KeyringPair;
     let nonce;
     if (argv["account-priv-key"]) {
       account = keyring.addFromUri(argv["account-priv-key"], null, "ethereum");
@@ -107,10 +108,38 @@ async function main() {
         .padStart(6, " ")} (prefix: ${collatorPrefix})`
     );
 
+    const maxSubKeys = 2000; // 2000 subkeys by kill
+    const batchesCount = Math.ceil(delegatorKeys.length / maxSubKeys);
+    const delegatorkills = new Array(batchesCount).fill(0).map((index) => {
+      return api.tx.scheduler.scheduleAfter(index + 1, null, 0, {
+        Value: api.tx.utility.batch([
+          api.tx.utility.dispatchAs(
+            { system: { signed: account?.address } },
+
+            api.tx.system.remarkWithEvent(
+              `State cleanup: DelegatorReserveToLockMigrations storage batch ${
+                index + 1
+              }/${batchesCount} (keys: 2 - subkeys: ${
+                delegatorKeys.length + collatorPrefix.length
+              })`
+            )
+          ),
+          api.tx.system.killPrefix(delegatorPrefix, maxSubKeys),
+        ]),
+      });
+    });
+
     const toPropose = api.tx.utility.batch([
-      api.tx.system.remarkWithEvent("State cleanup: reserve-to-lock storage items 1/1"),
-      api.tx.system.killPrefix(delegatorPrefix, delegatorKeys.length),
+      api.tx.utility.dispatchAs(
+        { system: { signed: account?.address } },
+        api.tx.system.remarkWithEvent(
+          `State cleanup: CollatorReserveToLockMigrations storage batch ${1}/1 (keys: 2 - subkeys: ${
+            delegatorKeys.length + collatorPrefix.length
+          })`
+        )
+      ),
       api.tx.system.killPrefix(collatorPrefix, collatorKeys.length),
+      ...delegatorkills,
     ]);
     let encodedProposal = toPropose?.method.toHex() || "";
     let encodedHash = blake2AsHex(encodedProposal);
@@ -133,6 +162,7 @@ async function main() {
           .signAndSend(account, { nonce: nonce++ });
       } else if (argv["send-proposal-as"] == "council-external") {
         let external = api.tx.democracy.externalProposeMajority(encodedHash);
+        console.log(external);
 
         await api.tx.councilCollective
           .propose(collectiveThreshold, external, external.length)
@@ -140,7 +170,7 @@ async function main() {
       }
     }
   } finally {
-    await api.disconnect();
+    //await api.disconnect();
   }
 }
 
