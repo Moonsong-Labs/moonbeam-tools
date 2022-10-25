@@ -17,11 +17,16 @@ const argv = yargs(process.argv.slice(2))
       description: "Network to retrieve the exported state for",
       demandOption: true,
     },
+    "state-folder": {
+      type: "string",
+      description: "Folder where to store the state",
+      demandOption: true,
+    },
   }).argv;
 
 const main = async () => {
-  await fs.mkdir(`/tmp/fork-test/states`, { recursive: true });
-  const file = await downloadExportedState(argv.network as NetworkName, `/tmp/fork-test/states`);
+  // await fs.mkdir(argv["state-folder"], { recursive: true });
+  const file = await downloadExportedState(argv.network as NetworkName, argv["state-folder"]);
   await neutralizeExportedState(file, file.replace(/.json$/, ".mod.json"));
 };
 
