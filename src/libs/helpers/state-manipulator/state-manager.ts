@@ -42,7 +42,7 @@ export async function downloadExportedState(network: NetworkName, outPath: strin
     await request(
       `https://s3.us-east-2.amazonaws.com/` +
         `snapshots.moonbeam.network/${STORAGE_NAMES[network]}/` +
-        `latest/${stateInfoFileName}`
+        `latest/${STORAGE_NAMES[network]}-chain-info.json`
     )
   ).body.json();
 
@@ -64,7 +64,7 @@ export async function downloadExportedState(network: NetworkName, outPath: strin
   await stream(
     `https://s3.us-east-2.amazonaws.com/` +
       `snapshots.moonbeam.network/${STORAGE_NAMES[network]}/` +
-      `latest/${stateFileName}`,
+      `latest/${STORAGE_NAMES[network]}-state.json`,
     { method: "GET" },
     () => fileStream
   );
