@@ -108,6 +108,7 @@ async function main() {
     );
 
     const toPropose = api.tx.utility.batch([
+      api.tx.system.remarkWithEvent("State cleanup: reserve-to-lock storage items 1/1"),
       api.tx.system.killPrefix(delegatorPrefix, delegatorKeys.length),
       api.tx.system.killPrefix(collatorPrefix, collatorKeys.length),
     ]);
