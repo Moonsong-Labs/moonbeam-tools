@@ -14,6 +14,7 @@ Ex: ./node_modules/.bin/ts-node-transpile-only src/hotfixes/runtime-1900-fix-at-
    --account-priv-key <key> \
 */
 import yargs from "yargs";
+import chalk from "chalk";
 import Debug from "debug";
 import "@polkadot/api-augment";
 import "@moonbeam-network/api-augment";
@@ -187,8 +188,8 @@ async function main() {
         p[v.round].storageSize += v.storageSize;
         return p;
       }, {});
-    const maxStorageSize = 1_000_000; // 1MB
-    const maxCall = 100; // 1MB
+    const maxStorageSize = 500_000; // 500kb
+    const maxCall = 500; // 500 calls per batch
     console.log(
       `hotfixing ${keysToRemove.length} accounts through ${
         Object.keys(roundsToRemove).length
@@ -203,13 +204,16 @@ async function main() {
         p[p.length - 1].storageSize + round.storageSize > maxStorageSize ||
         p[p.length - 1].rounds.length == maxCall
       ) {
-        p.push({ totalCandidates: 0, storageSize: 0, rounds: [] });
+        p.push({ totalCandidates: 0, storageSize: 0, extrinsicSize: 0, rounds: [] });
       }
       p[p.length - 1].totalCandidates += round.candidates;
       p[p.length - 1].storageSize += round.storageSize;
+      p[p.length - 1].extrinsicSize += api.tx.system
+        .killPrefix(api.query.parachainStaking.atStake.keyPrefix(roundNumber), 1000)
+        .toU8a().length;
       p[p.length - 1].rounds.push({ round: roundNumber, candidates: round.candidates });
       return p;
-    }, [] as { totalCandidates: number; storageSize: number; rounds: { round: number; candidates: number }[] }[]);
+    }, [] as { totalCandidates: number; extrinsicSize: number; storageSize: number; rounds: { round: number; candidates: number }[] }[]);
 
     const batchCount = batches.length;
     for (const [i, batch] of batches.entries()) {
@@ -219,7 +223,9 @@ async function main() {
         batch.rounds.length > 1
           ? api.tx.utility.batchAll([
               api.tx.system.remarkWithEvent(
-                `State cleanup: at-stake-old-round storage items ${i + 1}/${batchCount}`
+                `State cleanup: at-stake-old-round storage batch ${i + 1}/${batchCount} (keys: ${
+                  batch.rounds.length
+                } - storage: ~${Math.floor(batch.storageSize / 1024)}kB)`
               ),
               ...batch.rounds.map(({ round, candidates }) =>
                 api.tx.system.killPrefix(
@@ -236,7 +242,9 @@ async function main() {
       console.log(
         `propose batch ${i} for block +${i + 1}: [Rounds: ${batch.rounds.length} - Candidates: ${
           batch.totalCandidates
-        } - Storage: ${Math.floor(batch.storageSize / 1024)}kB]`
+        } - Extrinsic: ${chalk.red(
+          `${Math.floor(batch.extrinsicSize / 1024)}kB`
+        )} - Storage: ${chalk.red(`${Math.floor(batch.storageSize / 1024)}kB`)}]`
       );
       const toPropose = api.tx.scheduler.scheduleAfter(i + 1, null, 0, {
         Value: txKillStorage,
