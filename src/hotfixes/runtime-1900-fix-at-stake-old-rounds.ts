@@ -222,7 +222,7 @@ async function main() {
       const txKillStorage =
         batch.rounds.length > 1
           ? api.tx.utility.batchAll([
-              api.tx.system.remarkWithEvent(
+              api.tx.system.remark(
                 `State cleanup: at-stake-old-round storage batch ${i + 1}/${batchCount} (keys: ${
                   batch.rounds.length
                 } - storage: ~${Math.floor(batch.storageSize / 1024)}kB)`
