@@ -108,47 +108,25 @@ async function main() {
         .padStart(6, " ")} (prefix: ${collatorPrefix})`
     );
 
-    const maxSubKeys = 2000; // 2000 subkeys by kill
-    const batchesCount = Math.ceil(delegatorKeys.length / maxSubKeys);
-    const delegatorkills = new Array(batchesCount).fill(0).map((index) => {
-      return api.tx.scheduler.scheduleAfter(index + 1, null, 0, {
-        Value: api.tx.utility.batch([
-          api.tx.utility.dispatchAs(
-            { system: { signed: account?.address } },
-
-            api.tx.system.remarkWithEvent(
-              `State cleanup: DelegatorReserveToLockMigrations storage batch ${
-                index + 1
-              }/${batchesCount} (keys: 2 - subkeys: ${
-                delegatorKeys.length + collatorPrefix.length
-              })`
-            )
-          ),
-          api.tx.system.killPrefix(delegatorPrefix, maxSubKeys),
-        ]),
-      });
-    });
-
-    const toPropose = api.tx.utility.batch([
-      api.tx.utility.dispatchAs(
-        { system: { signed: account?.address } },
-        api.tx.system.remarkWithEvent(
-          `State cleanup: CollatorReserveToLockMigrations storage batch ${1}/1 (keys: 2 - subkeys: ${
-            delegatorKeys.length + collatorPrefix.length
-          })`
-        )
+    const proposal = api.tx.utility.batch([
+      api.tx.system.remark(
+        `State cleanup: CollatorReserveToLockMigrations storage (keys: 1 - subkeys: ${collatorKeys.length})`
       ),
       api.tx.system.killPrefix(collatorPrefix, collatorKeys.length),
-      ...delegatorkills,
+      api.tx.system.remark(
+        `State cleanup: DelegatorReserveToLockMigrations storage (keys: 1 - subkeys: ${delegatorKeys.length})`
+      ),
+      api.tx.system.killPrefix(delegatorPrefix, delegatorKeys.length),
     ]);
-    let encodedProposal = toPropose?.method.toHex() || "";
+
+    let encodedProposal = proposal.method.toHex();
     let encodedHash = blake2AsHex(encodedProposal);
     console.log("Encoded proposal after schedule is", encodedProposal);
     console.log("Encoded proposal hash after schedule is", encodedHash);
     console.log("Encoded length", encodedProposal.length);
 
     if (argv["sudo"]) {
-      await api.tx.sudo.sudo(toPropose).signAndSend(account, { nonce: nonce++ });
+      await api.tx.sudo.sudo(proposal).signAndSend(account, { nonce: nonce++ });
     } else {
       if (argv["send-preimage-hash"]) {
         await api.tx.democracy
@@ -170,7 +148,7 @@ async function main() {
       }
     }
   } finally {
-    //await api.disconnect();
+    await api.disconnect();
   }
 }
 
