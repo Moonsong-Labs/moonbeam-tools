@@ -211,19 +211,23 @@ async function main() {
       return p;
     }, [] as { totalCandidates: number; storageSize: number; rounds: { round: number; candidates: number }[] }[]);
 
+    const batchCount = batches.length;
     for (const [i, batch] of batches.entries()) {
       // console.log(`using key: ${api.query.parachainStaking.atStake.keyPrefix(batch.rounds[0])}`);
 
       const txKillStorage =
         batch.rounds.length > 1
-          ? api.tx.utility.batchAll(
-              batch.rounds.map(({ round, candidates }) =>
+          ? api.tx.utility.batchAll([
+              api.tx.system.remarkWithEvent(
+                `State cleanup: at-stake-old-round storage items ${i + 1}/${batchCount}`
+              ),
+              ...batch.rounds.map(({ round, candidates }) =>
                 api.tx.system.killPrefix(
                   api.query.parachainStaking.atStake.keyPrefix(round),
                   candidates + 1
                 )
-              )
-            )
+              ),
+            ])
           : api.tx.system.killPrefix(
               api.query.parachainStaking.atStake.keyPrefix(batch.rounds[0].round),
               batch.rounds[0].candidates + 1
