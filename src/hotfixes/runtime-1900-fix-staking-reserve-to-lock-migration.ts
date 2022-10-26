@@ -19,6 +19,7 @@ import { ApiPromise, Keyring } from "@polkadot/api";
 import { KeyringPair } from "@polkadot/keyring/types";
 import { getApiFor, NETWORK_YARGS_OPTIONS } from "../utils/networks";
 import { blake2AsHex, xxhashAsHex } from "@polkadot/util-crypto";
+import { monitorSubmittedExtrinsic, waitForAllMonitoredExtrinsics } from "src/utils/monitoring";
 
 const argv = yargs(process.argv.slice(2))
   .usage("Usage: $0")
@@ -41,6 +42,8 @@ const argv = yargs(process.argv.slice(2))
       demandOption: false,
       alias: "s",
     },
+    "fast-track": { type: "boolean", demandOption: false },
+    vote: { type: "boolean", demandOption: false },
     "collective-threshold": { type: "number", demandOption: false, alias: "c" },
     "at-block": { type: "number", demandOption: false },
   })
@@ -126,28 +129,66 @@ async function main() {
     console.log("Encoded length", encodedProposal.length);
 
     if (argv["sudo"]) {
-      await api.tx.sudo.sudo(proposal).signAndSend(account, { nonce: nonce++ });
+      await api.tx.sudo
+        .sudo(proposal)
+        .signAndSend(account, { nonce: nonce++ }, monitorSubmittedExtrinsic(api, { id: "sudo" }));
     } else {
+      let refCount = (await api.query.democracy.referendumCount()).toNumber();
       if (argv["send-preimage-hash"]) {
         await api.tx.democracy
           .notePreimage(encodedProposal)
-          .signAndSend(account, { nonce: nonce++ });
+          .signAndSend(
+            account,
+            { nonce: nonce++ },
+            monitorSubmittedExtrinsic(api, { id: "preimage" })
+          );
       }
 
       if (argv["send-proposal-as"] == "democracy") {
         await api.tx.democracy
           .propose(encodedHash, proposalAmount)
-          .signAndSend(account, { nonce: nonce++ });
+          .signAndSend(
+            account,
+            { nonce: nonce++ },
+            monitorSubmittedExtrinsic(api, { id: "proposal" })
+          );
       } else if (argv["send-proposal-as"] == "council-external") {
         let external = api.tx.democracy.externalProposeMajority(encodedHash);
-        console.log(external);
 
         await api.tx.councilCollective
           .propose(collectiveThreshold, external, external.length)
-          .signAndSend(account, { nonce: nonce++ });
+          .signAndSend(
+            account,
+            { nonce: nonce++ },
+            monitorSubmittedExtrinsic(api, { id: "proposal" })
+          );
+
+        if (argv["fast-track"]) {
+          let fastTrack = api.tx.democracy.fastTrack(encodedHash, 1, 0);
+
+          await api.tx.techCommitteeCollective
+            .propose(collectiveThreshold, fastTrack, fastTrack.length)
+            .signAndSend(
+              account,
+              { nonce: nonce++ },
+              monitorSubmittedExtrinsic(api, { id: "fast-track" })
+            );
+        }
+      }
+
+      if (argv["vote"]) {
+        await api.tx.democracy
+          .vote(refCount, {
+            Standard: {
+              balance: 1n * 10n ** BigInt(api.registry.chainDecimals[0]),
+              vote: { aye: true, conviction: 1 },
+            },
+          })
+          .signAndSend(account, { nonce: nonce++ }, monitorSubmittedExtrinsic(api, { id: "vote" }));
       }
     }
   } finally {
+    await waitForAllMonitoredExtrinsics();
     await api.disconnect();
   }
 }

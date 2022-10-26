@@ -2,6 +2,7 @@ import type { ApiPromise } from "@polkadot/api";
 import type { Extrinsic, BlockHash, EventRecord } from "@polkadot/types/interfaces";
 import type { Block } from "@polkadot/types/interfaces/runtime/types";
 import { Data, GenericEthereumAccountId, Option, u128, u8, bool } from "@polkadot/types";
+import { ISubmittableResult } from "@polkadot/types/types";
 import type { EthereumTransactionTransactionV2 } from "@polkadot/types/lookup";
 import type { LegacyTransaction } from "@polkadot/types/interfaces/eth";
 import { u8aToString } from "@polkadot/util";
@@ -558,4 +559,52 @@ export function printBlockDetails(
   previousBlockDetails?: BlockDetails | RealtimeBlockDetails
 ) {
   console.log(generateBlockDetailsLog(blockDetails, options, previousBlockDetails));
+}
+
+// Probably move those monitoring function to a class or own module
+const monitoringPromises: Promise<void>[] = [];
+export function monitorSubmittedExtrinsic(
+  api: ApiPromise,
+  { id, verbose }: { id?: string; verbose?: boolean } = { id: "", verbose: false }
+) {
+  const formattedId = id.toString().padEnd(10, " ");
+  let resolve: (value: void | PromiseLike<void>) => void;
+  monitoringPromises.push(new Promise<void>((r) => (resolve = r)));
+  return (data: ISubmittableResult) => {
+    const { events = [], status } = data;
+    if (verbose) {
+      console.log(`${formattedId} Transaction status: ${status.type}", `);
+    }
+
+    if (status.isInBlock) {
+      if (verbose) {
+        console.log(`${formattedId} Included at block hash ${status.asInBlock.toHex()}`);
+        console.log(`${formattedId} Events: `);
+      }
+      events.forEach(({ event: { data, method, section } }) => {
+        const [error] = data as any[];
+        if (error?.isModule) {
+          const { docs, name, section } = api.registry.findMetaError(error.asModule);
+          console.log(`${formattedId} \t`, `${chalk.red(`${section}.${name}`)}`, `${docs}`);
+        } else if (section == "system" && method == "ExtrinsicSuccess") {
+          console.log(`${formattedId} \t`, chalk.green(`${section}.${method}`), data.toString());
+        } else {
+          if (verbose) {
+            console.log(`${formattedId} \t`, `${section}.${method}`, data.toString());
+          }
+        }
+      });
+      resolve();
+    } else if (status.isDropped || status.isInvalid || status.isRetracted) {
+      console.log(
+        `${formattedId} There was a problem with the extrinsic, status : `,
+        status.isDropped ? "Dropped" : status.isInvalid ? "isInvalid" : "isRetracted"
+      );
+      resolve();
+    }
+  };
+}
+
+export async function waitForAllMonitoredExtrinsics() {
+  await Promise.all(monitoringPromises);
 }

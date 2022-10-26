@@ -23,6 +23,7 @@ import { getApiFor, NETWORK_YARGS_OPTIONS } from "../utils/networks";
 import { BN } from "@polkadot/util";
 import { blake2AsHex } from "@polkadot/util-crypto";
 import { promiseConcurrent } from "../utils/functions";
+import { monitorSubmittedExtrinsic, waitForAllMonitoredExtrinsics } from "../utils/monitoring";
 const debug = Debug("hotfix:1900-at-stake");
 
 const argv = yargs(process.argv.slice(2))
@@ -46,6 +47,8 @@ const argv = yargs(process.argv.slice(2))
       demandOption: false,
       alias: "s",
     },
+    "fast-track": { type: "boolean", demandOption: false },
+    vote: { type: "boolean", demandOption: false },
     "collective-threshold": { type: "number", demandOption: false, alias: "c" },
     "at-block": { type: "number", demandOption: false },
   })
@@ -189,95 +192,155 @@ async function main() {
         return p;
       }, {});
     const maxStorageSize = 500_000; // 500kb
+    const maxExtrinsicSize = 500_000; // 500kb
     const maxCall = 500; // 500 calls per batch
     console.log(
-      `hotfixing ${keysToRemove.length} accounts through ${
+      `Found ${keysToRemove.length} keys through ${
         Object.keys(roundsToRemove).length
-      } (max [storage: ${maxStorageSize}, calls: ${maxCall}] per batch)`
+      } rounds (oldest: ${Math.min(
+        ...(Object.keys(roundsToRemove) as any)
+      )}, most recent: ${Math.max(...(Object.keys(roundsToRemove) as any))})`
+    );
+    console.log(
+      `Applying batch limits: [storage: ${Math.floor(
+        maxStorageSize / 1000
+      )}kB, extrinsic: ${Math.floor(maxExtrinsicSize / 1000)}kB, calls: ${maxCall}]`
     );
 
     // We make batches of maxium ${maxAccountPerBatch} by adding 1 by 1
     const batches = Object.keys(roundsToRemove).reduce((p, roundNumber: any) => {
       const round = roundsToRemove[roundNumber];
+      const extrinsicSize = api.tx.system
+        .killPrefix(api.query.parachainStaking.atStake.keyPrefix(roundNumber), 1000)
+        .toU8a().length;
       if (
         p.length == 0 ||
         p[p.length - 1].storageSize + round.storageSize > maxStorageSize ||
+        p[p.length - 1].extrinsicSize + extrinsicSize > maxExtrinsicSize ||
         p[p.length - 1].rounds.length == maxCall
       ) {
         p.push({ totalCandidates: 0, storageSize: 0, extrinsicSize: 0, rounds: [] });
       }
       p[p.length - 1].totalCandidates += round.candidates;
       p[p.length - 1].storageSize += round.storageSize;
-      p[p.length - 1].extrinsicSize += api.tx.system
-        .killPrefix(api.query.parachainStaking.atStake.keyPrefix(roundNumber), 1000)
-        .toU8a().length;
+      p[p.length - 1].extrinsicSize += extrinsicSize;
       p[p.length - 1].rounds.push({ round: roundNumber, candidates: round.candidates });
       return p;
     }, [] as { totalCandidates: number; extrinsicSize: number; storageSize: number; rounds: { round: number; candidates: number }[] }[]);
 
     const batchCount = batches.length;
-    for (const [i, batch] of batches.entries()) {
+
+    const allProposals = batches.map((batch, i) => {
       // console.log(`using key: ${api.query.parachainStaking.atStake.keyPrefix(batch.rounds[0])}`);
 
-      const txKillStorage =
-        batch.rounds.length > 1
-          ? api.tx.utility.batchAll([
-              api.tx.system.remark(
-                `State cleanup: at-stake-old-round storage batch ${i + 1}/${batchCount} (keys: ${
-                  batch.rounds.length
-                } - storage: ~${Math.floor(batch.storageSize / 1024)}kB)`
-              ),
-              ...batch.rounds.map(({ round, candidates }) =>
-                api.tx.system.killPrefix(
-                  api.query.parachainStaking.atStake.keyPrefix(round),
-                  candidates + 1
-                )
-              ),
-            ])
-          : api.tx.system.killPrefix(
-              api.query.parachainStaking.atStake.keyPrefix(batch.rounds[0].round),
-              batch.rounds[0].candidates + 1
-            );
-      // prepare the proposals
       console.log(
         `propose batch ${i} for block +${i + 1}: [Rounds: ${batch.rounds.length} - Candidates: ${
           batch.totalCandidates
         } - Extrinsic: ${chalk.red(
-          `${Math.floor(batch.extrinsicSize / 1024)}kB`
-        )} - Storage: ${chalk.red(`${Math.floor(batch.storageSize / 1024)}kB`)}]`
+          `${Math.floor(batch.extrinsicSize / 1000)}kB`
+        )} - Storage: ${chalk.red(`${Math.floor(batch.storageSize / 1000)}kB`)}]`
       );
-      const toPropose = api.tx.scheduler.scheduleAfter(i + 1, null, 0, {
-        Value: txKillStorage,
+      // prepare the proposals
+      return api.tx.scheduler.scheduleAfter(i + 1, null, 0, {
+        Value:
+          batch.rounds.length > 1
+            ? api.tx.utility.batchAll([
+                api.tx.system.remark(
+                  `State cleanup: at-stake-old-round storage batch ${i + 1}/${batchCount} (keys: ${
+                    batch.rounds.length
+                  } - storage: ~${Math.floor(batch.storageSize / 1000)}kB)`
+                ),
+                ...batch.rounds.map(({ round, candidates }) =>
+                  api.tx.system.killPrefix(
+                    api.query.parachainStaking.atStake.keyPrefix(round),
+                    candidates + 1
+                  )
+                ),
+              ])
+            : api.tx.system.killPrefix(
+                api.query.parachainStaking.atStake.keyPrefix(batch.rounds[0].round),
+                batch.rounds[0].candidates + 1
+              ),
       });
-      let encodedProposal = toPropose?.method.toHex() || "";
-      let encodedHash = blake2AsHex(encodedProposal);
-      // console.log("Encoded proposal after schedule is", encodedProposal);
-      // console.log("Encoded proposal hash after schedule is", encodedHash);
-      // console.log("Encoded length", encodedProposal.length);
+    });
 
-      if (argv["sudo"]) {
-        await api.tx.sudo.sudo(toPropose).signAndSend(account, { nonce: nonce++ });
-      } else {
-        if (argv["send-preimage-hash"]) {
-          await api.tx.democracy
-            .notePreimage(encodedProposal)
-            .signAndSend(account, { nonce: nonce++ });
+    const finalProposal = api.tx.utility.batchAll(allProposals);
+
+    let encodedProposal = finalProposal.method.toHex();
+    let encodedHash = blake2AsHex(encodedProposal);
+
+    console.log(
+      `propose all-in batch Extrinsic: ${chalk.red(
+        `${Math.floor(finalProposal.toU8a().length / 1000)}kB`
+      )} - hash: ${encodedHash}`
+    );
+    if (finalProposal.toU8a().length > maxExtrinsicSize) {
+      throw new Error(
+        `Final proposal is too big: ${finalProposal.toU8a().length} (limit: ${maxExtrinsicSize})`
+      );
+    }
+
+    if (argv["sudo"]) {
+      await api.tx.sudo
+        .sudo(finalProposal)
+        .signAndSend(account, { nonce: nonce++ }, monitorSubmittedExtrinsic(api, { id: "sudo" }));
+    } else {
+      let refCount = (await api.query.democracy.referendumCount()).toNumber();
+      if (argv["send-preimage-hash"]) {
+        await api.tx.democracy
+          .notePreimage(encodedProposal)
+          .signAndSend(
+            account,
+            { nonce: nonce++ },
+            monitorSubmittedExtrinsic(api, { id: "preimage" })
+          );
+      }
+
+      if (argv["send-proposal-as"] == "democracy") {
+        await api.tx.democracy
+          .propose(encodedHash, proposalAmount)
+          .signAndSend(
+            account,
+            { nonce: nonce++ },
+            monitorSubmittedExtrinsic(api, { id: "proposal" })
+          );
+      } else if (argv["send-proposal-as"] == "council-external") {
+        let external = api.tx.democracy.externalProposeMajority(encodedHash);
+
+        await api.tx.councilCollective
+          .propose(collectiveThreshold, external, external.length)
+          .signAndSend(
+            account,
+            { nonce: nonce++ },
+            monitorSubmittedExtrinsic(api, { id: "proposal" })
+          );
+
+        if (argv["fast-track"]) {
+          let fastTrack = api.tx.democracy.fastTrack(encodedHash, 1, 0);
+
+          await api.tx.techCommitteeCollective
+            .propose(collectiveThreshold, fastTrack, fastTrack.length)
+            .signAndSend(
+              account,
+              { nonce: nonce++ },
+              monitorSubmittedExtrinsic(api, { id: "fast-track" })
+            );
         }
+      }
 
-        if (argv["send-proposal-as"] == "democracy") {
-          await api.tx.democracy
-            .propose(encodedHash, proposalAmount)
-            .signAndSend(account, { nonce: nonce++ });
-        } else if (argv["send-proposal-as"] == "council-external") {
-          let external = api.tx.democracy.externalProposeMajority(encodedHash);
-
-          await api.tx.councilCollective
-            .propose(collectiveThreshold, external, external.length)
-            .signAndSend(account, { nonce: nonce++ });
-        }
+      if (argv["vote"]) {
+        await api.tx.democracy
+          .vote(refCount, {
+            Standard: {
+              balance: 1n * 10n ** BigInt(api.registry.chainDecimals[0]),
+              vote: { aye: true, conviction: 1 },
+            },
+          })
+          .signAndSend(account, { nonce: nonce++ }, monitorSubmittedExtrinsic(api, { id: "vote" }));
       }
     }
   } finally {
+    await waitForAllMonitoredExtrinsics();
     await api.disconnect();
   }
 }
