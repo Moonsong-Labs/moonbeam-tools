@@ -1,15 +1,16 @@
 import path from "node:path";
 import fs from "node:fs/promises";
-import { processState } from "../src/libs/helpers/genesis-parser";
-import { RoundManipulator } from "../src/libs/helpers/state-manipulators/round-manipulator";
-import { AuthorFilteringManipulator } from "../src/libs/helpers/state-manipulators/author-filtering-manipulator";
-import { BalancesManipulator } from "../src/libs/helpers/state-manipulators/balances-manipulator";
-import { CollatorManipulator } from "../src/libs/helpers/state-manipulators/collator-manipulator";
-import { HRMPManipulator } from "../src/libs/helpers/state-manipulators/hrmp-manipulator";
-import { SpecManipulator } from "../src/libs/helpers/state-manipulators/spec-manipulator";
-import { XCMPManipulator } from "../src/libs/helpers/state-manipulators/xcmp-manipulator";
-import { CollectiveManipulator } from "../src/libs/helpers/state-manipulators/collective-manipulator";
-import { ValidationManipulator } from "../src/libs/helpers/state-manipulators/validation-manipulator";
+import { processState } from "../src/libs/helpers/state-manipulator/genesis-parser";
+import { RoundManipulator } from "../src/libs/helpers/state-manipulator/round-manipulator";
+import { SudoManipulator } from "../src/libs/helpers/state-manipulator/sudo-manipulator";
+import { AuthorFilteringManipulator } from "../src/libs/helpers/state-manipulator/author-filtering-manipulator";
+import { BalancesManipulator } from "../src/libs/helpers/state-manipulator/balances-manipulator";
+import { CollatorManipulator } from "../src/libs/helpers/state-manipulator/collator-manipulator";
+import { HRMPManipulator } from "../src/libs/helpers/state-manipulator/hrmp-manipulator";
+import { SpecManipulator } from "../src/libs/helpers/state-manipulator/spec-manipulator";
+import { XCMPManipulator } from "../src/libs/helpers/state-manipulator/xcmp-manipulator";
+import { CollectiveManipulator } from "../src/libs/helpers/state-manipulator/collective-manipulator";
+import { ValidationManipulator } from "../src/libs/helpers/state-manipulator/validation-manipulator";
 import {
   CHARLETH_ADDRESS,
   CHARLETH_SESSION_ADDRESS,
@@ -30,6 +31,7 @@ describe("State Manipulation", () => {
       new RoundManipulator((current, first, length) => {
         return { current, first: 0, length: 100 };
       }),
+      new SudoManipulator(JUDITH_ADDRESS),
       new AuthorFilteringManipulator(100),
       new CollatorManipulator(CHARLETH_ADDRESS, CHARLETH_SESSION_ADDRESS),
       new HRMPManipulator(),
@@ -196,5 +198,11 @@ describe("State Manipulation", () => {
     expect(genesis.protocolId).toEqual("unk");
     expect(genesis.relayChain).toEqual("rococo-local");
     expect(genesis.paraId).toEqual(1002);
+  });
+
+  it("Should have updated the sudo keys", async () => {
+    expect(
+      finalState["0x5c0d1176a568c1f92944340dbfed9e9c530ebca703c85910e7164cb7d1c9e47b"]
+    ).toEqual(JUDITH_ADDRESS);
   });
 });

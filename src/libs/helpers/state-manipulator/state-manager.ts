@@ -13,6 +13,7 @@ import { XCMPManipulator } from "./xcmp-manipulator";
 import { BalancesManipulator } from "./balances-manipulator";
 import { ALITH_ADDRESS, ALITH_SESSION_ADDRESS } from "../../../utils/constants";
 import { SpecManipulator } from "./spec-manipulator";
+import { SudoManipulator } from "./sudo-manipulator";
 const debug = Debug("helper:state-manager");
 
 export type NetworkName = "moonbeam" | "moonriver" | "alphanet";
@@ -82,6 +83,7 @@ export async function neutralizeExportedState(inFile: string, outFile: string) {
       return { current, first: 0, length: 100 };
     }),
     new AuthorFilteringManipulator(100),
+    new SudoManipulator(ALITH_ADDRESS),
     new CollatorManipulator(ALITH_ADDRESS, ALITH_SESSION_ADDRESS),
     new HRMPManipulator(),
     new SpecManipulator({
