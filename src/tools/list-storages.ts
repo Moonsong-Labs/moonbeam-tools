@@ -12,10 +12,12 @@ const argv = yargs(process.argv.slice(2))
 const main = async () => {
   const api = await getApiFor(argv);
 
-  for (const section of Object.keys(api.tx)) {
+  for (const section of Object.keys(api.query)) {
     console.log(`${section}`);
-    for (const method of Object.keys(api.tx[section])) {
-      console.log(`  ${`${section}.${method}`.padStart(50, " ")}: ${api.tx[section][method].callIndex.toString().padStart(6, " ")}`);
+    for (const method of Object.keys(api.query[section])) {
+      console.log(
+        `  ${`${section}.${method}`.padStart(50, " ")}: ${(api.query[section][method]).keyPrefix()}`
+      );
     }
   }
   await api.disconnect();
