@@ -195,12 +195,19 @@ async function main() {
     const maxExtrinsicSize = 500_000; // 500kb
     const maxCall = 500; // 500 calls per batch
     console.log(
-      `Found ${keysToRemove.length} keys through ${
-        Object.keys(roundsToRemove).length
-      } rounds (oldest: ${Math.min(
-        ...(Object.keys(roundsToRemove) as any)
-      )}, most recent: ${Math.max(...(Object.keys(roundsToRemove) as any))})`
+      `Found ${keysToRemove.length} keys through ${Object.keys(roundsToRemove).length} rounds ${
+        roundsToRemove.length > 0
+          ? `(oldest: ${Math.min(...(Object.keys(roundsToRemove) as any))}, most recent: ${Math.max(
+              ...(Object.keys(roundsToRemove) as any)
+            )})`
+          : ``
+      }`
     );
+
+    if (keysToRemove.length == 0) {
+      return;
+    }
+
     console.log(
       `Applying batch limits: [storage: ${Math.floor(
         maxStorageSize / 1000
