@@ -191,9 +191,6 @@ async function main() {
         p[v.round].storageSize += v.storageSize;
         return p;
       }, {});
-    const maxStorageSize = 500_000; // 500kb
-    const maxExtrinsicSize = 500_000; // 500kb
-    const maxCall = 500; // 500 calls per batch
     console.log(
       `Found ${keysToRemove.length} keys through ${Object.keys(roundsToRemove).length} rounds ${
         keysToRemove.length > 0
@@ -207,6 +204,12 @@ async function main() {
     if (keysToRemove.length == 0) {
       return;
     }
+
+    // Preparing the batches
+
+    const maxStorageSize = 500_000; // 500kb
+    const maxExtrinsicSize = 500_000; // 500kb
+    const maxCall = 500; // 500 calls per batch
 
     console.log(
       `Applying batch limits: [storage: ${Math.floor(
