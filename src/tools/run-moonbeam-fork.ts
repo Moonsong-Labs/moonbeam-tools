@@ -37,13 +37,13 @@ const argv = yargs(process.argv.slice(2))
     "moonbeam-binary": {
       type: "string",
       alias: "m",
-      description: "Binary of the moonbeam node",
+      description: "Binary file path of the moonbeam node",
       demandOption: true,
     },
     "polkadot-binary": {
       type: "string",
       alias: "p",
-      description: "Binary of the polkadot node",
+      description: "Binary file path of the polkadot node",
       demandOption: true,
     },
     "base-path": {
