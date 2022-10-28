@@ -25,12 +25,22 @@ export async function runTask(
 // Execute process return the emitter instantly, without wait
 export async function spawnTask(
   cmd: string,
-  { cwd, env }: { cwd: string; env?: NodeJS.ProcessEnv },
+  { cwd, env }: { cwd: string; env?: NodeJS.ProcessEnv } = { cwd: process.cwd() },
   title?: string
 ): Promise<ChildProcessWithoutNullStreams> {
   debug(`${title ? `Title: ${title}\n` : ""}Running task on directory ${process.cwd()}: ${cmd}\n`);
   try {
-    const process = child_process.spawn(cmd, { cwd, env });
+    const process = child_process.spawn(
+      cmd.split(" ")[0],
+      cmd
+        .split(" ")
+        .slice(1)
+        .filter((a) => a.length > 0),
+      {
+        cwd,
+        env,
+      }
+    );
     return process;
   } catch (error) {
     console.log(error);

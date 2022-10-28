@@ -14,6 +14,7 @@ import { BalancesManipulator } from "./balances-manipulator";
 import { ALITH_ADDRESS, ALITH_SESSION_ADDRESS } from "../../../utils/constants";
 import { SpecManipulator } from "./spec-manipulator";
 import { SudoManipulator } from "./sudo-manipulator";
+import { string } from "yargs";
 const debug = Debug("helper:state-manager");
 
 export type NetworkName = "moonbeam" | "moonriver" | "alphanet";
@@ -33,7 +34,7 @@ export async function downloadExportedState(
   onStart?: (size: number) => void,
   onProgress?: (bytes: number) => void,
   onComplete?: () => void
-) {
+): Promise<{ file: string; blockNumber: number }> {
   if (!STORAGE_NAMES[network]) {
     throw new Error(
       `Invalid network ${network}, expecting ${Object.keys(STORAGE_NAMES).join(", ")}`
@@ -58,15 +59,15 @@ export async function downloadExportedState(
     .then(() => true)
     .catch(() => false);
 
-  // No check for latest, skip if files already exists
-  if (stateInfoExists && stateExist && !checkLatest) {
-    return stateFile;
-  }
-
   const stateInfo = await fs
     .readFile(stateInfoFile)
     .then((d) => JSON.parse(d.toString()))
     .catch(() => null);
+
+  // No check for latest, skip if files already exists
+  if (stateInfoExists && stateExist && !checkLatest) {
+    return { file: stateFile, blockNumber: parseInt(stateInfo.best_number) };
+  }
 
   const client = new Client(`https://s3.us-east-2.amazonaws.com`);
   const downloadedStateInfo = await (
@@ -81,7 +82,7 @@ export async function downloadExportedState(
   // Already latest version
   if (stateInfo && stateInfo.best_hash == downloadedStateInfo.best_hash) {
     client.close();
-    return stateFile;
+    return { file: stateFile, blockNumber: parseInt(stateInfo.best_number) };
   }
 
   const fileStream = (await fs.open(stateFile, "w")).createWriteStream();
@@ -118,8 +119,9 @@ export async function downloadExportedState(
           onProgress && onProgress(transferredBytes);
           return true;
         },
-        onComplete: (trailers) => {
+        onComplete: (_) => {
           client.close();
+          fileStream.close();
           onComplete && onComplete();
           resolve();
         },
@@ -132,7 +134,7 @@ export async function downloadExportedState(
   await fs.writeFile(stateInfoFile, JSON.stringify(downloadedStateInfo));
   debug(`Downloaded ${stateFileName} to ${stateFile}`);
 
-  return stateFile;
+  return { file: stateFile, blockNumber: parseInt(downloadedStateInfo.best_number) };
 }
 
 // Customize a Moonbeam exported state spec to make it usable locally
