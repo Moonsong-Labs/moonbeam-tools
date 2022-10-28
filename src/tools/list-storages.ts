@@ -16,7 +16,7 @@ const main = async () => {
     console.log(`${section}`);
     for (const method of Object.keys(api.query[section])) {
       console.log(
-        `  ${`${section}.${method}`.padStart(50, " ")}: ${(api.query[section][method]).keyPrefix()}`
+        `  ${`${section}.${method}`.padStart(50, " ")}: ${api.query[section][method].keyPrefix()}`
       );
     }
   }

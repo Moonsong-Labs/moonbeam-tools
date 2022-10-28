@@ -216,7 +216,6 @@ const main = async () => {
     process.stdout.write(`\t - ${chalk.yellow(`Saving`)} raw relaychain spec...`);
   }
   process.stdout.write(` ${chalk.green(relayRawSpecFile)} ✓\n`);
-
 };
 
 main();

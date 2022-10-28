@@ -15,7 +15,11 @@ const main = async () => {
   for (const section of Object.keys(api.tx)) {
     console.log(`${section}`);
     for (const method of Object.keys(api.tx[section])) {
-      console.log(`  ${`${section}.${method}`.padStart(50, " ")}: ${api.tx[section][method].callIndex.toString().padStart(6, " ")}`);
+      console.log(
+        `  ${`${section}.${method}`.padStart(50, " ")}: ${api.tx[section][method].callIndex
+          .toString()
+          .padStart(6, " ")}`
+      );
     }
   }
   await api.disconnect();

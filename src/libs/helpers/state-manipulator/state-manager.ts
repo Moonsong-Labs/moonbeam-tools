@@ -62,12 +62,12 @@ export async function downloadExportedState(
   if (stateInfoExists && stateExist && !checkLatest) {
     return stateFile;
   }
-  
+
   const stateInfo = await fs
     .readFile(stateInfoFile)
     .then((d) => JSON.parse(d.toString()))
     .catch(() => null);
-    
+
   const client = new Client(`https://s3.us-east-2.amazonaws.com`);
   const downloadedStateInfo = await (
     await client.request({
@@ -77,7 +77,7 @@ export async function downloadExportedState(
       method: "GET",
     })
   ).body.json();
-  
+
   // Already latest version
   if (stateInfo && stateInfo.best_hash == downloadedStateInfo.best_hash) {
     client.close();
@@ -157,7 +157,6 @@ export async function neutralizeExportedState(inFile: string, outFile: string) {
     new BalancesManipulator([{ account: ALITH_ADDRESS, amount: 10_000n * 10n ** 18n }]),
   ]);
 }
-
 
 // Customize a Moonbeam exported state spec to make it usable locally
 // It makes Alith the main collator and restore XCMP/HRMP data.
