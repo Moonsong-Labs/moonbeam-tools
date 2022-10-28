@@ -196,7 +196,7 @@ async function main() {
     const maxCall = 500; // 500 calls per batch
     console.log(
       `Found ${keysToRemove.length} keys through ${Object.keys(roundsToRemove).length} rounds ${
-        roundsToRemove.length > 0
+        keysToRemove.length > 0
           ? `(oldest: ${Math.min(...(Object.keys(roundsToRemove) as any))}, most recent: ${Math.max(
               ...(Object.keys(roundsToRemove) as any)
             )})`
