@@ -13,6 +13,7 @@ import {
   NetworkName,
   neutralizeExportedState,
 } from "../libs/helpers/state-manipulator";
+import { ALITH_PRIVATE_KEY } from "../utils/constants";
 
 const argv = yargs(process.argv.slice(2))
   .usage("Usage: $0")
@@ -276,7 +277,7 @@ const main = async () => {
   process.stdout.write(` ✓\n`);
 
   process.stdout.write(`\t - ${chalk.yellow(`Starting`)} parachain nodes...\n`);
-  process.stdout.write(`\t\t - ${chalk.green(`Starting`)} Alith node...\n`);
+  process.stdout.write(`\t\t - ${chalk.green(`Starting`)} Alith node...(5-10min) \n`);
   const alithFolder = path.join(baseDataFolder, `para-alith`);
   const alithLogs = path.join(alithFolder, `alith.log`);
   process.stdout.write(`\t\t - ${chalk.yellow(`Logs`)}: ${alithLogs}`);
@@ -291,7 +292,10 @@ const main = async () => {
   );
   process.stdout.write(` ✓\n`);
 
-  process.stdout.write(`https://polkadot.js.org/apps/?rpc=ws://127.0.0.1:9944#/explorer\n`)
+  while((await runTask(`grep ${alithFolder}`)))
+  process.stdout.write(`https://polkadot.js.org/apps/?rpc=ws://127.0.0.1:9944#/explorer\n`);
+  process.stdout.write(`      Sudo: ${chalk.green("Alith")} ${ALITH_PRIVATE_KEY}\n`);
+  process.stdout.write(`Council/TC: ${chalk.green("Alith")} ${ALITH_PRIVATE_KEY}\n`);
 
   await Promise.race([
     new Promise<void>((resolve) => {
@@ -318,6 +322,7 @@ const main = async () => {
       });
     }),
   ]);
+  
 
   await Promise.all([aliceLogHandler.close(), bobLogHandler.close(), alithLogHandler.close()]);
   await Promise.all([aliceProcess.kill(), bobProcess.kill(), alithProcess.kill()]);
