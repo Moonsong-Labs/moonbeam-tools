@@ -35,6 +35,11 @@ const argv = yargs(process.argv.slice(2))
       description: "Will delete previous execution database",
       default: false,
     },
+    "purge-specs": {
+      type: "boolean",
+      description: "Will delete previous generated specs",
+      default: false,
+    },
     "moonbeam-binary": {
       type: "string",
       alias: "m",
@@ -178,11 +183,15 @@ const main = async () => {
   const parachainCode = (await fs.readFile(codeFile)).toString();
   const genesisState = (await fs.readFile(genesisStateFile)).toString();
 
-  process.stdout.write(`\t - Checking relaychain plain spec file...`);
   const relayPlainSpecFile = path.join(
     argv["base-path"],
     `rococo-${argv.network}-${polkadotVersion.replace(" ", "-")}-local-plain.json`
   );
+  if (argv["purge-specs"]) {
+    process.stdout.write(`\t - ${chalk.red(`purging`)} relay spec... ${relayPlainSpecFile}\n`);
+    await fs.rm(relayPlainSpecFile, { recursive: true });
+  }
+  process.stdout.write(`\t - Checking relaychain plain spec file...`);
   if (
     !(await fs
       .access(relayPlainSpecFile)
@@ -197,7 +206,7 @@ const main = async () => {
     );
     process.stdout.write(` ✓\n`);
 
-    process.stdout.write(`\t   - Including parachain ${paraId} in relaychain plain specs...`);
+    process.stdout.write(`\t\t - Including parachain ${paraId} in relaychain plain specs...`);
     let relayChainSpec = JSON.parse((await fs.readFile(relayPlainSpecFile)).toString());
     relayChainSpec.bootNodes = bootNodes;
     relayChainSpec.genesis.runtime.runtime_genesis_config.paras = [
@@ -240,13 +249,13 @@ const main = async () => {
   }
   process.stdout.write(` ${chalk.green(relayRawSpecFile)} ✓\n`);
 
-  process.stdout.write(`\t - ${chalk.yellow(`Starting`)} relay nodes...\n`);
-
   const baseDataFolder = path.join(argv["base-path"], `${argv.network}`);
   if (argv.purge) {
-    await fs.rm(baseDataFolder, { recursive: true });
+    process.stdout.write(`\t - ${chalk.red(`purging`)} node db... ${baseDataFolder}\n`);
+    await fs.rm(baseDataFolder, { recursive: true, force: true });
   }
 
+  process.stdout.write(`\t - ${chalk.yellow(`Starting`)} relay nodes...\n`);
   process.stdout.write(`\t\t - ${chalk.green(`Starting`)} Alice node...\n`);
   const aliceFolder = path.join(baseDataFolder, `relay-alice`);
   const aliceLogs = path.join(aliceFolder, `alice.log`);
@@ -277,7 +286,7 @@ const main = async () => {
   process.stdout.write(` ✓\n`);
 
   process.stdout.write(`\t - ${chalk.yellow(`Starting`)} parachain nodes...\n`);
-  process.stdout.write(`\t\t - ${chalk.green(`Starting`)} Alith node...(5-10min) \n`);
+  process.stdout.write(`\t\t - ${chalk.green(`Starting`)} Alith node... \n`);
   const alithFolder = path.join(baseDataFolder, `para-alith`);
   const alithLogs = path.join(alithFolder, `alith.log`);
   process.stdout.write(`\t\t - ${chalk.yellow(`Logs`)}: ${alithLogs}`);
@@ -286,24 +295,24 @@ const main = async () => {
   const alithProcess = await spawnTask(
     `${
       argv["moonbeam-binary"]
-    } --base-path ${alithFolder} --alice --collator  --chain ${modFile} --  --chain ${relayRawSpecFile} --rpc-port 11003 --ws-port 12003 --port 10003 --node-key ${
+    } --base-path ${alithFolder} --execution native --log=debug,netlink=info,sync=info,lib=info,multi=info --alice --collator --db-cache 5000 --trie-cache-size 0 --chain ${modFile} --  --chain ${relayRawSpecFile} --rpc-port 11003 --ws-port 12003 --port 10003 --node-key ${
       Object.keys(NODE_KEYS)[2]
     }`
   );
   process.stdout.write(` ✓\n`);
 
-  while((await runTask(`grep ${alithFolder}`)))
-  process.stdout.write(`https://polkadot.js.org/apps/?rpc=ws://127.0.0.1:9944#/explorer\n`);
-  process.stdout.write(`      Sudo: ${chalk.green("Alith")} ${ALITH_PRIVATE_KEY}\n`);
-  process.stdout.write(`Council/TC: ${chalk.green("Alith")} ${ALITH_PRIVATE_KEY}\n`);
-
-  await Promise.race([
+  const exitPromises = [
     new Promise<void>((resolve) => {
       // aliceProcess.stderr.on("data", (d) => console.log(d.toString()));
       aliceProcess.stderr.pipe(aliceProcess.stdout.pipe(aliceLogHandler.createWriteStream()));
       aliceProcess.on("exit", () => {
         console.log(`Unexpected closure ${chalk.red(`relay alice`)}`);
         resolve();
+      });
+      process.on("exit", () => {
+        try {
+          aliceProcess.kill();
+        } catch (e) {}
       });
     }),
     new Promise<void>((resolve) => {
@@ -313,6 +322,11 @@ const main = async () => {
         console.log(`Unexpected closure ${chalk.red(`relay bob`)}`);
         resolve();
       });
+      process.on("exit", () => {
+        try {
+          bobProcess.kill();
+        } catch (e) {}
+      });
     }),
     new Promise<void>((resolve) => {
       alithProcess.stderr.pipe(alithProcess.stdout.pipe(alithLogHandler.createWriteStream()));
@@ -320,9 +334,25 @@ const main = async () => {
         console.log(`Unexpected closure ${chalk.red(`parachain alith`)}`);
         resolve();
       });
+      process.on("exit", () => {
+        try {
+          alithProcess.kill();
+        } catch (e) {}
+      });
     }),
-  ]);
-  
+  ];
+
+  process.stdout.write(`\t - ${chalk.yellow(`Waiting`)}...(5-10min)`);
+  while ((await runTask(`grep -o 'Accepting' ${alithLogs} || echo "no"`)).trim().length < 4) {
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+  }
+  process.stdout.write(` ✓\n`);
+
+  process.stdout.write(`https://polkadot.js.org/apps/?rpc=ws://127.0.0.1:9944#/explorer\n`);
+  process.stdout.write(`      Sudo: ${chalk.green("Alith")} ${ALITH_PRIVATE_KEY}\n`);
+  process.stdout.write(`Council/TC: ${chalk.green("Alith")} ${ALITH_PRIVATE_KEY}\n`);
+
+  await Promise.race(exitPromises);
 
   await Promise.all([aliceLogHandler.close(), bobLogHandler.close(), alithLogHandler.close()]);
   await Promise.all([aliceProcess.kill(), bobProcess.kill(), alithProcess.kill()]);
