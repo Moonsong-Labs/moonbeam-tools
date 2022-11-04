@@ -72,7 +72,9 @@ async function main() {
   const blockHash = await api.rpc.chain.getBlockHash(atBlock);
   const apiAt = await api.at(blockHash);
 
-  const collectiveThreshold = argv["collective-threshold"] || 1;
+  const collectiveThreshold =
+    argv["collective-threshold"] ||
+    Math.ceil(((await api.query.councilCollective.members()).length * 3) / 5);
   const proposalAmount = api.consts.democracy.minimumDeposit;
 
   let account;

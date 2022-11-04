@@ -19,7 +19,7 @@ import { ApiPromise, Keyring } from "@polkadot/api";
 import { KeyringPair } from "@polkadot/keyring/types";
 import { getApiFor, NETWORK_YARGS_OPTIONS } from "../utils/networks";
 import { blake2AsHex, xxhashAsHex } from "@polkadot/util-crypto";
-import { monitorSubmittedExtrinsic, waitForAllMonitoredExtrinsics } from "src/utils/monitoring";
+import { monitorSubmittedExtrinsic, waitForAllMonitoredExtrinsics } from "../utils/monitoring";
 
 const argv = yargs(process.argv.slice(2))
   .usage("Usage: $0")
@@ -66,7 +66,9 @@ async function main() {
       argv["at-block"] || (await api.rpc.chain.getBlock()).block.header.number.toNumber();
     const blockHash = await api.rpc.chain.getBlockHash(atBlock);
 
-    const collectiveThreshold = argv["collective-threshold"] || 1;
+    const collectiveThreshold =
+      argv["collective-threshold"] ||
+      Math.ceil(((await api.query.councilCollective.members()).length * 3) / 5);
     const proposalAmount = api.consts.democracy.minimumDeposit;
 
     let account: KeyringPair;
