@@ -343,7 +343,10 @@ const main = async () => {
   ];
 
   process.stdout.write(`\t - ${chalk.yellow(`Waiting`)}...(5-10min)`);
-  while ((await runTask(`egrep -o '(Accepting|Running JSON-RPC)' ${alithLogs} || echo "no"`)).trim().length < 4) {
+  while (
+    (await runTask(`egrep -o '(Accepting|Running JSON-RPC)' ${alithLogs} || echo "no"`)).trim()
+      .length < 4
+  ) {
     await new Promise((resolve) => setTimeout(resolve, 1000));
   }
   process.stdout.write(` ✓\n`);
