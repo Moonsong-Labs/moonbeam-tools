@@ -24,6 +24,8 @@ import { BN } from "@polkadot/util";
 import { blake2AsHex } from "@polkadot/util-crypto";
 import { promiseConcurrent } from "../utils/functions";
 import { monitorSubmittedExtrinsic, waitForAllMonitoredExtrinsics } from "../utils/monitoring";
+import { SubmittableExtrinsic } from "@polkadot/api/types";
+import { ISubmittableResult } from "@polkadot/types/types";
 const debug = Debug("hotfix:1900-at-stake");
 
 const argv = yargs(process.argv.slice(2))
@@ -40,6 +42,17 @@ const argv = yargs(process.argv.slice(2))
       type: "boolean",
       demandOption: false,
       conflicts: ["send-preimage-hash", "send-proposal-as", "collective-threshold"],
+    },
+    proxy: {
+      type: "string",
+      demandOption: false,
+      describe: "Account being proxied",
+      conflicts: ["sudo"],
+    },
+    "proxy-type": {
+      type: "string",
+      demandOption: false,
+      describe: "Type of proxy",
     },
     "send-preimage-hash": { type: "boolean", demandOption: false, alias: "h" },
     "send-proposal-as": {
@@ -81,15 +94,24 @@ async function main() {
   let nonce;
   if (argv["account-priv-key"]) {
     account = keyring.addFromUri(argv["account-priv-key"], null, "ethereum");
-    const { nonce: rawNonce, data: balance } = (await api.query.system.account(
-      account.address
-    )) as any;
+    console.log(`[#${atBlock}]    Using account: ${account.address}`);
+    if (argv["proxy"]) {
+      console.log(
+        `[#${atBlock}] Proxying account: ${argv["proxy"]} ${
+          argv["proxy-type"] ? `(${argv["proxy"]})` : ""
+        }`
+      );
+    }
+
+    const { nonce: rawNonce, data: balance } = await api.query.system.account(
+      account.address as string
+    );
     nonce = BigInt(rawNonce.toString());
   }
 
   try {
     const currentRound = await apiAt.query.parachainStaking.round();
-    console.log(`[#${atBlock}] Starting: ${currentRound}`);
+    console.log(`[#${atBlock}]         Starting: ${currentRound}`);
     const maxUnpaidRound = currentRound.current.sub(
       apiAt.consts.parachainStaking.rewardPaymentDelay
     );
@@ -292,63 +314,68 @@ async function main() {
       );
     }
 
+    const proxyTx = (call: SubmittableExtrinsic<"promise", ISubmittableResult>) => {
+      if (argv["proxy"]) {
+        return api.tx.proxy.proxy(argv["proxy"], (argv["proxy-type"] as any) || null, call);
+      }
+      return call;
+    };
+
     if (argv["sudo"]) {
-      await api.tx.sudo
-        .sudo(finalProposal)
-        .signAndSend(account, { nonce: nonce++ }, monitorSubmittedExtrinsic(api, { id: "sudo" }));
+      await proxyTx(api.tx.sudo.sudo(finalProposal)).signAndSend(
+        account,
+        { nonce: nonce++ },
+        monitorSubmittedExtrinsic(api, { id: "sudo" })
+      );
     } else {
       let refCount = (await api.query.democracy.referendumCount()).toNumber();
       if (argv["send-preimage-hash"]) {
-        await api.tx.democracy
-          .notePreimage(encodedProposal)
-          .signAndSend(
-            account,
-            { nonce: nonce++ },
-            monitorSubmittedExtrinsic(api, { id: "preimage" })
-          );
+        await proxyTx(api.tx.democracy.notePreimage(encodedProposal)).signAndSend(
+          account,
+          { nonce: nonce++ },
+          monitorSubmittedExtrinsic(api, { id: "preimage" })
+        );
       }
 
       if (argv["send-proposal-as"] == "democracy") {
-        await api.tx.democracy
-          .propose(encodedHash, proposalAmount)
-          .signAndSend(
-            account,
-            { nonce: nonce++ },
-            monitorSubmittedExtrinsic(api, { id: "proposal" })
-          );
+        await proxyTx(api.tx.democracy.propose(encodedHash, proposalAmount)).signAndSend(
+          account,
+          { nonce: nonce++ },
+          monitorSubmittedExtrinsic(api, { id: "proposal" })
+        );
       } else if (argv["send-proposal-as"] == "council-external") {
         let external = api.tx.democracy.externalProposeMajority(encodedHash);
 
-        await api.tx.councilCollective
-          .propose(collectiveThreshold, external, external.length)
-          .signAndSend(
-            account,
-            { nonce: nonce++ },
-            monitorSubmittedExtrinsic(api, { id: "proposal" })
-          );
+        await proxyTx(
+          api.tx.councilCollective.propose(collectiveThreshold, external, external.length)
+        ).signAndSend(
+          account,
+          { nonce: nonce++ },
+          monitorSubmittedExtrinsic(api, { id: "proposal" })
+        );
 
         if (argv["fast-track"]) {
           let fastTrack = api.tx.democracy.fastTrack(encodedHash, 1, 0);
 
-          await api.tx.techCommitteeCollective
-            .propose(collectiveThreshold, fastTrack, fastTrack.length)
-            .signAndSend(
-              account,
-              { nonce: nonce++ },
-              monitorSubmittedExtrinsic(api, { id: "fast-track" })
-            );
+          await proxyTx(
+            api.tx.techCommitteeCollective.propose(collectiveThreshold, fastTrack, fastTrack.length)
+          ).signAndSend(
+            account,
+            { nonce: nonce++ },
+            monitorSubmittedExtrinsic(api, { id: "fast-track" })
+          );
         }
       }
 
       if (argv["vote"]) {
-        await api.tx.democracy
-          .vote(refCount, {
+        await proxyTx(
+          api.tx.democracy.vote(refCount, {
             Standard: {
               balance: 1n * 10n ** BigInt(api.registry.chainDecimals[0]),
               vote: { aye: true, conviction: 1 },
             },
           })
-          .signAndSend(account, { nonce: nonce++ }, monitorSubmittedExtrinsic(api, { id: "vote" }));
+        ).signAndSend(account, { nonce: nonce++ }, monitorSubmittedExtrinsic(api, { id: "vote" }));
       }
     }
   } finally {
