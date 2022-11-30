@@ -12,7 +12,7 @@ Ex: ./node_modules/.bin/ts-node runtime-2000-lazy-migrate-pallet-democracy.ts \
 import yargs from "yargs";
 import { Keyring, ApiPromise } from "@polkadot/api";
 import "@moonbeam-network/api-augment";
-import {xxhashAsHex} from '@polkadot/util-crypto';
+import { xxhashAsHex } from "@polkadot/util-crypto";
 import { getApiFor, NETWORK_YARGS_OPTIONS } from "..";
 
 const argv = yargs(process.argv.slice(2))
@@ -34,7 +34,7 @@ const main = async () => {
   const atBlockNumber = argv.at || (await api.rpc.chain.getHeader()).number.toNumber();
   const atBlockHash = await api.rpc.chain.getBlockHash(atBlockNumber);
   const apiAt = await api.at(atBlockHash);
-  
+
   const upgradeInfo = (await apiAt.query.system.lastRuntimeUpgrade()).unwrap();
   const runtimeVersion = upgradeInfo.specVersion.toNumber();
 
@@ -45,17 +45,15 @@ const main = async () => {
   // We retrieve all storage keys. Since we do not have access to the storage item
   // we just need to do it through RPC with the encodede keys
   // XX128("Democracy") || XX128("Preimages")
-  const preimagePrefix =
-    xxhashAsHex("Democracy", 128) +
-    xxhashAsHex("Preimages", 128).slice(2);
+  const preimagePrefix = xxhashAsHex("Democracy", 128) + xxhashAsHex("Preimages", 128).slice(2);
 
   async function getAllKeys(api: ApiPromise, prefix: string, startKey?: string) {
     const keys = (
-        await api.rpc.state.getKeysPaged(prefix, 1000, startKey || prefix, atBlockHash)
+      await api.rpc.state.getKeysPaged(prefix, 1000, startKey || prefix, atBlockHash)
     ).map((d) => d.toHex());
-  
+
     if (keys.length == 0) {
-        return [];
+      return [];
     }
     return keys.concat(await getAllKeys(api, prefix, keys[keys.length - 1]));
   }
@@ -70,28 +68,27 @@ const main = async () => {
     const keyring = new Keyring({ type: "ethereum" });
     const account = await keyring.addFromUri(argv["account-priv-key"], null, "ethereum");
     const { nonce: rawNonce, data: balance } = (await api.query.system.account(
-        account.address
-      )) as any;
+      account.address
+    )) as any;
     let nonce = BigInt(rawNonce.toString());
 
     for (const key of preimageKeys) {
-        // We slice and take only the proposal hash part.
-        let proposal = '0x' + key.slice(preimagePrefix.length);
-        console.log("Found proposal %s to migrate", proposal);
-        // We take the storage size to bound it. This will probably be more than
-        // what we need, but never less
-        let storageSize = await api.rpc.state.getStorageSize(key, atBlockHash);
+      // We slice and take only the proposal hash part.
+      let proposal = "0x" + key.slice(preimagePrefix.length);
+      console.log("Found proposal %s to migrate", proposal);
+      // We take the storage size to bound it. This will probably be more than
+      // what we need, but never less
+      let storageSize = await api.rpc.state.getStorageSize(key, atBlockHash);
 
-        // We do a batch remarking migrated proposals and migrating all
-        // proposals
-        await api.tx.utility.batch([
-            api.tx.system.remark(
-            `Democracy preimage migration: Migrating proposal %s: ${proposal})`
-            ),
-            api.tx.migrations.migrateDemocracyPreimage(proposal, storageSize),
+      // We do a batch remarking migrated proposals and migrating all
+      // proposals
+      await api.tx.utility
+        .batch([
+          api.tx.system.remark(`Democracy preimage migration: Migrating proposal %s: ${proposal})`),
+          api.tx.migrations.migrateDemocracyPreimage(proposal, storageSize),
         ])
         .signAndSend(account, { nonce: nonce++ });
-        await new Promise((resolve) => setTimeout(resolve, 12000));
+      await new Promise((resolve) => setTimeout(resolve, 12000));
     }
   }
   await api.disconnect();
