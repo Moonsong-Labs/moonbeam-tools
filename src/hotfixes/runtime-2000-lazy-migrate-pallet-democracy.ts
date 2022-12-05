@@ -84,7 +84,7 @@ const main = async () => {
       // proposals
       await api.tx.utility
         .batch([
-          api.tx.system.remark(`Democracy preimage migration: Migrating proposal %s: ${proposal})`),
+          api.tx.system.remark(`Democracy preimage migration: Migrating proposal: ${proposal})`),
           api.tx.migrations.migrateDemocracyPreimage(proposal, storageSize),
         ])
         .signAndSend(account, { nonce: nonce++ });
