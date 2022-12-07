@@ -74,3 +74,15 @@ export const sendAllStreamAndWaitLast = async (
   }
   await Promise.all(promises);
 };
+
+export const maybeProxyCall = (
+  api: ApiPromise,
+  call: SubmittableExtrinsic,
+  proxy?: string,
+  proxyType?: string
+) => {
+  if (proxy) {
+    return api.tx.proxy.proxy(proxy, (proxyType as any) || null, call);
+  }
+  return call;
+};

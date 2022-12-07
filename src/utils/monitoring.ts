@@ -253,7 +253,7 @@ export const getFeeMultiplier = async (api: ApiPromise, blockHash: string): Prom
 
 export const getBlockDetails = async (api: ApiPromise, blockHash: BlockHash) => {
   debug(`Querying ${blockHash}`);
-  const maxBlockWeight = api.consts.system.blockWeights.maxBlock.toBigInt();
+  const maxBlockWeight = api.consts.system.blockWeights.maxBlock.refTime.toBigInt();
   const apiAt = await api.at(blockHash);
   const [{ block }, records, blockTime, collatorId] = await Promise.all([
     api.rpc.chain.getBlock(blockHash),
@@ -303,7 +303,8 @@ export const getBlockDetails = async (api: ApiPromise, blockHash: BlockHash) => 
       ] as any)
   );
   const blockWeight = txWithEvents.reduce((totalWeight, tx, index) => {
-    return totalWeight + (tx.dispatchInfo && tx.dispatchInfo.weight.toBigInt());
+    // TODO: support weight v1/2
+    return totalWeight + (tx.dispatchInfo && (tx.dispatchInfo.weight as any).refTime.toBigInt());
   }, 0n);
   return {
     block,
@@ -379,18 +380,29 @@ export const listenBlocks = async (
   return unsubHeads;
 };
 
+export const waitBlocks = async (api: ApiPromise, count: number): Promise<void>  => {
+  const startingBlockNumber = (await api.rpc.chain.getBlock()).block.header.number.toNumber();
+  const unsubListener = await listenBestBlocks(api, async (blockDetails) => {
+    if (blockDetails.block.header.number.toNumber() - count >= startingBlockNumber) {
+      unsubListener();
+      return;
+    }
+  })
+  await api.query.timestamp.now.at((await api.rpc.chain.getBlock()).block.header.parentHash)
+} 
+
 export const listenBestBlocks = async (
   api: ApiPromise,
   callBack: (blockDetails: RealtimeBlockDetails) => Promise<void>
 ) => {
-  listenBlocks(api, false, callBack);
+  return listenBlocks(api, false, callBack);
 };
 
 export const listenFinalizedBlocks = async (
   api: ApiPromise,
   callBack: (blockDetails: RealtimeBlockDetails) => Promise<void>
 ) => {
-  listenBlocks(api, true, callBack);
+  return listenBlocks(api, true, callBack);
 };
 
 export function generateBlockDetailsLog(
@@ -479,7 +491,7 @@ export function generateBlockDetailsLog(
             payload.asEip1559?.maxFeePerGas.toBigInt() || 0n
           : (payload as any as LegacyTransaction).gasPrice?.toBigInt();
 
-        return p + (BigInt(gasPrice) * dispatchInfo.weight.toBigInt()) / 25000n;
+        return p + (BigInt(gasPrice) * (dispatchInfo.weight as any).refTime.toBigInt()) / 25000n;
       }
       return p + fees.totalFees;
     }, 0n);
