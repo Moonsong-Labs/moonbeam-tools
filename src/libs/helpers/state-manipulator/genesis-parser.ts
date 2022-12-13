@@ -53,6 +53,19 @@ export function encodeStorageBlake128MapKey(module, name, key) {
   );
 }
 
+export function encodeStorageBlake128DoubleMapKey(module, name, [key1, key2]) {
+  return u8aToHex(
+    u8aConcat(
+      xxhashAsU8a(module, 128),
+      xxhashAsU8a(name, 128),
+      blake2AsU8a(key1, 128),
+      key1,
+      blake2AsU8a(key2, 128),
+      key2
+    )
+  );
+};
+
 // Read, and parse line by line the raw state file, in a fast way
 // Parsing has 2 passes:
 // - first, to read only (allowing to prepare data) calling processRead
