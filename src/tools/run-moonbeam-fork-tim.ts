@@ -10,10 +10,12 @@ import fs from "fs/promises";
 import path from "path";
 import {
   downloadExportedState,
+  encodeStorageBlake128DoubleMapKey,
   NetworkName,
   neutralizeExportedState,
 } from "../libs/helpers/state-manipulator";
-import { ALITH_PRIVATE_KEY } from "../utils/constants";
+import { ALITH_ADDRESS, ALITH_PRIVATE_KEY, USDT_ASSET_ID } from "../utils/constants";
+import { bnToHex } from "@polkadot/util";
 
 const argv = yargs(process.argv.slice(2))
   .usage("Usage: $0")
@@ -74,6 +76,14 @@ const bootNodes = Object.values(NODE_KEYS)
 const main = async () => {
   // Variable to allow replaying some following steps if previous steps have been modified
   let hasChanged = false;
+
+// const key = encodeStorageBlake128DoubleMapKey("Assets", "Account", [
+//   bnToHex(BigInt(USDT_ASSET_ID), { isLe: true, bitLength: 128 }),
+//   ALITH_ADDRESS,
+// ]);
+
+// console.log(key)
+// return
 
   if (!argv["polkadot-binary"] || (await fs.access(argv["polkadot-binary"]).catch(() => false))) {
     throw new Error("Missing polkadot-binary");

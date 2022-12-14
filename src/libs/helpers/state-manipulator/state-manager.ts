@@ -14,13 +14,14 @@ import { BalancesManipulator } from "./balances-manipulator";
 import {
   ALITH_ADDRESS,
   ALITH_SESSION_ADDRESS,
+  BALTATHAR_ADDRESS,
   DOT_ASSET_ID,
   USDT_ASSET_ID,
 } from "../../../utils/constants";
 import { SpecManipulator } from "./spec-manipulator";
 import { SudoManipulator } from "./sudo-manipulator";
 import { string } from "yargs";
-import { AssetsManipulator } from "./assets-manipulator";
+import { AssetManipulator } from "./asset-manipulator";
 const debug = Debug("helper:state-manager");
 
 export type NetworkName = "moonbeam" | "moonriver" | "alphanet";
@@ -162,11 +163,11 @@ export async function neutralizeExportedState(inFile: string, outFile: string) {
     new CollectiveManipulator("CouncilCollective", [ALITH_ADDRESS]),
     new ValidationManipulator(),
     new XCMPManipulator(),
-    new BalancesManipulator([{ account: ALITH_ADDRESS, amount: 10_000n * 10n ** 18n }]),
-    new AssetsManipulator([
-      { account: ALITH_ADDRESS, id: DOT_ASSET_ID, amount: 1000n * 10n ** 10n },
-      { account: ALITH_ADDRESS, id: USDT_ASSET_ID, amount: 20_000n * 10n ** 6n },
+    new BalancesManipulator([
+      { account: ALITH_ADDRESS, amount: 10_000n * 10n ** 18n },
+      { account: BALTATHAR_ADDRESS, amount: 10_000n * 10n ** 18n },
     ]),
+    new AssetManipulator(ALITH_ADDRESS, USDT_ASSET_ID, 20_000n * 10n ** 6n),
   ]);
 }
 
