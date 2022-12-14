@@ -11,6 +11,7 @@ export interface SpecOptions {
   relayChain?: string;
   chainType?: string;
   paraId?: number;
+  soloChain?: boolean;
 }
 
 export class SpecManipulator implements StateManipulator {
@@ -21,8 +22,9 @@ export class SpecManipulator implements StateManipulator {
   constructor(options: SpecOptions) {
     this.options = {
       clearBootnodes: true,
-      chainType: "Local",
+      chainType: /*options.chainType ||*/ "Local",
       protocolId: `fork${Math.floor(Math.random() * 100000)}`, //random protocol to reduce issues
+      // devId: options.devId || false,
       ...(options || {}),
     };
   }
@@ -42,6 +44,12 @@ export class SpecManipulator implements StateManipulator {
       return { action: "remove" as Action, extraLines: [{ key, value: this.options.relayChain }] };
     } else if (this.options.paraId && key == "paraId") {
       return { action: "remove" as Action, extraLines: [{ key, value: this.options.paraId }] };
+    } else if (this.options.soloChain) {
+     if (key == "id") {
+        return { action: "remove" as Action, extraLines: [{ key, value: value.concat("_dev") }] };
+      }/*  else if (key == "bootNodes") {
+        return { action: "remove" as Action, extraLines: [{ key, value: [] }] };
+      } */
     }
   };
 }

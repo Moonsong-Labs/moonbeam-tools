@@ -106,4 +106,4 @@ dist
 
 test/*-result.json
 
-binaries/
+binaries/*
