@@ -46,12 +46,12 @@ const argv = yargs(process.argv.slice(2))
       description: "Binary file path or of the moonbeam node",
       demandOption: true,
     },
-    "polkadot-binary": {
-      type: "string",
-      alias: "p",
-      description: "Binary file path of the polkadot node",
-      demandOption: true,
-    },
+    // "polkadot-binary": {
+    //   type: "string",
+    //   alias: "p",
+    //   description: "Binary file path of the polkadot node",
+    //   demandOption: true,
+    // },
     "base-path": {
       type: "string",
       description: "Where to store the data",
@@ -175,7 +175,7 @@ const main = async () => {
   await fs.mkdir(alithFolder, { recursive: true });
   const alithLogHandler = await fs.open(alithLogs, "w");
   const alithProcess = await spawnTask(
-    `${argv["moonbeam-binary"]} --base-path ${alithFolder} --execution native --log=info,netlink=info,sync=info,lib=info,multi=info --alice --collator --db-cache 5000 --trie-cache-size 0 --chain ${modFile} --rpc-port 19101 --ws-port 19102 --no-hardware-benchmarks --no-prometheus --no-telemetry`
+    `${argv["moonbeam-binary"]} --base-path ${alithFolder} --execution native --log=info,netlink=info,sync=info,lib=info,multi=info --alice --collator --db-cache 5000 --trie-cache-size 0 --chain ${modFile} --rpc-port 19932 --ws-port 19933 --no-hardware-benchmarks --no-prometheus --no-telemetry --sealing=manual`
   );
   process.stdout.write(` ✓\n`);
 
@@ -209,11 +209,11 @@ const main = async () => {
   process.stdout.write(`      Sudo: ${chalk.green("Alith")} ${ALITH_PRIVATE_KEY}\n`);
   process.stdout.write(`Council/TC: ${chalk.green("Alith")} ${ALITH_PRIVATE_KEY}\n`);
 
-  await Promise.race(exitPromises);
+  // await Promise.race(exitPromises);
 
-  await Promise.all([alithLogHandler.close()]);
-  await Promise.all([alithProcess.kill()]);
-  console.log(`Done`);
+  // await Promise.all([alithLogHandler.close()]);
+  // await Promise.all([alithProcess.kill()]);
+  console.log(`Launched`);
 };
 
 main();
