@@ -59,17 +59,17 @@ const argv = yargs(process.argv.slice(2))
     },
   }).argv;
 
-const NODE_KEYS = {
-  "1111111111111111111111111111111111111111111111111111111111111111":
-    "12D3KooWPqT2nMDSiXUSx5D7fasaxhxKigVhcqfkKqrLghCq9jxz",
-  "2222222222222222222222222222222222222222222222222222222222222222":
-    "12D3KooWLdJAwPtyQ5RFnr9wGXsQzpf3P2SeqFbYkqbfVehLu4Ns",
-  "3333333333333333333333333333333333333333333333333333333333333333":
-    "12D3KooWBRFW3HkJCLKSWb4yG6iWRBpgNjbM4FFvNsL5T5JKTqrd",
-};
-const bootNodes = Object.values(NODE_KEYS)
-  .slice(0, 3)
-  .map((peerId, index) => `/ip4/127.0.0.1/tcp/1000${index + 1}/p2p/${peerId}`);
+// const NODE_KEYS = {
+//   "1111111111111111111111111111111111111111111111111111111111111111":
+//     "12D3KooWPqT2nMDSiXUSx5D7fasaxhxKigVhcqfkKqrLghCq9jxz",
+//   "2222222222222222222222222222222222222222222222222222222222222222":
+//     "12D3KooWLdJAwPtyQ5RFnr9wGXsQzpf3P2SeqFbYkqbfVehLu4Ns",
+//   "3333333333333333333333333333333333333333333333333333333333333333":
+//     "12D3KooWBRFW3HkJCLKSWb4yG6iWRBpgNjbM4FFvNsL5T5JKTqrd",
+// };
+// const bootNodes = Object.values(NODE_KEYS)
+//   .slice(0, 3)
+//   .map((peerId, index) => `/ip4/127.0.0.1/tcp/1000${index + 1}/p2p/${peerId}`);
 
 const main = async () => {
   // Variable to allow replaying some following steps if previous steps have been modified

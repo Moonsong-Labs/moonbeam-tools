@@ -77,7 +77,8 @@
     "test": "jest",
     "dev": "rollup -c -w",
     "build": "rollup -c && ./scripts/update-readme.sh",
-    "lint": "npx prettier --write ."
+    "lint": "npx prettier --write .",
+    "fork-solo": "npx ts-node ./src/tools/run-moonbeam-fork-solo.ts -m ./binaries/moonbeam --base-path /tmp/fork-data/ -n moonbeam"
   },
   "repository": {
     "type": "git",
