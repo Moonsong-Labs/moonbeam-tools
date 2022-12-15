@@ -47,7 +47,7 @@ export class SpecManipulator implements StateManipulator {
     } else if (this.options.soloChain) {
       if (key == "id") {
         return { action: "remove" as Action, extraLines: [{ key, value: value.concat("_dev") }] };
-      } 
+      }
     }
   };
 }
