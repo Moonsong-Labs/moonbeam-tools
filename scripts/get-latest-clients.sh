@@ -9,7 +9,7 @@ cd $PARENT_PATH
 cd ../binaries
 
 
-# Update script to checksum MD5 hashes of binaries to see if already most uptodate
+# TODO: Update script to checksum MD5 hashes of binaries to see if already most uptodate
 echo "Retrieving binaries..."
 MOONBEAM_CLIENT_TAG=$(curl -s https://api.github.com/repos/purestake/moonbeam/releases | jq -r '.[] | select(.assets|.[]|.name|test("\\bmoonbeam\\b")) | .tag_name' | grep '^v' | head -1)
 POLKADOT_CLIENT_TAG=$(curl -s https://api.github.com/repos/paritytech/polkadot/releases | jq -r '.[] | select(.assets|.[]|.name|test("\\bpolkadot\\b")) | .tag_name' | grep '^v' | head -1)
