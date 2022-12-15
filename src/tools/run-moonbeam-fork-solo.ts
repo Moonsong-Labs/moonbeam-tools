@@ -13,7 +13,7 @@ import {
   NetworkName,
   neutralizeExportedState,
 } from "../libs/helpers/state-manipulator";
-import {  ALITH_PRIVATE_KEY } from "../utils/constants";
+import { ALITH_PRIVATE_KEY } from "../utils/constants";
 
 const argv = yargs(process.argv.slice(2))
   .usage("Usage: $0")
@@ -187,11 +187,7 @@ const main = async () => {
   await fs.mkdir(alithFolder, { recursive: true });
   const alithLogHandler = await fs.open(alithLogs, "w");
   const alithProcess = await spawnTask(
-    `${
-      argv["moonbeam-binary"]
-    } --base-path ${alithFolder} --execution native --log=info,netlink=info,sync=info,lib=info,multi=info --alice --collator --db-cache 5000 --trie-cache-size 0 --chain ${
-      modFile
-    } --rpc-port 19101 --ws-port 19102 --no-hardware-benchmarks --no-prometheus --no-telemetry`
+    `${argv["moonbeam-binary"]} --base-path ${alithFolder} --execution native --log=info,netlink=info,sync=info,lib=info,multi=info --alice --collator --db-cache 5000 --trie-cache-size 0 --chain ${modFile} --rpc-port 19101 --ws-port 19102 --no-hardware-benchmarks --no-prometheus --no-telemetry`
   );
   process.stdout.write(` ✓\n`);
 
@@ -219,7 +215,9 @@ const main = async () => {
   }
   process.stdout.write(` ✓\n`);
 
-  process.stdout.write(`\tℹ️  Polkadot.js Explorer: https://polkadot.js.org/apps/?rpc=ws://127.0.0.1:19102#/explorer\n`);
+  process.stdout.write(
+    `\tℹ️  Polkadot.js Explorer: https://polkadot.js.org/apps/?rpc=ws://127.0.0.1:19102#/explorer\n`
+  );
   process.stdout.write(`      Sudo: ${chalk.green("Alith")} ${ALITH_PRIVATE_KEY}\n`);
   process.stdout.write(`Council/TC: ${chalk.green("Alith")} ${ALITH_PRIVATE_KEY}\n`);
 

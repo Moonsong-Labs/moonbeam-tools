@@ -64,7 +64,7 @@ export function encodeStorageBlake128DoubleMapKey(module, name, [key1, key2]) {
       key2
     )
   );
-};
+}
 
 // Read, and parse line by line the raw state file, in a fast way
 // Parsing has 2 passes:

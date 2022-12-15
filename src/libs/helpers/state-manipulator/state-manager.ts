@@ -171,7 +171,7 @@ export async function neutralizeExportedState(
         })
       : new SpecManipulator({
           name: `Fork Network`,
-          relayChain: `rococo-local`
+          relayChain: `rococo-local`,
         }),
     new CollectiveManipulator("TechCommitteeCollective", [ALITH_ADDRESS]),
     new CollectiveManipulator("CouncilCollective", [ALITH_ADDRESS]),

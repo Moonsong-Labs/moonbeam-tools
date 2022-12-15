@@ -14,10 +14,7 @@ import "@moonbeam-network/api-augment";
 import { Keyring } from "@polkadot/api";
 import { KeyringPair } from "@polkadot/keyring/types";
 import { getApiFor, NETWORK_YARGS_OPTIONS } from "../utils/networks";
-import {
-  monitorSubmittedExtrinsic,
-  waitForAllMonitoredExtrinsics,
-} from "../utils/monitoring";
+import { monitorSubmittedExtrinsic, waitForAllMonitoredExtrinsics } from "../utils/monitoring";
 import { maybeProxyCall } from "../utils/transactions";
 import { ALITH_PRIVATE_KEY } from "../utils/constants";
 
