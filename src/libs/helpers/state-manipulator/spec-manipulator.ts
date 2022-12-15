@@ -22,9 +22,8 @@ export class SpecManipulator implements StateManipulator {
   constructor(options: SpecOptions) {
     this.options = {
       clearBootnodes: true,
-      chainType: /*options.chainType ||*/ "Local",
+      chainType: "Local",
       protocolId: `fork${Math.floor(Math.random() * 100000)}`, //random protocol to reduce issues
-      // devId: options.devId || false,
       ...(options || {}),
     };
   }
