@@ -78,6 +78,7 @@
     "dev": "rollup -c -w",
     "build": "rollup -c && ./scripts/update-readme.sh",
     "lint": "npx prettier --write .",
+    "fork": "npx ts-node ./src/tools/run-moonbeam-fork.ts -m ./binaries/moonbeam -p ./binaries/polkadot --base-path /tmp/fork-data/ -n moonbeam",
     "fork-solo": "npx ts-node ./src/tools/run-moonbeam-fork-solo.ts -m ./binaries/moonbeam --base-path /tmp/fork-data/ -n moonbeam"
   },
   "repository": {
