@@ -209,11 +209,13 @@ const main = async () => {
   process.stdout.write(`      Sudo: ${chalk.green("Alith")} ${ALITH_PRIVATE_KEY}\n`);
   process.stdout.write(`Council/TC: ${chalk.green("Alith")} ${ALITH_PRIVATE_KEY}\n`);
 
-  // Promise.race(exitPromises);
+  if (process.env.KEEP_ALIVE) {
+    await Promise.race(exitPromises);
+  }
 
   await Promise.all([alithLogHandler.close()]);
   await Promise.all([alithProcess.kill()]);
   console.log(`Forked network setup complete`);
 };
 
-main()
+main();
