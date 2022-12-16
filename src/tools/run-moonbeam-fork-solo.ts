@@ -183,7 +183,7 @@ const main = async () => {
     new Promise<void>((resolve) => {
       alithProcess.stderr.pipe(alithProcess.stdout.pipe(alithLogHandler.createWriteStream()));
       alithProcess.on("exit", () => {
-        console.log(`Unexpected closure ${chalk.red(`parachain alith`)}`);
+        console.log(`${chalk.red(`parachain alith`)} is closed`);
         resolve();
       });
       process.on("exit", () => {
@@ -209,11 +209,11 @@ const main = async () => {
   process.stdout.write(`      Sudo: ${chalk.green("Alith")} ${ALITH_PRIVATE_KEY}\n`);
   process.stdout.write(`Council/TC: ${chalk.green("Alith")} ${ALITH_PRIVATE_KEY}\n`);
 
-  // await Promise.race(exitPromises);
+  // Promise.race(exitPromises);
 
-  // await Promise.all([alithLogHandler.close()]);
-  // await Promise.all([alithProcess.kill()]);
-  console.log(`Launched`);
+  await Promise.all([alithLogHandler.close()]);
+  await Promise.all([alithProcess.kill()]);
+  console.log(`Forked network setup complete`);
 };
 
-main();
+main()
