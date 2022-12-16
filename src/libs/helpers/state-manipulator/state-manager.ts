@@ -16,7 +16,7 @@ import {
   ALITH_SESSION_ADDRESS,
   BALTATHAR_ADDRESS,
   CHARLETH_ADDRESS,
-  DOT_ASSET_ID,
+  RELAY_ASSET_ID,
   USDT_ASSET_ID,
 } from "../../../utils/constants";
 import { SpecManipulator } from "./spec-manipulator";
@@ -150,7 +150,7 @@ export async function downloadExportedState(
 export async function neutralizeExportedState(
   inFile: string,
   outFile: string,
-  runAsSoloChain: boolean = false
+  solo: boolean = false
 ) {
   await processState(inFile, outFile, [
     new RoundManipulator((current, first, length) => {
@@ -160,12 +160,12 @@ export async function neutralizeExportedState(
     new SudoManipulator(ALITH_ADDRESS),
     new CollatorManipulator(ALITH_ADDRESS, ALITH_SESSION_ADDRESS),
     new HRMPManipulator(),
-    runAsSoloChain
+    solo
       ? new SpecManipulator({
           name: `Forked Solo Network`,
           chainType: `Development`,
           relayChain: `dev-service`,
-          soloChain: runAsSoloChain,
+          soloChain: true,
           paraId: 0,
           protocolId: "",
         })
@@ -183,7 +183,7 @@ export async function neutralizeExportedState(
       { account: CHARLETH_ADDRESS, amount: 10_000n * 10n ** 18n },
     ]),
     new AssetManipulator(ALITH_ADDRESS, USDT_ASSET_ID, 20_000n * 10n ** 6n),
-    new AssetManipulator(ALITH_ADDRESS, DOT_ASSET_ID, 20_000n * 10n ** 10n),
+    new AssetManipulator(ALITH_ADDRESS, RELAY_ASSET_ID, 20_000n * 10n ** 10n),
   ]);
 }
 
