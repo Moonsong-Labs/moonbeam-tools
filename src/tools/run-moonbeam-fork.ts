@@ -5,9 +5,13 @@ import prettyBytes from "pretty-bytes";
 import { SingleBar } from "cli-progress";
 import { runTask, spawnTask } from "../utils/runner";
 import { ChildProcessWithoutNullStreams } from "node:child_process";
+import { pipeline } from "stream";
+import { promisify } from "util";
 import yargs from "yargs";
 import chalk from "chalk";
 import fs from "fs/promises";
+import http from "http";
+import fetch from "node-fetch";
 import path from "path";
 import {
   downloadExportedState,
@@ -88,19 +92,63 @@ const main = async () => {
   let hasChanged = false;
   let polkadotVersion: string;
 
-  // TODO - if binary missing, go download the latest
+  // TODO - Add ARG for specifying which binary versions to download
+
   if (!argv.solo) {
-    if (!argv["polkadot-binary"] || (await fs.access(argv["polkadot-binary"]).catch(() => false))) {
-      throw new Error("Missing polkadot-binary");
+    if (await fs.access(argv["polkadot-binary"]).catch(() => true)) {
+      try {
+        const releases = await (
+          await fetch("https://api.github.com/repos/paritytech/polkadot/releases")
+        ).json();
+        const release = releases.find((release) =>
+          release.assets.find((asset) => asset.name === "polkadot")
+        );
+        process.stdout.write(
+          `\t - Polkadot binary not found, downloading latest client:  ${release.tag_name} ....`
+        );
+        const asset = release.assets.find((asset) => asset.name === "polkadot");
+        const response = await fetch(asset.browser_download_url);
+        if (!response.ok) {
+          throw new Error(`unexpected response ${response.statusText}`);
+        }
+        await fs.writeFile(argv["polkadot-binary"], response.body);
+        await fs.chmod(argv["polkadot-binary"], "755");
+        process.stdout.write(` ${chalk.green("done")} ✓\n`);
+      } catch (e) {
+        console.error(e);
+        throw new Error("Error downloading polkadot-binary");
+      }
     }
     process.stdout.write(`\t - Checking polkadot binary...`);
     polkadotVersion = (await runTask(`${argv["polkadot-binary"]} --version`)).trim();
     process.stdout.write(` ${chalk.green(polkadotVersion.trim())} ✓\n`);
   }
 
-  if (!argv["moonbeam-binary"] || (await fs.access(argv["moonbeam-binary"]).catch(() => false))) {
-    throw new Error("Missing moonbeam-binary");
+  if (await fs.access(argv["moonbeam-binary"]).catch(() => true)) {
+    try {
+      const releases = await (
+        await fetch("https://api.github.com/repos/purestake/moonbeam/releases")
+      ).json();
+      const release = releases.find((release) =>
+        release.assets.find((asset) => asset.name === "moonbeam")
+      );
+      process.stdout.write(
+        `\t - Moonbeam binary not found, downloading latest client:  ${release.tag_name} ....`
+      );
+      const asset = release.assets.find((asset) => asset.name === "moonbeam");
+      const response = await fetch(asset.browser_download_url);
+      if (!response.ok) {
+        throw new Error(`unexpected response ${response.statusText}`);
+      }
+      await fs.writeFile(argv["moonbeam-binary"], response.body);
+      await fs.chmod(argv["moonbeam-binary"], "755");
+      process.stdout.write(` ${chalk.green("done")} ✓\n`);
+    } catch (e) {
+      console.error(e);
+      throw new Error("Error downloading moonbeam-binary");
+    }
   }
+
   process.stdout.write(`\t - Checking moonbeam binary...`);
   const moonbeamVersion = (await runTask(`${argv["moonbeam-binary"]} --version`)).trim();
   process.stdout.write(` ${chalk.green(moonbeamVersion.trim())} ✓\n`);
