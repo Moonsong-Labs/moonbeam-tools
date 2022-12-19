@@ -67,11 +67,23 @@ const argv = yargs(process.argv.slice(2))
       description: "Binary file path of the polkadot node",
       default: "./binaries/polkadot",
     },
-
+    "polkadot-version": {
+      type: "string",
+      alias: "pver",
+      description: "Client version number for Polkadot binary",
+      default: "latest",
+    },
+    "moonbeam-version": {
+      type: "string",
+      alias: "mver",
+      description: "Client version number for Moonbeam binary",
+      default: "latest",
+    },
     "base-path": {
       type: "string",
+      alias: "bp",
       description: "Where to store the data",
-      demandOption: true,
+      default: "/tmp/fork-data/",
     },
   }).argv;
 
@@ -92,19 +104,46 @@ const main = async () => {
   let hasChanged = false;
   let polkadotVersion: string;
 
-  // TODO - Add ARG for specifying which binary versions to download
-
   if (!argv.solo) {
-    if (await fs.access(argv["polkadot-binary"]).catch(() => true)) {
+    const polkadotReleases = await (
+      await fetch("https://api.github.com/repos/paritytech/polkadot/releases")
+    ).json();
+
+    const latestPolkadotVersion = polkadotReleases.find((release) =>
+      release.assets.find((asset) => asset.name === "polkadot")
+    ).tag_name;
+
+    // Download new binary if non found, or if existing version doesnt match specified, or if not latest
+    if (
+      (await fs.access(argv["polkadot-binary"]).catch(() => true)) ||
+      ((await runTask(`${argv["polkadot-binary"]} --version`))
+        .trim()
+        .split(" ")[1]
+        .split("-")[0] !== argv["polkadot-version"] &&
+        argv["polkadot-version"] !== "latest") ||
+      ("v" +
+        (await runTask(`${argv["polkadot-binary"]} --version`))
+          .trim()
+          .split(" ")[1]
+          .split("-")[0] !==
+        latestPolkadotVersion &&
+        argv["polkadot-version"] === "latest")
+    ) {
       try {
-        const releases = await (
-          await fetch("https://api.github.com/repos/paritytech/polkadot/releases")
-        ).json();
-        const release = releases.find((release) =>
-          release.assets.find((asset) => asset.name === "polkadot")
-        );
+        const release =
+          argv["polkadot-version"] === "latest"
+            ? polkadotReleases.find((release) =>
+                release.assets.find((asset) => asset.name === "polkadot")
+              )
+            : polkadotReleases
+                .filter((release) => release.tag_name.includes("v" + argv["polkadot-version"]))
+                .find((release) => release.assets.find((asset) => asset.name === "polkadot"));
+
+        if (release == null) {
+          throw new Error(`Release not found for ${argv["polkadot-version"]}`);
+        }
         process.stdout.write(
-          `\t - Polkadot binary not found, downloading latest client:  ${release.tag_name} ....`
+          `\t - Requested Polkadot ${argv["polkadot-version"]} binary not found, downloading client ....`
         );
         const asset = release.assets.find((asset) => asset.name === "polkadot");
         const response = await fetch(asset.browser_download_url);
@@ -119,21 +158,46 @@ const main = async () => {
         throw new Error("Error downloading polkadot-binary");
       }
     }
+
     process.stdout.write(`\t - Checking polkadot binary...`);
     polkadotVersion = (await runTask(`${argv["polkadot-binary"]} --version`)).trim();
     process.stdout.write(` ${chalk.green(polkadotVersion.trim())} ✓\n`);
   }
 
-  if (await fs.access(argv["moonbeam-binary"]).catch(() => true)) {
+  const moonbeamReleases = await (
+    await fetch("https://api.github.com/repos/purestake/moonbeam/releases")
+  ).json();
+
+  const latestMoonbeamVersion = moonbeamReleases.find((release) =>
+    release.assets.find((asset) => asset.name === "moonbeam")
+  ).tag_name;
+
+  // Download new binary if: none found, or if existing version doesnt match requested, or newer latest available
+  if (
+    (await fs.access(argv["moonbeam-binary"]).catch(() => true)) ||
+    ((await runTask(`${argv["moonbeam-binary"]} --version`)).trim().split(" ")[1].split("-")[0] !==
+      argv["moonbeam-version"] &&
+      argv["moonbeam-version"] !== "latest") ||
+    ("v" +
+      (await runTask(`${argv["moonbeam-binary"]} --version`)).trim().split(" ")[1].split("-")[0] !==
+      latestMoonbeamVersion &&
+      argv["moonbeam-version"] === "latest")
+  ) {
     try {
-      const releases = await (
-        await fetch("https://api.github.com/repos/purestake/moonbeam/releases")
-      ).json();
-      const release = releases.find((release) =>
-        release.assets.find((asset) => asset.name === "moonbeam")
-      );
+      const release =
+        argv["moonbeam-version"] === "latest"
+          ? moonbeamReleases.find((release) =>
+              release.assets.find((asset) => asset.name === "moonbeam")
+            )
+          : moonbeamReleases
+              .filter((release) => release.tag_name.includes("v" + argv["moonbeam-version"]))
+              .find((release) => release.assets.find((asset) => asset.name === "moonbeam"));
+
+      if (release == null) {
+        throw new Error(`Release not found for ${argv["moonbeam-version"]}`);
+      }
       process.stdout.write(
-        `\t - Moonbeam binary not found, downloading latest client:  ${release.tag_name} ....`
+        `\t - Requested Moonbeam ${argv["moonbeam-version"]} binary not found, downloading client ....`
       );
       const asset = release.assets.find((asset) => asset.name === "moonbeam");
       const response = await fetch(asset.browser_download_url);
