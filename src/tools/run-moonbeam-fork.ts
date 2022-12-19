@@ -5,6 +5,7 @@ import prettyBytes from "pretty-bytes";
 import { SingleBar } from "cli-progress";
 import { runTask, spawnTask } from "../utils/runner";
 import { ChildProcessWithoutNullStreams } from "node:child_process";
+import { constants } from "fs";
 import { pipeline } from "stream";
 import { promisify } from "util";
 import yargs from "yargs";
@@ -19,6 +20,7 @@ import {
   neutralizeExportedState,
 } from "../libs/helpers/state-manipulator";
 import { ALITH_PRIVATE_KEY } from "../utils/constants";
+import ts from "typescript";
 
 const argv = yargs(process.argv.slice(2))
   .usage("Usage: $0")
@@ -35,24 +37,25 @@ const argv = yargs(process.argv.slice(2))
       description: "Will verify if a latest snapshot is available and download it",
       default: false,
     },
-    purge: {
+    "reset-to-genesis": {
       type: "boolean",
-      description: "Will delete previous execution database",
+      description:
+        "Will delete the execution database, setting this will restore network back to genesis state",
       default: false,
     },
-    solo: {
+    "purge-all": {
+      type: "boolean",
+      description: "Will delete ALL files at base path, use with caution",
+      default: false,
+    },
+    dev: {
       type: "boolean",
       description: "Will run the network as a single manual-sealed dev node",
       default: false,
     },
     ephemeral: {
       type: "boolean",
-      description: "Will leave the network running after setup has completed",
-      default: false,
-    },
-    "purge-specs": {
-      type: "boolean",
-      description: "Will delete previous generated specs",
+      description: "Will close the network immediately after it has completed setup, used for CI.",
       default: false,
     },
     "moonbeam-binary": {
@@ -104,7 +107,7 @@ const main = async () => {
   let hasChanged = false;
   let polkadotVersion: string;
 
-  if (!argv.solo) {
+  if (!argv.dev) {
     const polkadotReleases = await (
       await fetch("https://api.github.com/repos/paritytech/polkadot/releases")
     ).json();
@@ -217,8 +220,14 @@ const main = async () => {
   const moonbeamVersion = (await runTask(`${argv["moonbeam-binary"]} --version`)).trim();
   process.stdout.write(` ${chalk.green(moonbeamVersion.trim())} ✓\n`);
 
-  process.stdout.write(`\t - Checking exported state...`);
+  if (argv["purge-all"]) {
+    await fs.rm(argv["base-path"], { recursive: true, force: true });
+    process.stdout.write(
+      `\t - ${chalk.red(`Purged`)} all local files at:  ${argv["base-path"]} ✓\n`
+    );
+  }
 
+  process.stdout.write(`\t - Checking exported state...`);
   let progressBar: SingleBar;
   const { file: stateFile, blockNumber } = await downloadExportedState(
     argv.network as NetworkName,
@@ -267,7 +276,7 @@ const main = async () => {
   ) {
     hasChanged = true;
     process.stdout.write(` ${chalk.yellow(`generating`)} (3min)...`);
-    await neutralizeExportedState(stateFile, modFile, argv.solo);
+    await neutralizeExportedState(stateFile, modFile, argv.dev);
     process.stdout.write(` ✓\n`);
   }
   process.stdout.write(` ${chalk.green(modFile)} ✓\n`);
@@ -309,7 +318,7 @@ const main = async () => {
   process.stdout.write(` ${chalk.green(genesisStateFile)} ✓\n`);
 
   let relayRawSpecFile: string;
-  if (!argv.solo) {
+  if (!argv.dev) {
     const parachainCode = (await fs.readFile(codeFile)).toString();
     const genesisState = (await fs.readFile(genesisStateFile)).toString();
 
@@ -317,10 +326,10 @@ const main = async () => {
       argv["base-path"],
       `rococo-${argv.network}-${polkadotVersion.replace(" ", "-")}-local-plain.json`
     );
-    if (argv["purge-specs"]) {
-      process.stdout.write(`\t - ${chalk.red(`purging`)} relay spec... ${relayPlainSpecFile}\n`);
-      await fs.rm(relayPlainSpecFile, { recursive: true });
-    }
+    // if (argv["purge-specs"]) {
+    //   process.stdout.write(`\t - ${chalk.red(`purging`)} relay spec... ${relayPlainSpecFile}\n`);
+    //   await fs.rm(relayPlainSpecFile, { recursive: true });
+    // }
     process.stdout.write(`\t - Checking relaychain plain spec file...`);
     if (
       !(await fs
@@ -381,8 +390,8 @@ const main = async () => {
   }
 
   const baseDataFolder = path.join(argv["base-path"], `${argv.network}`);
-  if (argv.purge) {
-    process.stdout.write(`\t - ${chalk.red(`purging`)} node db... ${baseDataFolder}\n`);
+  if (argv["reset-to-genesis"]) {
+    process.stdout.write(`\t - ${chalk.red(`Purging`)} node db... ${baseDataFolder}\n`);
     await fs.rm(baseDataFolder, { recursive: true, force: true });
   }
 
@@ -391,7 +400,7 @@ const main = async () => {
   let bobProcess: ChildProcessWithoutNullStreams;
   let bobLogHandler: fs.FileHandle;
 
-  if (!argv.solo) {
+  if (!argv.dev) {
     process.stdout.write(`\t - ${chalk.yellow(`Starting`)} relay nodes...\n`);
     process.stdout.write(`\t\t - ${chalk.green(`Starting`)} Alice node...\n`);
     const aliceFolder = path.join(baseDataFolder, `relay-alice`);
@@ -430,7 +439,7 @@ const main = async () => {
   process.stdout.write(`\t\t - ${chalk.yellow(`Logs`)}: ${alithLogs}`);
   await fs.mkdir(alithFolder, { recursive: true });
   const alithLogHandler = await fs.open(alithLogs, "w");
-  const alithProcess = argv.solo
+  const alithProcess = argv.dev
     ? await spawnTask(
         `${argv["moonbeam-binary"]} --base-path ${alithFolder} --execution native --log=info,netlink=info,sync=info,lib=info,multi=info --alice --collator --db-cache 5000 --trie-cache-size 0 --chain ${modFile} --no-hardware-benchmarks --no-prometheus --no-telemetry --sealing=manual`
       )
@@ -458,7 +467,7 @@ const main = async () => {
     }),
   ];
 
-  if (!argv.solo) {
+  if (!argv.dev) {
     exitPromises.push(
       new Promise<void>((resolve) => {
         // aliceProcess.stderr.on("data", (d) => console.log(d.toString()));
@@ -498,7 +507,7 @@ const main = async () => {
   }
   process.stdout.write(` ✓\n`);
 
-  if (!argv.solo) {
+  if (!argv.dev) {
     process.stdout.write(
       `\tℹ️  RelayChain Explorer: https://polkadot.js.org/apps/?rpc=ws://127.0.0.1:12003#/explorer\n`
     );
@@ -514,13 +523,13 @@ const main = async () => {
   }
 
   await Promise.all([
-    !argv.solo && aliceLogHandler.close(),
-    !argv.solo && bobLogHandler.close(),
+    !argv.dev && aliceLogHandler.close(),
+    !argv.dev && bobLogHandler.close(),
     alithLogHandler.close(),
   ]);
   await Promise.all([
-    !argv.solo && aliceProcess.kill(),
-    !argv.solo && bobProcess.kill(),
+    !argv.dev && aliceProcess.kill(),
+    !argv.dev && bobProcess.kill(),
     alithProcess.kill(),
   ]);
   console.log(`Done`);

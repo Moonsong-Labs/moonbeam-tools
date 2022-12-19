@@ -113,10 +113,10 @@ Which will grab the latest polkadot and moonbeam binaries, grab the latest snaps
 
 
 If however, you are more interested in intereacting with the contracts in the Moonbeam emulated EVM environment, but not so much parachain staking or XCM, you can run
-the forked network as a solo node in dev mode. This allows for manual sealing of blocks which dramatically reduces execution times of tests (reduction of 12s blocktime into milliseconds).
+the forked network in development mode. This allows for manual sealing of blocks which dramatically reduces execution times of tests (reduction of 12s blocktime into milliseconds).
 
 ```
-npm run fork-solo
+npx ts-node npx ts-node ./src/tools/run-moonbeam-fork.ts -n moonbeam --dev
 ```
 
 ### Further Examples
@@ -129,6 +129,18 @@ By default the polkadot and moonbeam binaries will be downloaded from github if 
 use the `--polkadot-binary` option to provide the path to the binary to use (or copy them into the folder). If doing this option, make sure the correct binary version is supplied via `--moonbeam-version` and 
 `--polkadot-version` respectively, otherwise the script will still attempt to download the latest.
 
+:information_source: When running the node in manual-seal mode, to create a block you can run the following `curl` command:
+```
+curl --location --request POST 'http://127.0.0.1:9933/' \
+--header 'Content-Type: application/json' \
+--data-raw '{
+    "jsonrpc":"2.0",
+    "id"     :1,
+    "method" :"engine_createBlock",
+    "params" :[true,true]
+}'
+```
+
 
 The full list of options can be found in the `--help` :
 ```
@@ -138,13 +150,15 @@ The full list of options can be found in the `--help` :
                                                              [string] [required]
       --latest                    Will verify if a latest snapshot is available
                                   and download it     [boolean] [default: false]
-      --purge                     Will delete previous execution database
-                                                      [boolean] [default: false]
-      --solo                      Will run the network as a single manual-sealed
+      --reset-to-genesis          Will delete the execution database, setting
+                                  this will restore network back to genesis
+                                  state               [boolean] [default: false]
+      --purge-all                 Will delete ALL files at base path, use with
+                                  caution             [boolean] [default: false]
+      --dev                       Will run the network as a single manual-sealed
                                   dev node            [boolean] [default: false]
-      --ephemeral                 Will leave the network running after setup has
-                                  completed           [boolean] [default: false]
-      --purge-specs               Will delete previous generated specs
+      --ephemeral                 Will close the network immediately after it
+                                  has completed setup, used for CI.
                                                       [boolean] [default: false]
   -m, --moonbeam-binary           Binary file path or of the moonbeam node
                                        [string] [default: "./binaries/moonbeam"]
@@ -156,4 +170,5 @@ The full list of options can be found in the `--help` :
                                                     [string] [default: "latest"]
       --base-path, --bp           Where to store the data
                                            [string] [default: "/tmp/fork-data/"]
+
 ```

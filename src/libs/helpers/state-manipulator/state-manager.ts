@@ -150,7 +150,7 @@ export async function downloadExportedState(
 export async function neutralizeExportedState(
   inFile: string,
   outFile: string,
-  solo: boolean = false
+  dev: boolean = false
 ) {
   await processState(inFile, outFile, [
     new RoundManipulator((current, first, length) => {
@@ -160,12 +160,12 @@ export async function neutralizeExportedState(
     new SudoManipulator(ALITH_ADDRESS),
     new CollatorManipulator(ALITH_ADDRESS, ALITH_SESSION_ADDRESS),
     new HRMPManipulator(),
-    solo
+    dev
       ? new SpecManipulator({
-          name: `Forked Solo Network`,
+          name: `Forked Dev Network`,
           chainType: `Development`,
           relayChain: `dev-service`,
-          soloChain: true,
+          devService: true,
           paraId: 0,
           protocolId: "",
         })
