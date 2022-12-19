@@ -434,8 +434,13 @@ const main = async () => {
   }
   process.stdout.write(` ✓\n`);
 
+  if (!argv.solo) {
+    process.stdout.write(
+      `\tℹ️  RelayChain Explorer: https://polkadot.js.org/apps/?rpc=ws://127.0.0.1:12003#/explorer\n`
+    );
+  }
   process.stdout.write(
-    `\tℹ️  Polkadot.js Explorer: https://polkadot.js.org/apps/?rpc=ws://127.0.0.1:12003#/explorer\n`
+    `\tℹ️  ParaChain Explorer: https://polkadot.js.org/apps/?rpc=ws://127.0.0.1:9944#/explorer\n`
   );
   process.stdout.write(`      Sudo: ${chalk.green("Alith")} ${ALITH_PRIVATE_KEY}\n`);
   process.stdout.write(`Council/TC: ${chalk.green("Alith")} ${ALITH_PRIVATE_KEY}\n`);
