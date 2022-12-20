@@ -1,14 +1,11 @@
-import { bool } from "@polkadot/types-codec";
 import { bnToHex, hexToBigInt, nToHex } from "@polkadot/util";
 import Debug from "debug";
-import { ALITH_ADDRESS, USDT_ASSET_ID } from "../../../utils/constants";
 import {
   Action,
   encodeStorageBlake128MapKey,
   encodeStorageBlake128DoubleMapKey,
   encodeStorageKey,
   StateManipulator,
-  StateLine,
 } from "./genesis-parser";
 const debug = Debug("helper:balances-manipulator");
 
@@ -18,10 +15,8 @@ export class AssetManipulator implements StateManipulator {
   amount: bigint;
   injected: boolean;
   key: string;
-  private readonly assetsGeneralPrefix = encodeStorageKey("Assets", "Account");
-
-  // TODO: Increase asset total issuance by injected amount
-  //       if required by tests
+  assetSupplyPrefix: string;
+  assetsGeneralPrefix = encodeStorageKey("Assets", "Account");
 
   constructor(account: string, assetId: string, amount: bigint) {
     this.account = account;
@@ -32,6 +27,11 @@ export class AssetManipulator implements StateManipulator {
       bnToHex(BigInt(assetId), { isLe: true, bitLength: 128 }),
       account,
     ]);
+    this.assetSupplyPrefix = encodeStorageBlake128MapKey(
+      "Assets",
+      "Asset",
+      bnToHex(BigInt(assetId), { isLe: true, bitLength: 128 })
+    );
   }
 
   processRead = () => {};
@@ -52,6 +52,51 @@ export class AssetManipulator implements StateManipulator {
       };
     }
 
-    return { action: "keep" as Action };
+    // This section is overly verbose so that future maintainers can extend this section as they wish
+    if (key.startsWith(this.assetSupplyPrefix)) {
+      const currentTotal = hexToBigInt(value.slice(162, 194), { isLe: true });
+      const supply = bnToHex(currentTotal + this.amount, { isLe: true, bitLength: 128 }).slice(2);
+      const address = "6d6f646c617373746d6e67720000000000000000";
+      const owner = address;
+      const issuer = address;
+      const admin = address;
+      const freezer = address;
+      const deposit = nToHex(0, { isLe: true, bitLength: 128 }).slice(2);
+      const minBalance = nToHex(1, { isLe: true, bitLength: 128 }).slice(2);
+      const isSufficient = nToHex(1, { isLe: true }).slice(2);
+      const accounts = bnToHex(hexToBigInt(value.slice(259, 267)) + BigInt(1), {
+        isLe: true,
+      }).slice(2);
+      const sufficients = value.slice(267, 275);
+      const approvals = value.slice(275, 283);
+      const isFrozen = nToHex(0, { isLe: true }).slice(2);
+      const newValue =
+        "0x" +
+        owner +
+        issuer +
+        admin +
+        freezer +
+        supply +
+        deposit +
+        minBalance +
+        isSufficient +
+        accounts +
+        sufficients +
+        approvals +
+        isFrozen;
+      console.log("value");
+      console.log(newValue);
+      return {
+        action: "remove" as Action,
+        extraLines: [
+          {
+            key,
+            value: newValue,
+          },
+        ],
+      };
+    } else {
+      return { action: "keep" as Action };
+    }
   };
 }

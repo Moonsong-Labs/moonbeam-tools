@@ -5,13 +5,10 @@ import prettyBytes from "pretty-bytes";
 import { SingleBar } from "cli-progress";
 import { runTask, spawnTask } from "../utils/runner";
 import { ChildProcessWithoutNullStreams } from "node:child_process";
-import { constants } from "fs";
-import { pipeline } from "stream";
-import { promisify } from "util";
+import semver from "semver";
 import yargs from "yargs";
 import chalk from "chalk";
 import fs from "fs/promises";
-import http from "http";
 import fetch from "node-fetch";
 import path from "path";
 import {
@@ -20,7 +17,6 @@ import {
   neutralizeExportedState,
 } from "../libs/helpers/state-manipulator";
 import { ALITH_PRIVATE_KEY } from "../utils/constants";
-import ts from "typescript";
 
 const argv = yargs(process.argv.slice(2))
   .usage("Usage: $0")
@@ -48,10 +44,16 @@ const argv = yargs(process.argv.slice(2))
       description: "Will delete ALL files at base path, use with caution",
       default: false,
     },
+    regenerate: {
+      type: "boolean",
+      description: "Will regenerate genesis file from a newly created state.mod.json file",
+      default: false,
+    },
     dev: {
       type: "boolean",
       description: "Will run the network as a single manual-sealed dev node",
       default: false,
+      alias: "d",
     },
     ephemeral: {
       type: "boolean",
@@ -61,8 +63,8 @@ const argv = yargs(process.argv.slice(2))
     "moonbeam-binary": {
       type: "string",
       alias: "m",
-      description: "Binary file path or of the moonbeam node",
-      default: "./binaries/moonbeam",
+      description: "Absolute file path of moonbeam binary OR version number to download",
+      default: "latest",
     },
     "polkadot-binary": {
       type: "string",
@@ -74,12 +76,6 @@ const argv = yargs(process.argv.slice(2))
       type: "string",
       alias: "pver",
       description: "Client version number for Polkadot binary",
-      default: "latest",
-    },
-    "moonbeam-version": {
-      type: "string",
-      alias: "mver",
-      description: "Client version number for Moonbeam binary",
       default: "latest",
     },
     "base-path": {
@@ -106,7 +102,7 @@ const main = async () => {
   // Variable to allow replaying some following steps if previous steps have been modified
   let hasChanged = false;
   let polkadotVersion: string;
-
+  let polkadotBinaryPath: string;
   if (!argv.dev) {
     const polkadotReleases = await (
       await fetch("https://api.github.com/repos/paritytech/polkadot/releases")
@@ -116,45 +112,59 @@ const main = async () => {
       release.assets.find((asset) => asset.name === "polkadot")
     ).tag_name;
 
+    polkadotBinaryPath = path.isAbsolute(argv["polkadot-binary"])
+      ? argv["polkadot-binary"]
+      : "./binaries/polkadot";
+
     // Download new binary if non found, or if existing version doesnt match specified, or if not latest
+    // if     (
+    //   (await fs.access(argv["polkadot-binary"]).catch(() => true)) ||
+    //   ((await runTask(`${argv["polkadot-binary"]} --version`))
+    //     .trim()
+    //     .split(" ")[1]
+    //     .split("-")[0] !== argv["polkadot-version"] &&
+    //     argv["polkadot-version"] !== "latest") ||
+    //   ("v" +
+    //     (await runTask(`${argv["polkadot-binary"]} --version`))
+    //       .trim()
+    //       .split(" ")[1]
+    //       .split("-")[0] !==
+    //     latestPolkadotVersion &&
+    //     argv["polkadot-version"] === "latest")
+    // )     {
     if (
-      (await fs.access(argv["polkadot-binary"]).catch(() => true)) ||
-      ((await runTask(`${argv["polkadot-binary"]} --version`))
-        .trim()
-        .split(" ")[1]
-        .split("-")[0] !== argv["polkadot-version"] &&
-        argv["polkadot-version"] !== "latest") ||
-      ("v" +
-        (await runTask(`${argv["polkadot-binary"]} --version`))
-          .trim()
-          .split(" ")[1]
-          .split("-")[0] !==
-        latestPolkadotVersion &&
-        argv["polkadot-version"] === "latest")
+      !path.isAbsolute(argv["polkadot-binary"]) &&
+      ((await fs.access("./binaries/polkadot").catch(() => true)) ||
+        (semver.valid(argv["polkadot-binary"]) &&
+          semver.valid(semver.coerce(await runTask(`${polkadotBinaryPath} --version`))) !==
+            argv["polkadot-binary"]) ||
+        (argv["polkadot-binary"] == "latest" &&
+          semver.valid(semver.coerce(await runTask(`${polkadotBinaryPath} --version`))) !==
+            semver.clean(latestPolkadotVersion)))
     ) {
       try {
         const release =
-          argv["polkadot-version"] === "latest"
+          argv["polkadot-binary"] === "latest"
             ? polkadotReleases.find((release) =>
                 release.assets.find((asset) => asset.name === "polkadot")
               )
             : polkadotReleases
-                .filter((release) => release.tag_name.includes("v" + argv["polkadot-version"]))
+                .filter((release) => release.tag_name.includes("v" + argv["polkadot-binary"]))
                 .find((release) => release.assets.find((asset) => asset.name === "polkadot"));
 
         if (release == null) {
-          throw new Error(`Release not found for ${argv["polkadot-version"]}`);
+          throw new Error(`Release not found for ${argv["polkadot-binary"]}`);
         }
         process.stdout.write(
-          `\t - Requested Polkadot ${argv["polkadot-version"]} binary not found, downloading client ....`
+          `\t - Requested Polkadot ${argv["polkadot-binary"]} binary not found, downloading client ....`
         );
         const asset = release.assets.find((asset) => asset.name === "polkadot");
         const response = await fetch(asset.browser_download_url);
         if (!response.ok) {
           throw new Error(`unexpected response ${response.statusText}`);
         }
-        await fs.writeFile(argv["polkadot-binary"], response.body);
-        await fs.chmod(argv["polkadot-binary"], "755");
+        await fs.writeFile(polkadotBinaryPath, response.body);
+        await fs.chmod(polkadotBinaryPath, "755");
         process.stdout.write(` ${chalk.green("done")} ✓\n`);
       } catch (e) {
         console.error(e);
@@ -163,7 +173,7 @@ const main = async () => {
     }
 
     process.stdout.write(`\t - Checking polkadot binary...`);
-    polkadotVersion = (await runTask(`${argv["polkadot-binary"]} --version`)).trim();
+    polkadotVersion = (await runTask(`${polkadotBinaryPath} --version`)).trim();
     process.stdout.write(` ${chalk.green(polkadotVersion.trim())} ✓\n`);
   }
 
@@ -171,44 +181,55 @@ const main = async () => {
     await fetch("https://api.github.com/repos/purestake/moonbeam/releases")
   ).json();
 
-  const latestMoonbeamVersion = moonbeamReleases.find((release) =>
-    release.assets.find((asset) => asset.name === "moonbeam")
-  ).tag_name;
+  const latestMoonbeamVersion = semver.valid(
+    semver.coerce(
+      moonbeamReleases.find((release) => release.assets.find((asset) => asset.name === "moonbeam"))
+        .tag_name
+    )
+  );
 
-  // Download new binary if: none found, or if existing version doesnt match requested, or newer latest available
+  const moonbeamBinaryPath = path.isAbsolute(argv["moonbeam-binary"])
+    ? argv["moonbeam-binary"]
+    : "./binaries/moonbeam";
+
+  // Download binary if:
+  // 1) Absolute binary path hasn't been supplied
+  // 2) Binary doesn't exist in default location
+  // 3) Existing binary doesn't match requested version
+
   if (
-    (await fs.access(argv["moonbeam-binary"]).catch(() => true)) ||
-    ((await runTask(`${argv["moonbeam-binary"]} --version`)).trim().split(" ")[1].split("-")[0] !==
-      argv["moonbeam-version"] &&
-      argv["moonbeam-version"] !== "latest") ||
-    ("v" +
-      (await runTask(`${argv["moonbeam-binary"]} --version`)).trim().split(" ")[1].split("-")[0] !==
-      latestMoonbeamVersion &&
-      argv["moonbeam-version"] === "latest")
+    !path.isAbsolute(argv["moonbeam-binary"]) &&
+    ((await fs.access("./binaries/moonbeam").catch(() => true)) ||
+      (semver.valid(argv["moonbeam-binary"]) &&
+        semver.valid(semver.coerce(await runTask(`${moonbeamBinaryPath} --version`))) !==
+          argv["moonbeam-binary"]) ||
+      (argv["moonbeam-binary"] == "latest" &&
+        semver.valid(semver.coerce(await runTask(`${moonbeamBinaryPath} --version`))) !==
+          semver.clean(latestMoonbeamVersion)))
   ) {
     try {
       const release =
-        argv["moonbeam-version"] === "latest"
+        argv["moonbeam-binary"] === "latest"
           ? moonbeamReleases.find((release) =>
               release.assets.find((asset) => asset.name === "moonbeam")
             )
           : moonbeamReleases
-              .filter((release) => release.tag_name.includes("v" + argv["moonbeam-version"]))
+              .filter((release) => release.tag_name.includes("v" + argv["moonbeam-binary"]))
               .find((release) => release.assets.find((asset) => asset.name === "moonbeam"));
 
       if (release == null) {
-        throw new Error(`Release not found for ${argv["moonbeam-version"]}`);
+        throw new Error(`Release not found for ${argv["moonbeam-binary"]}`);
       }
       process.stdout.write(
-        `\t - Requested Moonbeam ${argv["moonbeam-version"]} binary not found, downloading client ....`
+        `\t - Requested Moonbeam ${argv["moonbeam-binary"]} binary not found, downloading client ....`
       );
       const asset = release.assets.find((asset) => asset.name === "moonbeam");
       const response = await fetch(asset.browser_download_url);
       if (!response.ok) {
         throw new Error(`unexpected response ${response.statusText}`);
       }
-      await fs.writeFile(argv["moonbeam-binary"], response.body);
-      await fs.chmod(argv["moonbeam-binary"], "755");
+      await fs.writeFile(moonbeamBinaryPath, response.body);
+      await fs.chmod(moonbeamBinaryPath, "755");
       process.stdout.write(` ${chalk.green("done")} ✓\n`);
     } catch (e) {
       console.error(e);
@@ -217,7 +238,7 @@ const main = async () => {
   }
 
   process.stdout.write(`\t - Checking moonbeam binary...`);
-  const moonbeamVersion = (await runTask(`${argv["moonbeam-binary"]} --version`)).trim();
+  const moonbeamVersion = (await runTask(`${moonbeamBinaryPath} --version`)).trim();
   process.stdout.write(` ${chalk.green(moonbeamVersion.trim())} ✓\n`);
 
   if (argv["purge-all"]) {
@@ -265,6 +286,23 @@ const main = async () => {
   );
   process.stdout.write(` ${chalk.green(paraId)} ✓\n`);
 
+  if (argv.regenerate) {
+    await fs.rm(path.join(argv["base-path"], `${argv.network}-chain.info.json`), { force: true });
+    await fs.rm(path.join(argv["base-path"], `${argv.network}-code`), { force: true });
+    await fs.rm(path.join(argv["base-path"], `${argv.network}.genesis.state`), { force: true });
+    await fs.rm(path.join(argv["base-path"], `${argv.network}-state.mod.json`), { force: true });
+
+    if (!argv.dev) {
+      await fs.rm(
+        path.join(
+          argv["base-path"],
+          `rococo-${argv.network}-${polkadotVersion.replace(" ", "-")}-local-raw.json`
+        ),
+        { force: true }
+      );
+    }
+  }
+
   process.stdout.write(`\t - Checking customized state...`);
   const modFile = stateFile.replace(/.json$/, ".mod.json");
   if (
@@ -279,7 +317,7 @@ const main = async () => {
     await neutralizeExportedState(stateFile, modFile, argv.dev);
     process.stdout.write(` ✓\n`);
   }
-  process.stdout.write(` ${chalk.green(modFile)} ✓\n`);
+  process.stdout.write(`\t - Completed at: ${chalk.green(modFile)} ✓\n`);
 
   process.stdout.write(`\t - Checking parachain wasm code...`);
   const codeFile = path.join(argv["base-path"], `${argv.network}.code`);
@@ -312,7 +350,7 @@ const main = async () => {
     hasChanged = true;
     process.stdout.write(` ${chalk.yellow(`exporting`)}...`);
     await runTask(
-      `${argv["moonbeam-binary"]} export-genesis-state --chain ${modFile} | tee ${genesisStateFile}`
+      `${moonbeamBinaryPath} export-genesis-state --chain ${modFile} | tee ${genesisStateFile}`
     );
   }
   process.stdout.write(` ${chalk.green(genesisStateFile)} ✓\n`);
@@ -326,10 +364,6 @@ const main = async () => {
       argv["base-path"],
       `rococo-${argv.network}-${polkadotVersion.replace(" ", "-")}-local-plain.json`
     );
-    // if (argv["purge-specs"]) {
-    //   process.stdout.write(`\t - ${chalk.red(`purging`)} relay spec... ${relayPlainSpecFile}\n`);
-    //   await fs.rm(relayPlainSpecFile, { recursive: true });
-    // }
     process.stdout.write(`\t - Checking relaychain plain spec file...`);
     if (
       !(await fs
@@ -341,7 +375,7 @@ const main = async () => {
       hasChanged = true;
       process.stdout.write(` ${chalk.yellow(`generating`)}...`);
       await runTask(
-        `${argv["polkadot-binary"]} build-spec --chain rococo-local --disable-default-bootnode > ${relayPlainSpecFile}`
+        `${polkadotBinaryPath} build-spec --chain rococo-local --disable-default-bootnode > ${relayPlainSpecFile}`
       );
       process.stdout.write(` ✓\n`);
 
@@ -381,7 +415,7 @@ const main = async () => {
       hasChanged = true;
       process.stdout.write(` ${chalk.yellow(`generating`)}...`);
       await runTask(
-        `${argv["polkadot-binary"]} build-spec --raw --chain ${relayPlainSpecFile} > ${relayRawSpecFile}`
+        `${polkadotBinaryPath} build-spec --raw --chain ${relayPlainSpecFile} > ${relayRawSpecFile}`
       );
       process.stdout.write(` ✓\n`);
       process.stdout.write(`\t - ${chalk.yellow(`Saving`)} raw relaychain spec...`);
@@ -409,9 +443,7 @@ const main = async () => {
     await fs.mkdir(aliceFolder, { recursive: true });
     aliceLogHandler = await fs.open(aliceLogs, "w");
     aliceProcess = await spawnTask(
-      `${
-        argv["polkadot-binary"]
-      } --base-path ${aliceFolder} --alice --chain ${relayRawSpecFile} --rpc-port 11001 --ws-port 12001 --port 10001 --node-key ${
+      `${polkadotBinaryPath} --base-path ${aliceFolder} --alice --chain ${relayRawSpecFile} --rpc-port 11001 --ws-port 12001 --port 10001 --node-key ${
         Object.keys(NODE_KEYS)[0]
       } --validator`
     );
@@ -423,9 +455,7 @@ const main = async () => {
     await fs.mkdir(bobFolder, { recursive: true });
     bobLogHandler = await fs.open(bobLogs, "w");
     bobProcess = await spawnTask(
-      `${
-        argv["polkadot-binary"]
-      } --base-path ${bobFolder} --bob --chain ${relayRawSpecFile} --rpc-port 11002 --ws-port 12002 --port 10002  --node-key ${
+      `${polkadotBinaryPath} --base-path ${bobFolder} --bob --chain ${relayRawSpecFile} --rpc-port 11002 --ws-port 12002 --port 10002  --node-key ${
         Object.keys(NODE_KEYS)[1]
       } --validator`
     );
@@ -441,12 +471,10 @@ const main = async () => {
   const alithLogHandler = await fs.open(alithLogs, "w");
   const alithProcess = argv.dev
     ? await spawnTask(
-        `${argv["moonbeam-binary"]} --base-path ${alithFolder} --execution native --log=info,netlink=info,sync=info,lib=info,multi=info --alice --collator --db-cache 5000 --trie-cache-size 0 --chain ${modFile} --no-hardware-benchmarks --no-prometheus --no-telemetry --sealing=manual`
+        `${moonbeamBinaryPath} --base-path ${alithFolder} --execution native --log=info,netlink=info,sync=info,lib=info,multi=info --alice --collator --db-cache 5000 --trie-cache-size 0 --chain ${modFile} --no-hardware-benchmarks --no-prometheus --no-telemetry --sealing=manual`
       )
     : await spawnTask(
-        `${
-          argv["moonbeam-binary"]
-        } --base-path ${alithFolder} --execution native --log=debug,netlink=info,sync=info,lib=info,multi=info --alice --collator --db-cache 5000 --trie-cache-size 0 --chain ${modFile} --  --chain ${relayRawSpecFile} --rpc-port 11003 --ws-port 12003 --port 10003 --node-key ${
+        `${moonbeamBinaryPath} --base-path ${alithFolder} --execution native --log=debug,netlink=info,sync=info,lib=info,multi=info --alice --collator --db-cache 5000 --trie-cache-size 0 --chain ${modFile} --  --chain ${relayRawSpecFile} --rpc-port 11003 --ws-port 12003 --port 10003 --node-key ${
           Object.keys(NODE_KEYS)[2]
         }`
       );
