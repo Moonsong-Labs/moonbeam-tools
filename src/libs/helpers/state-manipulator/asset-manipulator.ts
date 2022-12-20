@@ -84,8 +84,6 @@ export class AssetManipulator implements StateManipulator {
         sufficients +
         approvals +
         isFrozen;
-      console.log("value");
-      console.log(newValue);
       return {
         action: "remove" as Action,
         extraLines: [
