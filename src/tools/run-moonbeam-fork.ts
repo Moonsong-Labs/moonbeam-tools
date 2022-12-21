@@ -20,68 +20,68 @@ import { ALITH_PRIVATE_KEY } from "../utils/constants";
 
 const argv = yargs(process.argv.slice(2))
   .usage("Usage: $0")
-  .version("1.0.0")
+  .version("2.0.0")
   .options({
     network: {
       type: "string",
       alias: "n",
-      description: "Network to retrieve the exported state for",
+      description: "Network to retrieve the exported state for.",
       demandOption: true,
     },
     latest: {
       type: "boolean",
-      description: "Will verify if a latest snapshot is available and download it",
+      alias: "l",
+      description: "Verifies if a more recent state snapshot is able to download.",
       default: false,
     },
     "reset-to-genesis": {
       type: "boolean",
-      description:
-        "Will delete the execution database, setting this will restore network back to genesis state",
+      alias: "r",
+      description: "Resets the network back to the initial state at genesis block.",
       default: false,
     },
     "purge-all": {
       type: "boolean",
-      description: "Will delete ALL files at base path, use with caution",
+      alias: "k",
+      description: "Removes ALL files at the base-path directory, use with CAUTION.",
       default: false,
     },
     regenerate: {
       type: "boolean",
-      description: "Will regenerate genesis file from a newly created state.mod.json file",
+      alias: "g",
+      description: "Creates a new genesis file based on state manipulators.",
       default: false,
     },
     dev: {
       type: "boolean",
-      description: "Will run the network as a single manual-sealed dev node",
+      description: "Runs network as a single manual-sealed development node.",
       default: false,
       alias: "d",
     },
     ephemeral: {
       type: "boolean",
-      description: "Will close the network immediately after it has completed setup, used for CI.",
+      alias: "t",
+      description: "Closes network immediately after it has completed setup, used for CI.",
       default: false,
     },
     "moonbeam-binary": {
       type: "string",
       alias: "m",
-      description: "Absolute file path of moonbeam binary OR version number to download",
+      description:
+        "Absolute file path (e.g. /tmp/fork-chain/moonbeam) of moonbeam binary OR version number (e.g. 0.31) to download.",
       default: "latest",
     },
     "polkadot-binary": {
       type: "string",
       alias: "p",
-      description: "Binary file path of the polkadot node",
-      default: "./binaries/polkadot",
-    },
-    "polkadot-version": {
-      type: "string",
-      alias: "pver",
-      description: "Client version number for Polkadot binary",
+      description:
+        "Absolute file path (e.g. /tmp/fork-chain/polkadot) of polkadot binary OR version number (e.g. 0.9.28) to download.",
       default: "latest",
     },
     "base-path": {
       type: "string",
-      alias: "bp",
-      description: "Where to store the data",
+      alias: "o",
+      description: "Specifies where all generated files are to be stored.",
       default: "/tmp/fork-data/",
     },
   }).argv;
@@ -116,29 +116,29 @@ const main = async () => {
       ? argv["polkadot-binary"]
       : "./binaries/polkadot";
 
-    // Download new binary if non found, or if existing version doesnt match specified, or if not latest
-    // if     (
-    //   (await fs.access(argv["polkadot-binary"]).catch(() => true)) ||
-    //   ((await runTask(`${argv["polkadot-binary"]} --version`))
-    //     .trim()
-    //     .split(" ")[1]
-    //     .split("-")[0] !== argv["polkadot-version"] &&
-    //     argv["polkadot-version"] !== "latest") ||
-    //   ("v" +
-    //     (await runTask(`${argv["polkadot-binary"]} --version`))
-    //       .trim()
-    //       .split(" ")[1]
-    //       .split("-")[0] !==
-    //     latestPolkadotVersion &&
-    //     argv["polkadot-version"] === "latest")
-    // )     {
+    // Download binary if:
+    // 1) Absolute binary path hasn't been supplied
+    // 2) Binary doesn't exist in default location
+    // 3) Existing binary doesn't match requested version
+    // if (
+    //   !path.isAbsolute(argv["polkadot-binary"]) &&
+    //   ((await fs.access("./binaries/polkadot").catch(() => true)) ||
+    //     (semver.valid(argv["polkadot-binary"]) &&
+    //       semver.valid(semver.coerce(await runTask(`${polkadotBinaryPath} --version`))) !==
+    //         argv["polkadot-binary"]) ||
+    //     (argv["polkadot-binary"] == "latest" &&
+    //       semver.valid(semver.coerce(await runTask(`${polkadotBinaryPath} --version`))) !==
+    //         semver.clean(latestPolkadotVersion)))
+    // ) {
     if (
       !path.isAbsolute(argv["polkadot-binary"]) &&
       ((await fs.access("./binaries/polkadot").catch(() => true)) ||
-        (semver.valid(argv["polkadot-binary"]) &&
-          semver.valid(semver.coerce(await runTask(`${polkadotBinaryPath} --version`))) !==
-            argv["polkadot-binary"]) ||
-        (argv["polkadot-binary"] == "latest" &&
+        (argv["polkadot-binary"] !== "latest" &&
+          semver.compare(
+            semver.valid(semver.coerce(await runTask(`${polkadotBinaryPath} --version`))),
+            semver.valid(semver.coerce(argv["polkadot-binary"]))
+          ) !== 0) ||
+        (argv["polkadot-binary"] === "latest" &&
           semver.valid(semver.coerce(await runTask(`${polkadotBinaryPath} --version`))) !==
             semver.clean(latestPolkadotVersion)))
     ) {
@@ -196,14 +196,15 @@ const main = async () => {
   // 1) Absolute binary path hasn't been supplied
   // 2) Binary doesn't exist in default location
   // 3) Existing binary doesn't match requested version
-
   if (
     !path.isAbsolute(argv["moonbeam-binary"]) &&
     ((await fs.access("./binaries/moonbeam").catch(() => true)) ||
-      (semver.valid(argv["moonbeam-binary"]) &&
-        semver.valid(semver.coerce(await runTask(`${moonbeamBinaryPath} --version`))) !==
-          argv["moonbeam-binary"]) ||
-      (argv["moonbeam-binary"] == "latest" &&
+      (argv["moonbeam-binary"] !== "latest" &&
+        semver.compare(
+          semver.valid(semver.coerce(await runTask(`${moonbeamBinaryPath} --version`))),
+          semver.valid(semver.coerce(argv["moonbeam-binary"]))
+        ) !== 0) ||
+      (argv["moonbeam-binary"] === "latest" &&
         semver.valid(semver.coerce(await runTask(`${moonbeamBinaryPath} --version`))) !==
           semver.clean(latestMoonbeamVersion)))
   ) {
@@ -216,7 +217,6 @@ const main = async () => {
           : moonbeamReleases
               .filter((release) => release.tag_name.includes("v" + argv["moonbeam-binary"]))
               .find((release) => release.assets.find((asset) => asset.name === "moonbeam"));
-
       if (release == null) {
         throw new Error(`Release not found for ${argv["moonbeam-binary"]}`);
       }
@@ -537,11 +537,11 @@ const main = async () => {
 
   if (!argv.dev) {
     process.stdout.write(
-      `\tℹ️  RelayChain Explorer: https://polkadot.js.org/apps/?rpc=ws://127.0.0.1:12003#/explorer\n`
+      `ℹ️  RelayChain Explorer: https://polkadot.js.org/apps/?rpc=ws://127.0.0.1:12003#/explorer\n`
     );
   }
   process.stdout.write(
-    `\tℹ️  ParaChain Explorer: https://polkadot.js.org/apps/?rpc=ws://127.0.0.1:9944#/explorer\n`
+    `ℹ️  ParaChain Explorer: https://polkadot.js.org/apps/?rpc=ws://127.0.0.1:9944#/explorer\n`
   );
   process.stdout.write(`      Sudo: ${chalk.green("Alith")} ${ALITH_PRIVATE_KEY}\n`);
   process.stdout.write(`Council/TC: ${chalk.green("Alith")} ${ALITH_PRIVATE_KEY}\n`);
