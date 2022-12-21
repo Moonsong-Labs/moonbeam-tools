@@ -443,7 +443,7 @@ const main = async () => {
     await fs.mkdir(aliceFolder, { recursive: true });
     aliceLogHandler = await fs.open(aliceLogs, "w");
     aliceProcess = await spawnTask(
-      `${polkadotBinaryPath} --base-path ${aliceFolder} --alice --chain ${relayRawSpecFile} --rpc-port 11001 --ws-port 12001 --port 10001 --node-key ${
+      `${polkadotBinaryPath} --database paritydb --base-path ${aliceFolder} --alice --chain ${relayRawSpecFile} --rpc-port 11001 --ws-port 12001 --port 10001 --node-key ${
         Object.keys(NODE_KEYS)[0]
       } --validator`
     );
@@ -455,7 +455,7 @@ const main = async () => {
     await fs.mkdir(bobFolder, { recursive: true });
     bobLogHandler = await fs.open(bobLogs, "w");
     bobProcess = await spawnTask(
-      `${polkadotBinaryPath} --base-path ${bobFolder} --bob --chain ${relayRawSpecFile} --rpc-port 11002 --ws-port 12002 --port 10002  --node-key ${
+      `${polkadotBinaryPath} --database paritydb --base-path ${bobFolder} --bob --chain ${relayRawSpecFile} --rpc-port 11002 --ws-port 12002 --port 10002  --node-key ${
         Object.keys(NODE_KEYS)[1]
       } --validator`
     );
@@ -471,10 +471,10 @@ const main = async () => {
   const alithLogHandler = await fs.open(alithLogs, "w");
   const alithProcess = argv.dev
     ? await spawnTask(
-        `${moonbeamBinaryPath} --base-path ${alithFolder} --execution native --log=info,netlink=info,sync=info,lib=info,multi=info --alice --collator --db-cache 5000 --trie-cache-size 0 --chain ${modFile} --no-hardware-benchmarks --no-prometheus --no-telemetry --sealing=manual`
+        `${moonbeamBinaryPath} --database paritydb --base-path ${alithFolder} --execution native --log=info,netlink=info,sync=info,lib=info,multi=info --alice --collator --db-cache 5000 --trie-cache-size 0 --chain ${modFile} --no-hardware-benchmarks --no-prometheus --no-telemetry --sealing=manual`
       )
     : await spawnTask(
-        `${moonbeamBinaryPath} --base-path ${alithFolder} --execution native --log=debug,netlink=info,sync=info,lib=info,multi=info --alice --collator --db-cache 5000 --trie-cache-size 0 --chain ${modFile} --  --chain ${relayRawSpecFile} --rpc-port 11003 --ws-port 12003 --port 10003 --node-key ${
+        `${moonbeamBinaryPath} --database paritydb --base-path ${alithFolder} --execution native --log=debug,netlink=info,sync=info,lib=info,multi=info --alice --collator --db-cache 5000 --trie-cache-size 0 --chain ${modFile} --  --chain ${relayRawSpecFile} --rpc-port 11003 --ws-port 12003 --port 10003 --node-key ${
           Object.keys(NODE_KEYS)[2]
         }`
       );
