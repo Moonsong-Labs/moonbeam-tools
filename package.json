@@ -1,6 +1,6 @@
 {
   "name": "moonbeam-tools",
-  "version": "0.0.33",
+  "version": "0.0.35",
   "description": "Set of tools for Moonbeam blockchain",
   "exports": {
     ".": {
@@ -14,17 +14,19 @@
   "types": "src/index.ts",
   "dependencies": {
     "@moonbeam-network/api-augment": "^0.2000.1",
-    "@polkadot/api": "9.9.4",
+    "@polkadot/api": "^9.10.3",
     "@polkadot/util": "^10.1.8",
     "@polkadot/util-crypto": "^10.1.8",
     "chalk": "^4.1.2",
     "cli-progress": "^3.11.2",
     "debug": "^4.3.4",
     "esbuild": "^0.13.8",
+    "humanize-number": "^0.0.2",
     "knex": "^2.3.0",
     "lodash.isobject": "^3.0.2",
     "lodash.mergewith": "^4.6.2",
     "moment": "^2.29.4",
+    "moment-parseplus": "^2.0.3",
     "moonbeam-types-bundle": "^2.0.9",
     "p-map": "^4.0.0",
     "p-queue": "^6.6.2",
