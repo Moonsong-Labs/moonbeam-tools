@@ -11,6 +11,7 @@ export interface SpecOptions {
   relayChain?: string;
   chainType?: string;
   paraId?: number;
+  devService?: boolean;
 }
 
 export class SpecManipulator implements StateManipulator {
@@ -42,6 +43,10 @@ export class SpecManipulator implements StateManipulator {
       return { action: "remove" as Action, extraLines: [{ key, value: this.options.relayChain }] };
     } else if (this.options.paraId && key == "paraId") {
       return { action: "remove" as Action, extraLines: [{ key, value: this.options.paraId }] };
+    } else if (this.options.devService) {
+      if (key == "id") {
+        return { action: "remove" as Action, extraLines: [{ key, value: value.concat("_dev") }] };
+      }
     }
   };
 }

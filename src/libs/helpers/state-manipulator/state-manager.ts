@@ -11,10 +11,18 @@ import { CollectiveManipulator } from "./collective-manipulator";
 import { ValidationManipulator } from "./validation-manipulator";
 import { XCMPManipulator } from "./xcmp-manipulator";
 import { BalancesManipulator } from "./balances-manipulator";
-import { ALITH_ADDRESS, ALITH_SESSION_ADDRESS } from "../../../utils/constants";
+import {
+  ALITH_ADDRESS,
+  ALITH_SESSION_ADDRESS,
+  BALTATHAR_ADDRESS,
+  CHARLETH_ADDRESS,
+  RELAY_ASSET_ID,
+  USDT_ASSET_ID,
+} from "../../../utils/constants";
 import { SpecManipulator } from "./spec-manipulator";
 import { SudoManipulator } from "./sudo-manipulator";
 import { string } from "yargs";
+import { AssetManipulator } from "./asset-manipulator";
 const debug = Debug("helper:state-manager");
 
 export type NetworkName = "moonbeam" | "moonriver" | "alphanet";
@@ -139,7 +147,11 @@ export async function downloadExportedState(
 
 // Customize a Moonbeam exported state spec to make it usable locally
 // It makes Alith the main collator and restore XCMP/HRMP data.
-export async function neutralizeExportedState(inFile: string, outFile: string) {
+export async function neutralizeExportedState(
+  inFile: string,
+  outFile: string,
+  dev: boolean = false
+) {
   await processState(inFile, outFile, [
     new RoundManipulator((current, first, length) => {
       return { current, first: 0, length: 100 };
@@ -148,15 +160,30 @@ export async function neutralizeExportedState(inFile: string, outFile: string) {
     new SudoManipulator(ALITH_ADDRESS),
     new CollatorManipulator(ALITH_ADDRESS, ALITH_SESSION_ADDRESS),
     new HRMPManipulator(),
-    new SpecManipulator({
-      name: `Fork Network`,
-      relayChain: `rococo-local`,
-    }),
+    dev
+      ? new SpecManipulator({
+          name: `Forked Dev Network`,
+          chainType: `Development`,
+          relayChain: `dev-service`,
+          devService: true,
+          paraId: 0,
+          protocolId: "",
+        })
+      : new SpecManipulator({
+          name: `Fork Network`,
+          relayChain: `rococo-local`,
+        }),
     new CollectiveManipulator("TechCommitteeCollective", [ALITH_ADDRESS]),
     new CollectiveManipulator("CouncilCollective", [ALITH_ADDRESS]),
     new ValidationManipulator(),
     new XCMPManipulator(),
-    new BalancesManipulator([{ account: ALITH_ADDRESS, amount: 10_000n * 10n ** 18n }]),
+    new BalancesManipulator([
+      { account: ALITH_ADDRESS, amount: 10_000n * 10n ** 18n },
+      { account: BALTATHAR_ADDRESS, amount: 10_000n * 10n ** 18n },
+      { account: CHARLETH_ADDRESS, amount: 10_000n * 10n ** 18n },
+    ]),
+    new AssetManipulator(ALITH_ADDRESS, USDT_ASSET_ID, 20_000n * 10n ** 6n),
+    new AssetManipulator(ALITH_ADDRESS, RELAY_ASSET_ID, 20_000n * 10n ** 10n),
   ]);
 }
 

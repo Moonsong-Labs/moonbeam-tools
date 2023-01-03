@@ -380,16 +380,16 @@ export const listenBlocks = async (
   return unsubHeads;
 };
 
-export const waitBlocks = async (api: ApiPromise, count: number): Promise<void>  => {
+export const waitBlocks = async (api: ApiPromise, count: number): Promise<void> => {
   const startingBlockNumber = (await api.rpc.chain.getBlock()).block.header.number.toNumber();
   const unsubListener = await listenBestBlocks(api, async (blockDetails) => {
     if (blockDetails.block.header.number.toNumber() - count >= startingBlockNumber) {
       unsubListener();
       return;
     }
-  })
-  await api.query.timestamp.now.at((await api.rpc.chain.getBlock()).block.header.parentHash)
-} 
+  });
+  await api.query.timestamp.now.at((await api.rpc.chain.getBlock()).block.header.parentHash);
+};
 
 export const listenBestBlocks = async (
   api: ApiPromise,

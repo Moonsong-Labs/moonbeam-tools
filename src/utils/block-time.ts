@@ -2,11 +2,7 @@ import { ApiPromise } from "@polkadot/api";
 import { SignedBlock } from "@polkadot/types/interfaces";
 import moment, { Moment } from "moment";
 
-async function getFutureBlockDate(
-  api: ApiPromise,
-  blockNumber: number,
-  currentBlock: SignedBlock
-) {
+async function getFutureBlockDate(api: ApiPromise, blockNumber: number, currentBlock: SignedBlock) {
   const diffCount = blockNumber - currentBlock.block.header.number.toNumber();
   if (diffCount <= 0) {
     console.error("Block must be in the future");
@@ -35,21 +31,17 @@ async function getFutureBlockDate(
       ).data
     );
 
-    const expected =
-      currentBlock.block.header.number.toNumber() * 12 * 1000 * 1000;
+    const expected = currentBlock.block.header.number.toNumber() * 12 * 1000 * 1000;
     const past = currentTimestamp.toNumber() - firstTimestamp.toNumber();
     const expectedDate = new Date(
-      currentTimestamp.toNumber() +
-        (diffCount * 12 * 1000 * 1000 * past) / expected
+      currentTimestamp.toNumber() + (diffCount * 12 * 1000 * 1000 * past) / expected
     );
     return moment.utc(expectedDate);
   }
 
   const previousBlock = await api.rpc.chain.getBlock(
     (
-      await api.rpc.chain.getBlockHash(
-        currentBlock.block.header.number.toNumber() - diffCount
-      )
+      await api.rpc.chain.getBlockHash(currentBlock.block.header.number.toNumber() - diffCount)
     ).toString()
   );
 
@@ -61,18 +53,13 @@ async function getFutureBlockDate(
   );
 
   const expectedDate = new Date(
-    currentTimestamp.toNumber() +
-      (currentTimestamp.toNumber() - previousTimestamp.toNumber())
+    currentTimestamp.toNumber() + (currentTimestamp.toNumber() - previousTimestamp.toNumber())
   );
 
   return moment.utc(expectedDate);
 }
 
-async function getPastBlockDate(
-  api: ApiPromise,
-  blockNumber: number,
-  currentBlock: SignedBlock
-) {
+async function getPastBlockDate(api: ApiPromise, blockNumber: number, currentBlock: SignedBlock) {
   const diffCount = blockNumber - currentBlock.block.header.number.toNumber();
   if (diffCount > 0) {
     console.error("Block must be in the past");
@@ -105,10 +92,7 @@ export async function getBlockDate(api: ApiPromise, blockNumber: number) {
   };
 }
 
-export async function computeBlockForMoment(
-  api: ApiPromise,
-  targetDate: Moment
-) {
+export async function computeBlockForMoment(api: ApiPromise, targetDate: Moment) {
   const currentBlock = await api.rpc.chain.getBlock();
   const currentBlockNumber = currentBlock.block.header.number.toNumber();
 
