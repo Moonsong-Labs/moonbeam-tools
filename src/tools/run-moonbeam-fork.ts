@@ -46,6 +46,13 @@ const argv = yargs(process.argv.slice(2))
       description: "Removes ALL files at the base-path directory, use with CAUTION.",
       default: false,
     },
+    sealing: {
+      type: "string",
+      alias: "s",
+      description:
+        "Specify block sealing strategy for the forked chain when running a development node (i.e. only works with --dev/-d).",
+      default: "manual",
+    },
     regenerate: {
       type: "boolean",
       alias: "g",
@@ -120,16 +127,6 @@ const main = async () => {
     // 1) Absolute binary path hasn't been supplied
     // 2) Binary doesn't exist in default location
     // 3) Existing binary doesn't match requested version
-    // if (
-    //   !path.isAbsolute(argv["polkadot-binary"]) &&
-    //   ((await fs.access("./binaries/polkadot").catch(() => true)) ||
-    //     (semver.valid(argv["polkadot-binary"]) &&
-    //       semver.valid(semver.coerce(await runTask(`${polkadotBinaryPath} --version`))) !==
-    //         argv["polkadot-binary"]) ||
-    //     (argv["polkadot-binary"] == "latest" &&
-    //       semver.valid(semver.coerce(await runTask(`${polkadotBinaryPath} --version`))) !==
-    //         semver.clean(latestPolkadotVersion)))
-    // ) {
     if (
       !path.isAbsolute(argv["polkadot-binary"]) &&
       ((await fs.access("./binaries/polkadot").catch(() => true)) ||
@@ -471,7 +468,7 @@ const main = async () => {
   const alithLogHandler = await fs.open(alithLogs, "w");
   const alithProcess = argv.dev
     ? await spawnTask(
-        `${moonbeamBinaryPath} --database paritydb --base-path ${alithFolder} --execution native --log=info,netlink=info,sync=info,lib=info,multi=info --alice --collator --db-cache 5000 --trie-cache-size 0 --chain ${modFile} --no-hardware-benchmarks --no-prometheus --no-telemetry --sealing=manual`
+        `${moonbeamBinaryPath} --database paritydb --base-path ${alithFolder} --execution native --log=info,netlink=info,sync=info,lib=info,multi=info --alice --collator --db-cache 5000 --trie-cache-size 0 --chain ${modFile} --no-hardware-benchmarks --no-prometheus --no-telemetry --sealing=${argv.sealing}`
       )
     : await spawnTask(
         `${moonbeamBinaryPath} --database paritydb --base-path ${alithFolder} --execution native --log=debug,netlink=info,sync=info,lib=info,multi=info --alice --collator --db-cache 5000 --trie-cache-size 0 --chain ${modFile} --  --chain ${relayRawSpecFile} --rpc-port 11003 --ws-port 12003 --port 10003 --node-key ${
