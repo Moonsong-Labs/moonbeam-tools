@@ -144,31 +144,32 @@ curl --location --request POST 'http://127.0.0.1:9933/' \
 
 The full list of options can be found in the `--help` :
 ```
-      --help                      Show help                            [boolean]
-      --version                   Show version number                  [boolean]
-  -n, --network                   Network to retrieve the exported state for
+Options:
+      --help              Show help                                    [boolean]
+      --version           Show version number                          [boolean]
+  -n, --network           Network to retrieve the exported state for.
                                                              [string] [required]
-      --latest                    Will verify if a latest snapshot is available
-                                  and download it     [boolean] [default: false]
-      --reset-to-genesis          Will delete the execution database, setting
-                                  this will restore network back to genesis
-                                  state               [boolean] [default: false]
-      --purge-all                 Will delete ALL files at base path, use with
-                                  caution             [boolean] [default: false]
-      --dev                       Will run the network as a single manual-sealed
-                                  dev node            [boolean] [default: false]
-      --ephemeral                 Will close the network immediately after it
-                                  has completed setup, used for CI.
-                                                      [boolean] [default: false]
-  -m, --moonbeam-binary           Binary file path or of the moonbeam node
-                                       [string] [default: "./binaries/moonbeam"]
-  -p, --polkadot-binary           Binary file path of the polkadot node
-                                       [string] [default: "./binaries/polkadot"]
-      --polkadot-version, --pver  Client version number for Polkadot binary
-                                                    [string] [default: "latest"]
-      --moonbeam-version, --mver  Client version number for Moonbeam binary
-                                                    [string] [default: "latest"]
-      --base-path, --bp           Where to store the data
+  -l, --latest            Verifies if a more recent state snapshot is able to
+                          download.                   [boolean] [default: false]
+  -r, --reset-to-genesis  Resets the network back to the initial state at
+                          genesis block.              [boolean] [default: false]
+  -k, --purge-all         Removes ALL files at the base-path directory, use with
+                          CAUTION.                    [boolean] [default: false]
+  -s, --sealing           Specify block sealing strategy for the forked chain
+                          when running a development node (i.e. only works with
+                          --dev/-d).                [string] [default: "manual"]
+  -g, --regenerate        Creates a new genesis file based on state
+                          manipulators.               [boolean] [default: false]
+  -d, --dev               Runs network as a single manual-sealed development
+                          node.                       [boolean] [default: false]
+  -t, --ephemeral         Closes network immediately after it has completed
+                          setup, used for CI.         [boolean] [default: false]
+  -m, --moonbeam-binary   Absolute file path (e.g. /tmp/fork-chain/moonbeam) of
+                          moonbeam binary OR version number (e.g. 0.31) to
+                          download.                 [string] [default: "latest"]
+  -p, --polkadot-binary   Absolute file path (e.g. /tmp/fork-chain/polkadot) of
+                          polkadot binary OR version number (e.g. 0.9.28) to
+                          download.                 [string] [default: "latest"]
+  -o, --base-path         Specifies where all generated files are to be stored.
                                            [string] [default: "/tmp/fork-data/"]
-
 ```
