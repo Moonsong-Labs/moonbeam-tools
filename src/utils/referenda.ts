@@ -6,18 +6,25 @@ import { ApiDecoration } from "@polkadot/api/types";
 import type { Bytes } from "@polkadot/types";
 import type { Call, Hash } from "@polkadot/types/interfaces";
 import {
-    FrameSupportPreimagesBounded, PalletConvictionVotingTally,
-    PalletPreimageRequestStatus, PalletRankedCollectiveTally, PalletReferendaCurve, PalletReferendaReferendumInfoConvictionVotingTally, PalletReferendaReferendumInfoRankedCollectiveTally,
-    PalletReferendaReferendumStatusConvictionVotingTally, PalletReferendaTrackInfo
+  FrameSupportPreimagesBounded,
+  PalletConvictionVotingTally,
+  PalletPreimageRequestStatus,
+  PalletRankedCollectiveTally,
+  PalletReferendaCurve,
+  PalletReferendaReferendumInfoConvictionVotingTally,
+  PalletReferendaReferendumInfoRankedCollectiveTally,
+  PalletReferendaReferendumStatusConvictionVotingTally,
+  PalletReferendaTrackInfo,
 } from "@polkadot/types/lookup";
 import {
-    BN,
-    bnMax,
-    bnMin,
-    BN_BILLION,
-    BN_ONE,
-    BN_ZERO, isString,
-    stringPascalCase
+  BN,
+  bnMax,
+  bnMin,
+  BN_BILLION,
+  BN_ONE,
+  BN_ZERO,
+  isString,
+  stringPascalCase,
 } from "@polkadot/util";
 import { HexString } from "@polkadot/util/types";
 import Debug from "debug";
@@ -189,7 +196,6 @@ function parseImage(
   return { at: BN_ZERO, balance, proposal, proposer };
 }
 
-
 async function getImageProposal(api: ApiPromise | ApiDecoration<"promise">, hash: string) {
   const optStatus = await api.query.preimage.statusFor(hash);
   const status = optStatus.unwrapOr(null) as PalletPreimageRequestStatus;
@@ -209,7 +215,6 @@ async function getImageProposal(api: ApiPromise | ApiDecoration<"promise">, hash
   }
   return null;
 }
-
 
 async function getReferendumOnGoing(
   api: ApiPromise,
@@ -248,47 +253,47 @@ async function getReferendumOnGoing(
 }
 
 function extendReferendum(
- totalIssuance?: BN,
- referenda?: Referendum[],
- tracks?: TrackDescription[]
+  totalIssuance?: BN,
+  referenda?: Referendum[],
+  tracks?: TrackDescription[]
 ): Referendum[] {
- if (!referenda || !totalIssuance) {
-   // return an empty group when we have no referenda
-   return [];
- } else if (!tracks) {
-   // if we have no tracks, we just return the referenda sorted
-   return referenda;
- }
+  if (!referenda || !totalIssuance) {
+    // return an empty group when we have no referenda
+    return [];
+  } else if (!tracks) {
+    // if we have no tracks, we just return the referenda sorted
+    return referenda;
+  }
 
- // sort the referenda by track inside groups
- return referenda
-   .map((ref) => {
-     // only ongoing have tracks
-     const trackInfo = ref.ongoing ? tracks.find(({ id }) => id.eq(ref.ongoing.track)) : undefined;
+  // sort the referenda by track inside groups
+  return referenda
+    .map((ref) => {
+      // only ongoing have tracks
+      const trackInfo = ref.ongoing ? tracks.find(({ id }) => id.eq(ref.ongoing.track)) : undefined;
 
-     if (trackInfo) {
-       ref.trackName = `${trackInfo.info.name
-         .replace(/_/g, " ")
-         .split(" ")
-         .map(stringPascalCase)
-         .join(" ")}`;
-       ref.track = trackInfo.info;
+      if (trackInfo) {
+        ref.trackName = `${trackInfo.info.name
+          .replace(/_/g, " ")
+          .split(" ")
+          .map(stringPascalCase)
+          .join(" ")}`;
+        ref.track = trackInfo.info;
 
-       if (ref.isConvictionVote) {
-         const { deciding, tally } = ref.ongoing;
+        if (ref.isConvictionVote) {
+          const { deciding, tally } = ref.ongoing;
 
-         if (deciding.isSome) {
-           const { since } = deciding.unwrap();
+          if (deciding.isSome) {
+            const { since } = deciding.unwrap();
 
-           ref.decidingEnd = calcDecidingEnd(totalIssuance, tally, trackInfo.info, since);
-         }
-       }
-     }
-     return ref;
-   })
-   .sort((a, b) => {
-     return b.id - a.id;
-   });
+            ref.decidingEnd = calcDecidingEnd(totalIssuance, tally, trackInfo.info, since);
+          }
+        }
+      }
+      return ref;
+    })
+    .sort((a, b) => {
+      return b.id - a.id;
+    });
 }
 
 export async function getReferendumByGroups(api: ApiPromise) {
