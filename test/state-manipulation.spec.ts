@@ -19,6 +19,7 @@ import {
   BALTATHAR_ADDRESS,
 } from "../src/utils/constants";
 import { hexToBigInt, nToHex } from "@polkadot/util";
+import { AuthorizeUpgradeManipulator } from "../src/libs/helpers/state-manipulator/authorize-upgrade-manipulator";
 
 describe("State Manipulation", () => {
   const inFile = path.join(__dirname, "sample-state.json");
@@ -33,6 +34,9 @@ describe("State Manipulation", () => {
       }),
       new SudoManipulator(JUDITH_ADDRESS),
       new AuthorFilteringManipulator(100),
+      new AuthorizeUpgradeManipulator(
+        "0xfb9f16ba6b3433ba2a273974207260c7ace6aa629992d492bad0ba873b39762d"
+      ),
       new CollatorManipulator(CHARLETH_ADDRESS, CHARLETH_SESSION_ADDRESS),
       new HRMPManipulator(),
       new CollectiveManipulator("TechCommitteeCollective", [CHARLETH_ADDRESS, HEATH_ADDRESS]),
@@ -141,6 +145,12 @@ describe("State Manipulation", () => {
 
   it("Should not have any bootnode", async () => {
     expect(genesis.bootNodes.length).toEqual(0);
+  });
+
+  it("Should contain authorized upgrade hash", async () => {
+    expect(
+      finalState["0x45323df7cc47150b3930e2666b0aa3132fa9f1bf25567808771bff091dc89ecd"]
+    ).toEqual("0xfb9f16ba6b3433ba2a273974207260c7ace6aa629992d492bad0ba873b39762d");
   });
 
   it("Should set Charleth, Heath and Judith to 1000 tokens", async () => {
