@@ -119,6 +119,10 @@ const main = async () => {
       release.assets.find((asset) => asset.name === "polkadot")
     ).tag_name;
 
+    
+    // Ensure the binaries folder is there
+    await fs.mkdir("./binaries", { recursive: true });
+
     polkadotBinaryPath = path.isAbsolute(argv["polkadot-binary"])
       ? argv["polkadot-binary"]
       : "./binaries/polkadot";
