@@ -91,6 +91,10 @@ const argv = yargs(process.argv.slice(2))
       description: "Specifies where all generated files are to be stored.",
       default: "/tmp/fork-data/",
     },
+    "authorize-upgrade": {
+      type: "string",
+      description: "Hash of the runtime to authorize for upgrade",
+    },
   }).argv;
 
 const NODE_KEYS = {
@@ -119,7 +123,6 @@ const main = async () => {
       release.assets.find((asset) => asset.name === "polkadot")
     ).tag_name;
 
-    
     // Ensure the binaries folder is there
     await fs.mkdir("./binaries", { recursive: true });
 
@@ -315,7 +318,10 @@ const main = async () => {
   ) {
     hasChanged = true;
     process.stdout.write(` ${chalk.yellow(`generating`)} (3min)...`);
-    await neutralizeExportedState(stateFile, modFile, argv.dev);
+    await neutralizeExportedState(stateFile, modFile, {
+      dev: argv.dev,
+      authorizeUpgrade: argv["authorize-upgrade"],
+    });
     process.stdout.write(` ✓\n`);
   }
   process.stdout.write(`\t - Completed at: ${chalk.green(modFile)} ✓\n`);

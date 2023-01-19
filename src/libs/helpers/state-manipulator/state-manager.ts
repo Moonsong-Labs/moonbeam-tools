@@ -2,7 +2,7 @@ import Debug from "debug";
 import fs from "node:fs/promises";
 import { Client } from "undici";
 import path from "node:path";
-import { processState } from "./genesis-parser";
+import { processState, StateManipulator } from "./genesis-parser";
 import { RoundManipulator } from "./round-manipulator";
 import { AuthorFilteringManipulator } from "./author-filtering-manipulator";
 import { CollatorManipulator } from "./collator-manipulator";
@@ -23,6 +23,7 @@ import { SpecManipulator } from "./spec-manipulator";
 import { SudoManipulator } from "./sudo-manipulator";
 import { string } from "yargs";
 import { AssetManipulator } from "./asset-manipulator";
+import { AuthorizeUpgradeManipulator } from "./authorize-upgrade-manipulator";
 const debug = Debug("helper:state-manager");
 
 export type NetworkName = "moonbeam" | "moonriver" | "alphanet";
@@ -150,9 +151,15 @@ export async function downloadExportedState(
 export async function neutralizeExportedState(
   inFile: string,
   outFile: string,
-  dev: boolean = false
+  option: { dev: boolean; authorizeUpgrade: string } = { dev: false, authorizeUpgrade: "" }
 ) {
-  await processState(inFile, outFile, [
+  const { dev, authorizeUpgrade } = {
+    dev: false,
+    authorizeUpgrade: "",
+    ...option,
+  };
+
+  const manipulators: StateManipulator[] = [
     new RoundManipulator((current, first, length) => {
       return { current, first: 0, length: 100 };
     }),
@@ -184,7 +191,12 @@ export async function neutralizeExportedState(
     ]),
     new AssetManipulator(ALITH_ADDRESS, USDT_ASSET_ID, 20_000n * 10n ** 6n),
     new AssetManipulator(ALITH_ADDRESS, RELAY_ASSET_ID, 20_000n * 10n ** 10n),
-  ]);
+  ];
+  if (authorizeUpgrade) {
+    manipulators.push(new AuthorizeUpgradeManipulator(authorizeUpgrade));
+  }
+
+  await processState(inFile, outFile, manipulators);
 }
 
 // Customize a Moonbeam exported state spec to make it usable locally
