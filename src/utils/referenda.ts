@@ -35,8 +35,8 @@ export interface Referendum {
   id: number;
   ongoing: PalletReferendaReferendumStatusConvictionVotingTally;
   info:
-    | PalletReferendaReferendumInfoConvictionVotingTally
-    | PalletReferendaReferendumInfoRankedCollectiveTally;
+  | PalletReferendaReferendumInfoConvictionVotingTally
+  | PalletReferendaReferendumInfoRankedCollectiveTally;
   isConvictionVote: boolean;
   key: string;
   track?: PalletReferendaTrackInfo;
@@ -89,8 +89,8 @@ function curveDelay(curve: PalletReferendaCurve, input: BN, div: BN): BN {
     return y.lt(floor)
       ? BN_BILLION
       : y.gt(ceil)
-      ? BN_ZERO
-      : bnMin(BN_BILLION, bnMax(BN_ZERO, ceil.sub(y).mul(length).div(ceil.sub(floor))));
+        ? BN_ZERO
+        : bnMin(BN_BILLION, bnMax(BN_ZERO, ceil.sub(y).mul(length).div(ceil.sub(floor))));
   } else if (curve.isSteppedDecreasing) {
     const { begin, end, period, step } = curve.asSteppedDecreasing;
 
@@ -102,14 +102,14 @@ function curveDelay(curve: PalletReferendaCurve, input: BN, div: BN): BN {
     return y.lt(end)
       ? BN_BILLION
       : bnMin(
-          BN_BILLION,
-          bnMax(
-            BN_ZERO,
-            period
-              .mul(begin.sub(bnMin(y, begin)).add(step.isZero() ? step : step.sub(BN_ONE)))
-              .div(step)
-          )
-        );
+        BN_BILLION,
+        bnMax(
+          BN_ZERO,
+          period
+            .mul(begin.sub(bnMin(y, begin)).add(step.isZero() ? step : step.sub(BN_ONE)))
+            .div(step)
+        )
+      );
   } else if (curve.asReciprocal) {
     const { factor, xOffset, yOffset } = curve.asReciprocal;
 
@@ -118,7 +118,7 @@ function curveDelay(curve: PalletReferendaCurve, input: BN, div: BN): BN {
     // maybe_term
     //   .and_then(|term| (term - *x_offset).try_into_perthing().ok())
     //   .unwrap_or_else(Perbill::one)
-    return bnMin(
+    return y.sub(yOffset).eq(BN_ZERO) ? BN_ONE : bnMin(
       BN_BILLION,
       bnMax(BN_ZERO, factor.mul(BN_BILLION).div(y.sub(yOffset)).sub(xOffset))
     );
@@ -166,10 +166,10 @@ function getPreimageHash(
   return bounded.isInline
     ? bounded.asInline.hash.toHex()
     : bounded.isLegacy
-    ? bounded.asLegacy.hash_.toHex()
-    : bounded.isLookup
-    ? bounded.asLookup.hash_.toHex()
-    : hashOrBounded.toHex();
+      ? bounded.asLegacy.hash_.toHex()
+      : bounded.isLookup
+        ? bounded.asLookup.hash_.toHex()
+        : hashOrBounded.toHex();
 }
 
 function parseImage(
@@ -227,14 +227,14 @@ async function getReferendumOnGoing(
   const blockNumber = info.isApproved
     ? info.asApproved[0]
     : info.isCancelled
-    ? info.asCancelled[0]
-    : info.isKilled
-    ? info.asKilled[0]
-    : info.isRejected
-    ? info.asRejected[0]
-    : info.isTimedOut
-    ? info.asTimedOut[0]
-    : 0;
+      ? info.asCancelled[0]
+      : info.isKilled
+        ? info.asKilled[0]
+        : info.isRejected
+          ? info.asRejected[0]
+          : info.isTimedOut
+            ? info.asTimedOut[0]
+            : 0;
   if (!blockNumber) {
     throw new Error("Unknown referendum");
   }
@@ -325,9 +325,9 @@ export async function getReferendumByGroups(api: ApiPromise) {
     await api.query.balances.totalIssuance(),
     referendumInfos,
     tracks &&
-      tracks.map(([id, info]) => ({
-        id,
-        info,
-      }))
+    tracks.map(([id, info]) => ({
+      id,
+      info,
+    }))
   );
 }
