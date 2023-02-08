@@ -81,9 +81,15 @@ const main = async () => {
         // console.log(JSON.stringify({ ...ref, image: !!ref.image }));
 
         const enactmentDelayFromNow = ref.ongoing.enactment.isAfter
-          ? currentBlock + ref.ongoing.enactment.asAfter.toNumber()
-          : ref.ongoing.enactment.asAt.toNumber();
-
+          ? currentBlock +
+            Math.max(
+              ref.ongoing.enactment.asAfter.toNumber(),
+              ref.track.minEnactmentPeriod.toNumber()
+            )
+          : Math.max(
+              currentBlock + ref.track.minEnactmentPeriod.toNumber(),
+              ref.ongoing.enactment.asAt.toNumber()
+            );
         const isExecuted =
           ref.info.isApproved &&
           ((ref.ongoing.enactment.isAfter &&
