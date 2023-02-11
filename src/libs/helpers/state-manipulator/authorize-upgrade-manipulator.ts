@@ -10,7 +10,10 @@ export class AuthorizeUpgradeManipulator implements StateManipulator {
   constructor(runtimeHash: string) {
     this.runtimeHash = runtimeHash;
     this.storageKey = encodeStorageKey("ParachainSystem", "AuthorizedUpgrade");
-    this.lastRelayChainBlockNumberKey = encodeStorageKey("ParachainSystem", "LastRelayChainBlockNumber");
+    this.lastRelayChainBlockNumberKey = encodeStorageKey(
+      "ParachainSystem",
+      "LastRelayChainBlockNumber"
+    );
   }
 
   processRead = (_) => {};

@@ -145,13 +145,13 @@ export async function callInterpreter(
   return { text: `${call.section}.${call.method}`, call, depth: 0, subCalls: [] };
 }
 
-export function renderCallInterpretation(
-  callData: CallInterpretation,
-  separator = "\n",
-  depth = 0
-): string {
+export function renderCallInterpretation(callData: CallInterpretation, depth = 0): string {
   return [
     `${"".padStart(depth * 6, " ")}⤷ \`${callData.text}\``,
-    ...callData.subCalls.map((call) => renderCallInterpretation(call, separator, depth + 1)),
+    ...callData.subCalls.map((call) => renderCallInterpretation(call, depth + 1)),
   ].join("\n");
+}
+
+export async function renderCall(api: ApiPromise, call: GenericCall) {
+  return renderCallInterpretation(await callInterpreter(api, call));
 }

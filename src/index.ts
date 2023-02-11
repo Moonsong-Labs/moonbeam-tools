@@ -6,3 +6,4 @@ export * from "./utils/networks";
 export * from "./utils/referenda";
 export * from "./utils/transactions";
 export * from "./utils/types";
+export * from "./utils/proxy-chain";

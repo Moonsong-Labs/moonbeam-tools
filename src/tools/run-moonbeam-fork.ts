@@ -98,7 +98,7 @@ const argv = yargs(process.argv.slice(2))
     "trie-cache-size": {
       type: "string",
       description: "Size of internal state cache. ",
-      default: 0
+      default: 0,
     },
   }).argv;
 
@@ -486,7 +486,9 @@ const main = async () => {
         `${moonbeamBinaryPath} --database paritydb --base-path ${alithFolder} --execution native --log=info,netlink=info,sync=info,lib=info,multi=info --alice --collator --db-cache 4096 --trie-cache-size ${argv["trie-cache-size"]} --chain ${modFile} --no-hardware-benchmarks --no-prometheus --no-telemetry --sealing=${argv.sealing}`
       )
     : await spawnTask(
-        `${moonbeamBinaryPath} --database paritydb --base-path ${alithFolder} --execution native --log=debug,netlink=info,sync=info,lib=info,multi=info --alice --collator --db-cache 4096 --trie-cache-size ${argv["trie-cache-size"]} --chain ${modFile} --  --chain ${relayRawSpecFile} --rpc-port 11003 --ws-port 12003 --port 10003 --node-key ${
+        `${moonbeamBinaryPath} --database paritydb --base-path ${alithFolder} --execution native --log=debug,netlink=info,sync=info,lib=info,multi=info --alice --collator --db-cache 4096 --trie-cache-size ${
+          argv["trie-cache-size"]
+        } --chain ${modFile} --  --chain ${relayRawSpecFile} --rpc-port 11003 --ws-port 12003 --port 10003 --node-key ${
           Object.keys(NODE_KEYS)[2]
         }`
       );
