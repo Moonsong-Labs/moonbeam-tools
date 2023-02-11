@@ -12,7 +12,7 @@ export async function customWeb3Request(web3: Web3, method: string, params: any[
         method,
         params,
       },
-      (error: Error | null, result?: JsonRpcResponse) => {
+      (error: Error | null, result: JsonRpcResponse) => {
         // console.log(`Receiving ${id}`, error);
         if (error) {
           reject(

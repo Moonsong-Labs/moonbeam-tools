@@ -124,8 +124,8 @@ const main = async () => {
       await fetch("https://api.github.com/repos/paritytech/polkadot/releases")
     ).json();
 
-    const latestPolkadotVersion = polkadotReleases.find((release) =>
-      release.assets.find((asset) => asset.name === "polkadot")
+    const latestPolkadotVersion = polkadotReleases.find((release: any) =>
+      release.assets.find((asset: any) => asset.name === "polkadot")
     ).tag_name;
 
     // Ensure the binaries folder is there
@@ -144,7 +144,7 @@ const main = async () => {
       ((await fs.access("./binaries/polkadot").catch(() => true)) ||
         (argv["polkadot-binary"] !== "latest" &&
           semver.compare(
-            semver.valid(semver.coerce(await runTask(`${polkadotBinaryPath} --version`))),
+            semver.valid(semver.coerce(await runTask(`${polkadotBinaryPath} --version`))) || '',
             semver.valid(semver.coerce(argv["polkadot-binary"]))
           ) !== 0) ||
         (argv["polkadot-binary"] === "latest" &&

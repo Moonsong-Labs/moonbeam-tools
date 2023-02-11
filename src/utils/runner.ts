@@ -15,7 +15,7 @@ export async function runTask(
   try {
     const result = await execAsync(cmd, { cwd, env });
     return result.stdout;
-  } catch (error) {
+  } catch (error: any) {
     console.log(error);
     debug(`Caught exception in command execution. Error[${error.status}] ${error.message}\n`);
     throw error;

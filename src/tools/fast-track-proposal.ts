@@ -12,11 +12,11 @@ import yargs from "yargs";
 import "@polkadot/api-augment";
 import "@moonbeam-network/api-augment";
 import { Keyring } from "@polkadot/api";
-import { KeyringPair } from "@polkadot/keyring/types";
 import { getApiFor, NETWORK_YARGS_OPTIONS } from "../utils/networks";
 import { monitorSubmittedExtrinsic, waitForAllMonitoredExtrinsics } from "../utils/monitoring";
 import { maybeProxyCall } from "../utils/transactions";
 import { ALITH_PRIVATE_KEY } from "../utils/constants";
+import { SubmittableExtrinsic } from "@polkadot/api/promise/types";
 
 const argv = yargs(process.argv.slice(2))
   .usage("Usage: $0")
@@ -73,18 +73,16 @@ async function main() {
       argv["collective-threshold"] ||
       Math.ceil(((await api.query.councilCollective.members()).length * 3) / 5);
 
-    let account: KeyringPair;
-    let nonce;
     const privKey = argv["alith"] ? ALITH_PRIVATE_KEY : argv["account-priv-key"];
-    if (privKey) {
-      account = keyring.addFromUri(privKey, null, "ethereum");
-      const { nonce: rawNonce, data: balance } = (await api.query.system.account(
-        account.address
-      )) as any;
-      nonce = BigInt(rawNonce.toString());
+    if (!privKey) {
+      throw new Error("Missing private key");
     }
+    const account = keyring.addFromUri(privKey, undefined, "ethereum");
+    let nonce;
+    const { nonce: rawNonce } = (await api.query.system.account(account.address)) as any;
+    nonce = BigInt(rawNonce.toString());
 
-    const tryProxy = (call) => {
+    const tryProxy = (call: SubmittableExtrinsic) => {
       return maybeProxyCall(api, call, argv["proxy"], argv["proxy-type"]);
     };
 
