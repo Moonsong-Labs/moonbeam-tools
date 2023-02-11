@@ -35,7 +35,7 @@ export type ProxyChainOptions = {
   "proxied-account": Options & { type: "string" };
 };
 export type ProxyChainArgv = {
-  "proxied-account": string;
+  "proxied-account"?: string;
 };
 
 export const PROXY_CHAIN_YARGS_OPTIONS: ProxyChainOptions = {
@@ -49,16 +49,14 @@ export const PROXY_CHAIN_YARGS_OPTIONS: ProxyChainOptions = {
 
 // Keeps track of nonce and will apply proxy automatically
 export class ProxyChain {
-  api: ApiPromise;
   proxies: ProxyAccount[];
   ready: Promise<any>;
 
-  constructor(api: ApiPromise, proxies: ProxyAccount[] = []) {
-    this.api = api;
+  constructor(proxies: ProxyAccount[] = []) {
     this.proxies = proxies;
   }
 
-  chainProxy(call: SubmittableExtrinsic<"promise", ISubmittableResult>) {
+  applyChain(api: ApiPromise, call: SubmittableExtrinsic<"promise", ISubmittableResult>) {
     return this.proxies
       .slice()
       .reverse()
@@ -68,7 +66,7 @@ export class ProxyChain {
             call.method.section
           }.${call.method.method}`
         );
-        return this.api.tx.proxy.proxy(proxy.address, (proxy.type as any) || null, call);
+        return api.tx.proxy.proxy(proxy.address, (proxy.type as any) || null, call);
       }, call);
   }
 
@@ -82,8 +80,8 @@ export class ProxyChain {
     });
   }
 
-  static from(api: ApiPromise, argv: ProxyChainArgv) {
-    return new ProxyChain(api, this.parseArgv(argv));
+  static from(argv: ProxyChainArgv) {
+    return new ProxyChain(this.parseArgv(argv));
   }
 }
 
@@ -128,7 +126,7 @@ export class ProxyChainSigner {
     return new ProxyChainSigner(
       api,
       await keyring.addFromUri(argv["private-key"]),
-      ProxyChain.from(api, argv)
+      ProxyChain.from(argv)
     );
   }
 
@@ -142,7 +140,7 @@ export class ProxyChainSigner {
     }
     console.log(`${call.method.method.toString().padStart(30)}: ${nonce}`);
     return this.chain
-      .chainProxy(call)
+      .applyChain(this.api, call)
       .signAndSend(this.signer, { nonce, tip })
       .catch((e) => {
         console.log(`Error: ${e}`);
