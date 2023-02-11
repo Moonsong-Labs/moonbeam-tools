@@ -51,7 +51,7 @@ const main = async () => {
     [["Sender", "Receiver", "Status", "Messages", "Capacity", "Head"]] as any[]
   ).concat(
     filteredChannels.filter(filterPara).map(([key, data], index) => {
-      const channel = data.unwrap();
+      const channel = (data as any).unwrap();
       const senderKey = api.registry.createType("ParaId", key.toU8a().slice(-8, -4));
       const receiverKey = api.registry.createType("ParaId", key.toU8a().slice(-4));
       return [
@@ -64,7 +64,7 @@ const main = async () => {
       ];
     }),
     filteredChannelRequests.filter(filterPara).map(([key, data], index) => {
-      const request = data.unwrap();
+      const request = (data as any).unwrap();
       const senderKey = api.registry.createType("ParaId", key.toU8a().slice(-8, -4));
       const receiverKey = api.registry.createType("ParaId", key.toU8a().slice(-4));
       return [senderKey, receiverKey, chalk.yellow("Pending"), "", request.maxCapacity, ""];

@@ -36,7 +36,7 @@ const main = async () => {
       subText =
         callData.depth == 0
           ? null
-          : callData.subCalls.map((c) => renderCallInterpretation(c, "  \n", 1)).join("  \n");
+          : callData.subCalls.map((c) => renderCallInterpretation(c, 1)).join("  \n");
     } else {
       imageText = referendum.imageHash.toString();
     }
@@ -137,7 +137,7 @@ const main = async () => {
         const subText =
           !callData || callData.depth == 0 || callData.text.startsWith("whitelist.dispatch")
             ? null
-            : callData.subCalls.map((c) => renderCallInterpretation(c, "  \n", 1)).join("  \n");
+            : callData.subCalls.map((c) => renderCallInterpretation(c, 1)).join("  \n");
 
         const yes = ref.ongoing.tally.ayes.div(BN_TEN.pow(new BN(api.registry.chainDecimals[0])));
 

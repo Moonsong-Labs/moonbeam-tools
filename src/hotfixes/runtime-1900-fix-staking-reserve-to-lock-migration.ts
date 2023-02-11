@@ -1,3 +1,4 @@
+//@ts-nocheck
 /*
   This script is intended to run once as hotfix for specific networks.
   Do not use it without reading the code !!

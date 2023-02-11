@@ -3,11 +3,13 @@
     "target": "esnext",
     "module": "CommonJS",
     "moduleResolution": "node",
+    "declaration": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
     "baseUrl": ".",
     "composite": true,
-    "sourceMap": true
+    "sourceMap": true,
+    "outDir": "build"
   },
   "include": ["src/**/*.ts", "test/**/*.spec.ts"],
   "exclude": ["node_modules"]

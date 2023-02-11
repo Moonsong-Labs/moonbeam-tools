@@ -1,3 +1,4 @@
+//@ts-nocheck
 // This script is expected to run against a parachain network (using launch.ts script)
 //
 // Purpose is to find the accounts that have unreserved balances leftover from a staking

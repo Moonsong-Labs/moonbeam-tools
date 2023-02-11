@@ -1,3 +1,4 @@
+//@ts-nocheck
 // This script is expected to run against a parachain network (using launch.ts script)
 import yargs from "yargs";
 import fs from "fs";

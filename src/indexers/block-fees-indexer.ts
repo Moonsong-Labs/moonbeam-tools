@@ -206,8 +206,7 @@ const main = async () => {
 
       const upgradeInfo = (await apiAt.query.system.lastRuntimeUpgrade()).unwrap();
       const runtimeVersion = upgradeInfo.specVersion.toNumber();
-      const baseFeePerGas =
-        runtimeVersion >= 1200 ? (await apiAt.query.baseFee.baseFeePerGas()).toBigInt() : 0n;
+      const baseFeePerGas = runtimeVersion >= 1200 ? (await api.rpc.eth.gasPrice()).toBigInt() : 0n;
 
       // Might not work on first moonbase runtimes
       const nmbsKey = extractAuthorNimbusKey(blockDetails.block);
@@ -271,7 +270,9 @@ const main = async () => {
           if (extrinsic.method.section == "ethereum") {
             const payload = extrinsic.method.args[0] as EthereumTransactionTransactionV2;
             // For Ethereum tx we caluculate fee by first converting weight to gas
-            let gasUsed = dispatchInfo.weight.toBigInt() / WEIGHT_PER_GAS;
+            let gasUsed =
+              (dispatchInfo.weight.refTime || (dispatchInfo.weight as any)).toBigInt() /
+              WEIGHT_PER_GAS;
 
             let gasPriceParam = payload.isLegacy
               ? payload.asLegacy?.gasPrice.toBigInt()
@@ -442,7 +443,7 @@ const main = async () => {
           }
           debug(`    Validated`);
         }
-        blockWeight += dispatchInfo.weight.toBigInt();
+        blockWeight += (dispatchInfo.weight.refTime || (dispatchInfo.weight as any)).toBigInt();
         blockFees += txFees;
         blockBurnt += txBurnt;
         // Then search for Deposit event from treasury
@@ -479,7 +480,9 @@ const main = async () => {
           method: extrinsic.method.method,
           success: isSuccess,
           pay_fee: dispatchInfo.paysFee.isYes,
-          weight: dispatchInfo.weight.toBigInt().toString(),
+          weight: (dispatchInfo.weight.refTime || (dispatchInfo.weight as any))
+            .toBigInt()
+            .toString(),
           partial_fee: fees.totalFees.toString(),
           treasury_deposit: treasureDeposit.toString(),
           fee: txFees.toString(),

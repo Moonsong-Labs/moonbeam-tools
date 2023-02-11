@@ -1,6 +1,6 @@
 {
   "name": "moonbeam-tools",
-  "version": "0.0.39",
+  "version": "0.0.40",
   "description": "Set of tools for Moonbeam blockchain",
   "exports": {
     ".": {
@@ -11,7 +11,7 @@
   "main": "dist/index.cjs.js",
   "module": "dist/index.esm.js",
   "browser": "dist/index.umd.js",
-  "types": "src/index.ts",
+  "types": "dist/index.d.ts",
   "dependencies": {
     "@moonbeam-network/api-augment": "^0.2100.0",
     "@polkadot/api": "^9.13.6",
@@ -50,6 +50,7 @@
     "@rollup/plugin-commonjs": "^21.0.0",
     "@rollup/plugin-json": "^4.1.0",
     "@rollup/plugin-node-resolve": "^13.0.5",
+    "@types/axios": "^0.14.0",
     "@types/jest": "^29.2.0",
     "@types/lodash.isobject": "^3.0.7",
     "@types/lodash.mergewith": "^4.6.7",
@@ -57,6 +58,7 @@
     "eslint": "^7.32.0",
     "jest": "^29.2.1",
     "rollup": "^2.58.0",
+    "rollup-plugin-dts": "^4.2.3",
     "ts-jest": "^29.0.3",
     "tslib": "^2.4.0",
     "typescript": "^4.7.4"
@@ -79,7 +81,7 @@
   "scripts": {
     "test": "jest",
     "dev": "rollup -c -w",
-    "build": "rollup -c && ./scripts/update-readme.sh",
+    "build": "tsc -p tsconfig.json --emitDeclarationOnly && rollup -c && ./scripts/update-readme.sh",
     "lint": "npx prettier --write .",
     "fork": "npx ts-node ./src/tools/run-moonbeam-fork.ts --base-path /tmp/fork-data/ -n moonbeam"
   },

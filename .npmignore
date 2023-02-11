@@ -1,6 +1,7 @@
 /scripts
 /test
 /bins
+/build
 
 .vscode
 .github
