@@ -53,7 +53,7 @@ const main = async () => {
   const web3 = new Web3(argv["eth-url"]);
   const revoker = web3.eth.accounts.privateKeyToAccount(argv["private-key"]);
 
-  const gasPrice = ((await api.query.baseFee.baseFeePerGas()).toBigInt() + 49n).toString();
+  const gasPrice = await web3.eth.getGasPrice();
 
   const formattedCollators = argv.collators.map(
     (collator) => api.registry.createType("EthereumAccountId", collator).toHex() as string
