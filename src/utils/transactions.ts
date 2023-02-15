@@ -88,20 +88,35 @@ export const maybeProxyCall = (
   return call;
 };
 
-const NESTED_CALLS = [
+const NESTED_CALLS: {
+  section: string;
+  method: string;
+  multi: boolean;
+  argumentPosition: number;
+  inlined?: boolean;
+}[] = [
   {
     section: "utility",
     method: "dispatchAs",
     multi: false,
+    inlined: true,
     argumentPosition: 1,
   },
-  { section: "sudo", method: "sudo", multi: false, argumentPosition: 0 },
-  { section: "sudo", method: "sudoAs", multi: false, argumentPosition: 1 },
-  { section: "batch", method: "batch", multi: true, argumentPosition: 0 },
+  { section: "sudo", method: "sudo", multi: false, inlined: true, argumentPosition: 0 },
+  { section: "sudo", method: "sudoAs", multi: false, inlined: true, argumentPosition: 1 },
+  { section: "batch", method: "batch", multi: true, inlined: true, argumentPosition: 0 },
   {
     section: "whitelist",
     method: "dispatchWhitelistedCallWithPreimage",
     multi: false,
+    inlined: true,
+    argumentPosition: 0,
+  },
+  {
+    section: "whitelist",
+    method: "dispatchWhitelistedCall",
+    multi: false,
+    inlined: false,
     argumentPosition: 0,
   },
 ];
@@ -137,9 +152,26 @@ export async function callInterpreter(
         subCalls: subCallsData,
       };
     }
-    const subCall = await api.registry.createType("Call", call.args[nested.argumentPosition]);
+    const callData = nested.inlined
+      ? call.args[nested.argumentPosition]
+      : await api.query.preimage
+          .statusFor(call.args[nested.argumentPosition].toHex())
+          .then((optStatus) => {
+            if (optStatus.isNone) {
+              return null;
+            }
+            const status = optStatus.unwrap();
+            const len = status.isRequested
+              ? status.asRequested.len.unwrapOr(0)
+              : status.asUnrequested.len || 0;
+            return api.query.preimage.preimageFor([call.args[nested.argumentPosition].toHex(), len]).then(preimage => preimage.unwrap() .toHex());
+          });
+    if (callData) {
+      const subCall = await api.registry.createType("Call", callData);
+      return { text, call, depth: 1, subCalls: [await callInterpreter(api, subCall)] };
+    }
 
-    return { text, call, depth: 1, subCalls: [await callInterpreter(api, subCall)] };
+    return { text, call, depth: 1, subCalls: [] };
   }
 
   return { text: `${call.section}.${call.method}`, call, depth: 0, subCalls: [] };
