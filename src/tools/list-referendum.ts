@@ -159,9 +159,7 @@ const main = async () => {
             ? ref.info.asOngoing.deciding.unwrap().confirming.isSome
               ? `${await toBlockMoment(
                   api,
-                  ref.track.confirmPeriod.add(
-                    ref.info.asOngoing.deciding.unwrap().confirming.unwrap()
-                  ),
+                  ref.info.asOngoing.deciding.unwrap().confirming.unwrap(),
                   "✅"
                 )}`
               : ref.decidingEnd

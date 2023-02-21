@@ -164,7 +164,9 @@ export async function callInterpreter(
             const len = status.isRequested
               ? status.asRequested.len.unwrapOr(0)
               : status.asUnrequested.len || 0;
-            return api.query.preimage.preimageFor([call.args[nested.argumentPosition].toHex(), len]).then(preimage => preimage.unwrap() .toHex());
+            return api.query.preimage
+              .preimageFor([call.args[nested.argumentPosition].toHex(), len])
+              .then((preimage) => preimage.unwrap().toHex());
           });
     if (callData) {
       const subCall = await api.registry.createType("Call", callData);
