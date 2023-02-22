@@ -14,6 +14,10 @@ const argv = yargs(process.argv.slice(2))
   .version("1.0.0")
   .options({
     ...NETWORK_YARGS_OPTIONS,
+    "single-line": {
+      type: "boolean",
+      description: "Display only single line per referendum",
+    },
   }).argv;
 
 const main = async () => {
@@ -34,9 +38,9 @@ const main = async () => {
       const callData = await callInterpreter(api, referendum.image.proposal);
       imageText = callData.text;
       subText =
-        callData.depth == 0
+        callData.depth == 0 || argv["single-line"]
           ? null
-          : callData.subCalls.map((c) => renderCallInterpretation(c, 1)).join("  \n");
+          : callData.subCalls.map((c) => renderCallInterpretation(c, 1, "                 ")).join("  \n");
     } else {
       imageText = referendum.imageHash.toString();
     }
@@ -78,8 +82,6 @@ const main = async () => {
   const text = (
     await Promise.all(
       referendum.map(async (ref) => {
-        // console.log(JSON.stringify({ ...ref, image: !!ref.image }));
-
         const enactmentDelayFromNow = ref.ongoing.enactment.isAfter
           ? currentBlock +
             Math.max(
@@ -135,9 +137,9 @@ const main = async () => {
               : callData.text
             : "";
         const subText =
-          !callData || callData.depth == 0 || callData.text.startsWith("whitelist.dispatch")
+          !callData || callData.depth == 0 || callData.text.startsWith("whitelist.dispatch") || argv["single-line"]
             ? null
-            : callData.subCalls.map((c) => renderCallInterpretation(c, 1)).join("  \n");
+            : callData.subCalls.map((c) => renderCallInterpretation(c, 1, "                 ")).join("  \n");
 
         const yes = ref.ongoing.tally.ayes.div(BN_TEN.pow(new BN(api.registry.chainDecimals[0])));
 
@@ -219,7 +221,7 @@ const main = async () => {
           (additionalConfirmingTime ? `|${additionalConfirmingTime.padStart(15, " ")}` : "") +
           (additionalEnactmentTime ? `|${additionalEnactmentTime.padStart(15, " ")}` : "") +
           `|` +
-          (subText ? `\n                 ${subText}` : "")
+          (subText ? `\n${subText}` : "")
         );
       })
     )

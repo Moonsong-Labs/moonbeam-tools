@@ -104,7 +104,7 @@ const NESTED_CALLS: {
   },
   { section: "sudo", method: "sudo", multi: false, inlined: true, argumentPosition: 0 },
   { section: "sudo", method: "sudoAs", multi: false, inlined: true, argumentPosition: 1 },
-  { section: "batch", method: "batch", multi: true, inlined: true, argumentPosition: 0 },
+  { section: "utility", method: "batch", multi: true, inlined: true, argumentPosition: 0 },
   {
     section: "whitelist",
     method: "dispatchWhitelistedCallWithPreimage",
@@ -138,10 +138,14 @@ export async function callInterpreter(
   const text = `${call.section}.${call.method}`;
   if (nested) {
     if (nested.multi) {
-      const subCalls = await api.registry.createType(
-        "Vec<Call>",
-        call.args[nested.argumentPosition].toU8a(true)
-      );
+      const subData = call.args[nested.argumentPosition] as unknown as GenericCall[];
+      const subCalls =
+        subData.length > 0 && subData[0].callIndex
+          ? subData
+          : await api.registry.createType(
+              "Vec<Call>",
+              call.args[nested.argumentPosition].toU8a(true)
+            );
       const subCallsData = await Promise.all(
         subCalls.map((subCall) => callInterpreter(api, subCall))
       );
@@ -179,11 +183,15 @@ export async function callInterpreter(
   return { text: `${call.section}.${call.method}`, call, depth: 0, subCalls: [] };
 }
 
-export function renderCallInterpretation(callData: CallInterpretation, depth = 0): string {
+export function renderCallInterpretation(
+  callData: CallInterpretation,
+  depth = 0,
+  prefix = ""
+): string {
   return [
-    `${"".padStart(depth * 6, " ")}⤷ \`${callData.text}\``,
-    ...callData.subCalls.map((call) => renderCallInterpretation(call, depth + 1)),
-  ].join("\n");
+    `${prefix}${"".padStart(depth * 6, " ")}⤷ \`${callData.text}\``,
+    ...callData.subCalls.map((call) => `\n${renderCallInterpretation(call, depth + 1, prefix)}`),
+  ].join("");
 }
 
 export async function renderCall(api: ApiPromise, call: GenericCall) {
