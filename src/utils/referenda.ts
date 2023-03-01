@@ -217,22 +217,25 @@ async function getImageProposal(api: ApiPromise | ApiDecoration<"promise">, hash
 }
 
 // Returns the block at which the referendum ended, 0 if onGoing;
-function getReferendumConclusionBlock(info: PalletReferendaReferendumInfoConvictionVotingTally) {
+function getReferendumConclusionBlock(
+  info: PalletReferendaReferendumInfoConvictionVotingTally
+): number {
   if (info.isOngoing) {
     return 0;
   }
 
-  const blockNumber = info.isApproved
-    ? info.asApproved[0]
+  const blockNumber: number = info.isApproved
+    ? info.asApproved[0].toNumber()
     : info.isCancelled
-    ? info.asCancelled[0]
+    ? info.asCancelled[0].toNumber()
     : info.isKilled
-    ? info.asKilled[0]
+    ? info.asKilled[0].toNumber()
     : info.isRejected
-    ? info.asRejected[0]
+    ? info.asRejected[0].toNumber()
     : info.isTimedOut
-    ? info.asTimedOut[0]
+    ? info.asTimedOut[0].toNumber()
     : 0;
+
   return blockNumber;
 }
 
