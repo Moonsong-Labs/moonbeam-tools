@@ -21,17 +21,17 @@ import {
 } from "../../../utils/constants";
 import { SpecManipulator } from "./spec-manipulator";
 import { SudoManipulator } from "./sudo-manipulator";
-import { string } from "yargs";
 import { AssetManipulator } from "./asset-manipulator";
 import { AuthorizeUpgradeManipulator } from "./authorize-upgrade-manipulator";
 const debug = Debug("helper:state-manager");
 
-export type NetworkName = "moonbeam" | "moonriver" | "alphanet";
+export type NetworkName = "moonbeam" | "moonriver" | "alphanet" | "stagenet";
 
 export const STORAGE_NAMES: { [name in NetworkName]: string } = {
   moonbeam: "moonbeam",
   moonriver: "moonriver",
   alphanet: "moonbase-alpha",
+  stagenet: "stagenet",
 };
 
 // Downloads the exported state from s3. Only if the xxx-chain-info.json file hasn't changed
@@ -77,12 +77,11 @@ export async function downloadExportedState(
   if (stateInfoExists && stateExist && !checkLatest) {
     return { file: stateFile, blockNumber: parseInt(stateInfo.best_number) };
   }
-
   const client = new Client(`https://s3.us-east-2.amazonaws.com`);
   const downloadedStateInfo = await (
     await client.request({
       path:
-        `/snapshots.moonbeam.network/${STORAGE_NAMES[network]}/` +
+        `/chain-state.moonbeam.network/${STORAGE_NAMES[network]}/` +
         `latest/${STORAGE_NAMES[network]}-chain-info.json`,
       method: "GET",
     })
@@ -105,7 +104,7 @@ export async function downloadExportedState(
     client.dispatch(
       {
         path:
-          `/snapshots.moonbeam.network/${STORAGE_NAMES[network]}/` +
+          `/chain-state.moonbeam.network/${STORAGE_NAMES[network]}/` +
           `latest/${STORAGE_NAMES[network]}-state.json`,
         method: "GET",
       },

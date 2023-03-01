@@ -8,6 +8,7 @@ import { getBlockDate } from "../utils/block-time";
 import { getApiFor, NETWORK_YARGS_OPTIONS } from "../utils/networks";
 import { getReferendumByGroups } from "../utils/referenda";
 import { callInterpreter, renderCallInterpretation } from "../utils/transactions";
+import { promiseConcurrent } from "../utils/functions";
 
 const argv = yargs(process.argv.slice(2))
   .usage("Usage: $0")
@@ -40,7 +41,9 @@ const main = async () => {
       subText =
         callData.depth == 0 || argv["single-line"]
           ? null
-          : callData.subCalls.map((c) => renderCallInterpretation(c, 1, "                 ")).join("  \n");
+          : callData.subCalls
+              .map((c) => renderCallInterpretation(c, 1, "                 "))
+              .join("  \n");
     } else {
       imageText = referendum.imageHash.toString();
     }
@@ -80,8 +83,9 @@ const main = async () => {
 
   const referendum = await getReferendumByGroups(api);
   const text = (
-    await Promise.all(
-      referendum.map(async (ref) => {
+    await promiseConcurrent(
+      10,
+      async (ref) => {
         const enactmentDelayFromNow = ref.ongoing.enactment.isAfter
           ? currentBlock +
             Math.max(
@@ -119,10 +123,10 @@ const main = async () => {
             : "📰"
           : "?";
 
-        const callData = ref.image && (await callInterpreter(api, ref.image.proposal));
+        const callData = ref?.image?.proposal && (await callInterpreter(api, ref.image.proposal));
         const imageText =
           callData && callData.text
-            ? callData.text.startsWith("whitelist.dispatch")
+            ? callData.text.startsWith("whitelist.dispatch") && callData.subCalls.length > 0
               ? `${
                   ref.info.isOngoing
                     ? (
@@ -137,9 +141,14 @@ const main = async () => {
               : callData.text
             : "";
         const subText =
-          !callData || callData.depth == 0 || callData.text.startsWith("whitelist.dispatch") || argv["single-line"]
+          !callData ||
+          callData.depth == 0 ||
+          callData.text.startsWith("whitelist.dispatch") ||
+          argv["single-line"]
             ? null
-            : callData.subCalls.map((c) => renderCallInterpretation(c, 1, "                 ")).join("  \n");
+            : callData.subCalls
+                .map((c) => renderCallInterpretation(c, 1, "                 "))
+                .join("  \n");
 
         const yes = ref.ongoing.tally.ayes.div(BN_TEN.pow(new BN(api.registry.chainDecimals[0])));
 
@@ -223,7 +232,8 @@ const main = async () => {
           `|` +
           (subText ? `\n${subText}` : "")
         );
-      })
+      },
+      referendum
     )
   ).join("\n");
   console.log(text);

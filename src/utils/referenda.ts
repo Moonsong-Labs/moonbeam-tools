@@ -28,6 +28,7 @@ import {
 } from "@polkadot/util";
 import { HexString } from "@polkadot/util/types";
 import Debug from "debug";
+import { promiseConcurrent } from "./functions";
 const debug = Debug("tools:referenda");
 
 export interface Referendum {
@@ -215,14 +216,12 @@ async function getImageProposal(api: ApiPromise | ApiDecoration<"promise">, hash
   return null;
 }
 
-async function getReferendumOnGoing(
-  api: ApiPromise,
-  id: number,
-  info: PalletReferendaReferendumInfoConvictionVotingTally
-) {
+// Returns the block at which the referendum ended, 0 if onGoing;
+function getReferendumConclusionBlock(info: PalletReferendaReferendumInfoConvictionVotingTally) {
   if (info.isOngoing) {
-    return { apiAt: api, ongoing: info.asOngoing };
+    return 0;
   }
+
   const blockNumber = info.isApproved
     ? info.asApproved[0]
     : info.isCancelled
@@ -234,11 +233,20 @@ async function getReferendumOnGoing(
     : info.isTimedOut
     ? info.asTimedOut[0]
     : 0;
-  if (!blockNumber) {
-    throw new Error("Unknown referendum");
-  }
+  return blockNumber;
+}
 
-  debug(`Ref: ${id} - retrieving OnGoing from block #${blockNumber - 1}`);
+async function getReferendumOnGoing(
+  api: ApiPromise,
+  id: number,
+  info: PalletReferendaReferendumInfoConvictionVotingTally
+) {
+  if (info.isOngoing) {
+    return { apiAt: api, ongoing: info.asOngoing };
+  }
+  const blockNumber = getReferendumConclusionBlock(info);
+
+  debug(`Ref: ${id} - retrieving past OnGoingfrom block #${blockNumber - 1}`);
   const apiAt = await api.at(await api.rpc.chain.getBlockHash(blockNumber - 1));
   const referendumInfo = await apiAt.query.referenda.referendumInfoFor(id);
 
@@ -295,29 +303,43 @@ function extendReferendum(
     });
 }
 
-export async function getReferendumByGroups(api: ApiPromise) {
+export type ReferendumLimits = {
+  blocks: number;
+};
+
+export async function getReferendumByGroups(
+  api: ApiPromise,
+  limits: ReferendumLimits = { blocks: 7200 * 7 }
+) {
   if (!api.query.referenda) {
     return [];
   }
-  const referendumInfos = await Promise.all(
-    (
+  const blockNumber = (await api.rpc.chain.getHeader()).number.toNumber();
+  const { blocks } = limits;
+  const referendumInfos = (
+    await promiseConcurrent(
+      10,
+      async ([key, optInfo]): Promise<Referendum> => {
+        const info = optInfo.unwrap();
+        const id = new BN(key.toHex().slice(-8), "hex", "le").toNumber();
+        if (!info.isOngoing && getReferendumConclusionBlock(info) + blocks < blockNumber) {
+          return;
+        }
+        const { apiAt, ongoing } = await getReferendumOnGoing(api, id, info);
+        // Old proposal had the hash directly
+        const proposalHash = getPreimageHash(ongoing.proposal || (ongoing as any).proposalHash);
+        return {
+          id,
+          ongoing,
+          info,
+          isConvictionVote: isConvictionVote(info),
+          key: id.toString(),
+          image: await getImageProposal(apiAt, proposalHash),
+        };
+      },
       await api.query.referenda.referendumInfoFor.entries()
-    ).map(async ([key, optInfo]): Promise<Referendum> => {
-      const info = optInfo.unwrap();
-      const id = new BN(key.toHex().slice(-8), "hex", "le").toNumber();
-      const { apiAt, ongoing } = await getReferendumOnGoing(api, id, info);
-      // Old proposal had the hash directly
-      const proposalHash = getPreimageHash(ongoing.proposal || (ongoing as any).proposalHash);
-      return {
-        id,
-        ongoing,
-        info,
-        isConvictionVote: isConvictionVote(info),
-        key: id.toString(),
-        image: await getImageProposal(apiAt, proposalHash),
-      };
-    })
-  );
+    )
+  ).filter((result) => !!result);
   const tracks = await (api.query.referenda && api.consts.referenda.tracks);
 
   return extendReferendum(
