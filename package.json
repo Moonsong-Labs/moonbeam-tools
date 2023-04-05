@@ -28,6 +28,7 @@
     "moment": "^2.29.4",
     "moment-parseplus": "^2.0.3",
     "moonbeam-types-bundle": "^2.0.9",
+    "node-fetch": "2",
     "p-map": "^4.0.0",
     "p-queue": "^6.6.2",
     "pg": "^8.8.0",
