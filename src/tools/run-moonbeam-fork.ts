@@ -120,9 +120,9 @@ const main = async () => {
   let polkadotVersion: string;
   let polkadotBinaryPath: string;
   if (!argv.dev) {
-    const polkadotReleases = await (
+    const polkadotReleases = (await (
       await fetch("https://api.github.com/repos/paritytech/polkadot/releases")
-    ).json();
+    ).json()) as any;
 
     const latestPolkadotVersion = polkadotReleases.find((release: any) =>
       release.assets.find((asset: any) => asset.name === "polkadot")
@@ -186,9 +186,9 @@ const main = async () => {
     process.stdout.write(` ${chalk.green(polkadotVersion.trim())} ✓\n`);
   }
 
-  const moonbeamReleases = await (
+  const moonbeamReleases = (await (
     await fetch("https://api.github.com/repos/purestake/moonbeam/releases")
-  ).json();
+  ).json()) as any;
 
   const latestMoonbeamVersion = semver.valid(
     semver.coerce(
