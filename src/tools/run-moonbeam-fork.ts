@@ -17,6 +17,7 @@ import {
   neutralizeExportedState,
 } from "../libs/helpers/state-manipulator";
 import { ALITH_PRIVATE_KEY } from "../utils/constants";
+import inquirer from "inquirer";
 
 const argv = yargs(process.argv.slice(2))
   .usage("Usage: $0")
@@ -115,6 +116,23 @@ const bootNodes = Object.values(NODE_KEYS)
   .map((peerId, index) => `/ip4/127.0.0.1/tcp/1000${index + 1}/p2p/${peerId}`);
 
 const main = async () => {
+  if (argv["purge-all"]) {
+    const answer = await inquirer.prompt({
+      name: "confirm",
+      type: "confirm",
+      message: `Are you sure you want to run this script with ${chalk.bgWhiteBright.blackBright(
+        "purge-all"
+      )} enabled? \n This will delete ${chalk.bgWhiteBright.blackBright(
+        "all"
+      )} files in the base-path directory: ${argv["base-path"]}.`,
+    });
+
+    if (!answer.confirm) {
+      console.log("Goodbye! 👋");
+      return;
+    }
+  }
+
   // Variable to allow replaying some following steps if previous steps have been modified
   let hasChanged = false;
   let polkadotVersion: string;
