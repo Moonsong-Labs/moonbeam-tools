@@ -292,7 +292,7 @@ export const getBlockDetails = async (api: ApiPromise, blockHash: BlockHash) => 
   );
   const blockWeight = txWithEvents.reduce((totalWeight, tx, index) => {
     // TODO: support weight v1/2
-    return totalWeight + (tx.dispatchInfo && (tx.dispatchInfo.weight as any).refTime.toBigInt());
+    return totalWeight + (tx.dispatchInfo && (tx.dispatchInfo.weight as any).toBigInt());
   }, 0n);
   return {
     block,
