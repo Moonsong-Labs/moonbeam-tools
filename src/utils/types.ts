@@ -25,7 +25,6 @@ export function mapExtrinsics(
   records: EventRecord[],
   fees: InclusionFee[],
   feeMultiplier: u128,
-  weightToFees: any[]
 ): TxWithEventAndFee[] {
   return extrinsics.map((extrinsic, index): TxWithEventAndFee => {
     let dispatchError: DispatchError | undefined;

@@ -289,18 +289,6 @@ export const getBlockDetails = async (api: ApiPromise, blockHash: BlockHash) => 
     records,
     fees.map((fee) => fee.inclusionFee.unwrapOrDefault()),
     feeMultiplier,
-    apiAt.consts.transactionPayment?.weightToFee ||
-      ([
-        {
-          coeffInteger: new u128(
-            api.registry,
-            api.runtimeVersion.specName.toString() == "moonbeam" ? 1_000_000 : 10_000
-          ).muln(apiAt.consts.transactionPayment.operationalFeeMultiplier.toNumber() || 5),
-          coeffFrac: api.registry.createType("Perbill", 0),
-          negative: new bool(api.registry, false),
-          degree: new u8(api.registry, 1),
-        },
-      ] as any)
   );
   const blockWeight = txWithEvents.reduce((totalWeight, tx, index) => {
     // TODO: support weight v1/2
