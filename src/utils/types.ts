@@ -10,6 +10,8 @@ import { BN } from "@polkadot/util";
 
 import type { TxWithEvent } from "@polkadot/api-derive/types";
 import { ApiPromise } from "@polkadot/api";
+import { toPairsIn } from "lodash";
+import { EXTRINSIC_BASE_WEIGHT } from "./constants";
 
 export interface ComputedFees {
   baseFee: bigint;
@@ -47,29 +49,27 @@ export const mapExtrinsics = async (
         return event;
       });
 
-    let computedFees: ComputedFees;
-    const feeDetails = fees[index];
+    const unadjustedWeightFee = (await api.call.transactionPaymentApi.queryWeightToFee(dispatchInfo.weight) as any).toBigInt();
+    const lengthFee = (await api.call.transactionPaymentApi.queryLengthToFee(extrinsic.encodedLength) as any).toBigInt();
 
-    const frac = 1n;
-    const integer = 1n;
-    // const frac = weightToFees[0].coeffFrac.mul((dispatchInfo.weight as any).refTime?.toBn());
-    // const integer = weightToFees[0].coeffInteger.mul((dispatchInfo.weight as any).refTime?.toBn());
+    // TODO: should be doing this at api.at() the original block 
+    const feeMultiplier = await api.query.transactionPayment.nextFeeMultiplier();
+    const weightFee = unadjustedWeightFee * feeMultiplier.toBigInt() / 1_000_000_000_000_000_000n;
 
-    /*
-    const unadjustedWeightFee = await api.call.transactionPaymentApi.queryWeightToFee({
-      refTime: 1,
-      proofSize: 1,
-    });
-    */
+    const baseFee = (await api.call.transactionPaymentApi.queryWeightToFee({
+      refTime: EXTRINSIC_BASE_WEIGHT,
+      proofSize: 0n,
+    }) as any).toBigInt();
 
-    const unadjustedFee = frac + integer;
-    const adjustedFee = unadjustedFee * feeMultiplier.toBigInt() / 1_000_000_000_000_000_000n;
+    const tip = extrinsic.tip.toBigInt();
 
-    computedFees = {
-      baseFee: feeDetails.baseFee.toBigInt(),
-      lenFee: feeDetails.lenFee.toBigInt(),
-      weightFee: adjustedFee,
-      totalFees: adjustedFee + feeDetails.baseFee.toBigInt() + feeDetails.lenFee.toBigInt(),
+    const totalFees = lengthFee + weightFee + baseFee + tip;
+
+    const computedFees: ComputedFees = {
+      baseFee,
+      lenFee: lengthFee,
+      weightFee,
+      totalFees,
     };
     return { dispatchError, dispatchInfo, events, extrinsic, fees: computedFees };
   }));
