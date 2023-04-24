@@ -9,6 +9,7 @@ import type { u128 } from "@polkadot/types";
 import { BN } from "@polkadot/util";
 
 import type { TxWithEvent } from "@polkadot/api-derive/types";
+import { ApiPromise } from "@polkadot/api";
 
 export interface ComputedFees {
   baseFee: bigint;
@@ -20,12 +21,13 @@ export interface TxWithEventAndFee extends TxWithEvent {
   fees: ComputedFees;
 }
 
-export function mapExtrinsics(
+export const mapExtrinsics = async (
+  api: ApiPromise,
   extrinsics: Extrinsic[],
   records: EventRecord[],
   fees: InclusionFee[],
   feeMultiplier: u128,
-): TxWithEventAndFee[] {
+) => {
   return extrinsics.map((extrinsic, index): TxWithEventAndFee => {
     let dispatchError: DispatchError | undefined;
     let dispatchInfo: DispatchInfo | undefined;
@@ -52,6 +54,13 @@ export function mapExtrinsics(
     const integer = 1n;
     // const frac = weightToFees[0].coeffFrac.mul((dispatchInfo.weight as any).refTime?.toBn());
     // const integer = weightToFees[0].coeffInteger.mul((dispatchInfo.weight as any).refTime?.toBn());
+
+    /*
+    const unadjustedWeightFee = await api.call.transactionPaymentApi.queryWeightToFee({
+      refTime: 1,
+      proofSize: 1,
+    });
+    */
 
     const unadjustedFee = frac + integer;
     const adjustedFee = unadjustedFee * feeMultiplier.toBigInt() / 1_000_000_000_000_000_000n;

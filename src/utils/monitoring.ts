@@ -284,7 +284,8 @@ export const getBlockDetails = async (api: ApiPromise, blockHash: BlockHash) => 
   ]);
 
   const feeMultiplier = await getFeeMultiplier(api, block.header.parentHash.toString());
-  const txWithEvents = mapExtrinsics(
+  const txWithEvents = await mapExtrinsics(
+    api,
     block.extrinsics,
     records,
     fees.map((fee) => fee.inclusionFee.unwrapOrDefault()),
