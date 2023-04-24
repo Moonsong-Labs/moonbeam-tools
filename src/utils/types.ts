@@ -28,7 +28,7 @@ export const mapExtrinsics = async (
   fees: InclusionFee[],
   feeMultiplier: u128,
 ) => {
-  return extrinsics.map((extrinsic, index): TxWithEventAndFee => {
+  return Promise.all(extrinsics.map(async (extrinsic, index) => {
     let dispatchError: DispatchError | undefined;
     let dispatchInfo: DispatchInfo | undefined;
 
@@ -72,5 +72,5 @@ export const mapExtrinsics = async (
       totalFees: adjustedFee + feeDetails.baseFee.toBigInt() + feeDetails.lenFee.toBigInt(),
     };
     return { dispatchError, dispatchInfo, events, extrinsic, fees: computedFees };
-  });
+  }));
 }
