@@ -478,7 +478,7 @@ export function generateBlockDetailsLog(
       : eths;
 
   const fees = blockDetails.txWithEvents
-    .filter(({ dispatchInfo }) => dispatchInfo.paysFee.isYes && !dispatchInfo.class.isMandatory)
+    .filter(({ dispatchInfo }) => !dispatchInfo.class.isMandatory)
     .reduce((p, { dispatchInfo, extrinsic, events, fees }) => {
       if (extrinsic.method.section == "ethereum") {
         const payload = extrinsic.method.args[0] as EthereumTransactionTransactionV2;
@@ -490,10 +490,9 @@ export function generateBlockDetailsLog(
           ? // If gasPrice is not indicated, we should use the base fee defined in that block
             payload.asEip1559?.maxFeePerGas.toBigInt() || 0n
           : (payload as any as LegacyTransaction).gasPrice?.toBigInt();
-
         return p + (BigInt(gasPrice) * (dispatchInfo.weight as any).refTime.toBigInt()) / 25000n;
       }
-      return p + fees.totalFees;
+      return p + (dispatchInfo.paysFee.isYes ? fees.totalFees: 0n);
     }, 0n);
   const feesTokens = Number(fees / 10n ** 15n) / 1000;
   const feesTokenTxt = feesTokens.toFixed(3).padStart(5, " ");
