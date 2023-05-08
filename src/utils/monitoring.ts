@@ -289,7 +289,7 @@ export const getBlockDetails = async (api: ApiPromise, blockHash: BlockHash) => 
     block.extrinsics,
     records,
     fees.map((fee) => fee.inclusionFee.unwrapOrDefault()),
-    feeMultiplier,
+    feeMultiplier
   );
   const blockWeight = txWithEvents.reduce((totalWeight, tx, index) => {
     // TODO: support weight v1/2
