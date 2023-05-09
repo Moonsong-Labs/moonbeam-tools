@@ -206,10 +206,10 @@ export const getAccountFromNimbusKey = async (
     !authorMappingCache[nmbsKey] ||
     authorMappingCache[nmbsKey].lastUpdate < Date.now() - 3600 * 1000
   ) {
-    const mappingData = (await api.query.authorMapping.mappingWithDeposit(nmbsKey)) as Option<any>;
+    const mappingData = (await api.query.authorMapping.mapping(nmbsKey)) as Option<any>;
     authorMappingCache[nmbsKey] = {
       lastUpdate: Date.now(),
-      account: mappingData.isEmpty ? null : ethereumEncode(mappingData.unwrap().account.toString()),
+      account: mappingData.isEmpty ? null : ethereumEncode(mappingData.unwrap().toString()),
     };
   }
   const { account } = authorMappingCache[nmbsKey];
@@ -284,27 +284,16 @@ export const getBlockDetails = async (api: ApiPromise, blockHash: BlockHash) => 
   ]);
 
   const feeMultiplier = await getFeeMultiplier(api, block.header.parentHash.toString());
-  const txWithEvents = mapExtrinsics(
+  const txWithEvents = await mapExtrinsics(
+    api,
     block.extrinsics,
     records,
     fees.map((fee) => fee.inclusionFee.unwrapOrDefault()),
-    feeMultiplier,
-    apiAt.consts.transactionPayment?.weightToFee ||
-      ([
-        {
-          coeffInteger: new u128(
-            api.registry,
-            api.runtimeVersion.specName.toString() == "moonbeam" ? 1_000_000 : 10_000
-          ).muln(apiAt.consts.transactionPayment.operationalFeeMultiplier.toNumber() || 5),
-          coeffFrac: api.registry.createType("Perbill", 0),
-          negative: new bool(api.registry, false),
-          degree: new u8(api.registry, 1),
-        },
-      ] as any)
+    feeMultiplier
   );
   const blockWeight = txWithEvents.reduce((totalWeight, tx, index) => {
     // TODO: support weight v1/2
-    return totalWeight + (tx.dispatchInfo && (tx.dispatchInfo.weight as any).refTime.toBigInt());
+    return totalWeight + (tx.dispatchInfo && (tx.dispatchInfo.weight as any).toBigInt());
   }, 0n);
   return {
     block,
