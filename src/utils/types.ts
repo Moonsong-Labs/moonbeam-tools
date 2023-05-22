@@ -9,6 +9,9 @@ import type { u128 } from "@polkadot/types";
 import { BN } from "@polkadot/util";
 
 import type { TxWithEvent } from "@polkadot/api-derive/types";
+import { ApiPromise } from "@polkadot/api";
+import { toPairsIn } from "lodash";
+import { EXTRINSIC_BASE_WEIGHT } from "./constants";
 
 export interface ComputedFees {
   baseFee: bigint;
@@ -20,53 +23,63 @@ export interface TxWithEventAndFee extends TxWithEvent {
   fees: ComputedFees;
 }
 
-export function mapExtrinsics(
+export const mapExtrinsics = async (
+  api: ApiPromise,
   extrinsics: Extrinsic[],
   records: EventRecord[],
   fees: InclusionFee[],
-  feeMultiplier: u128,
-  weightToFees: any[]
-): TxWithEventAndFee[] {
-  return extrinsics.map((extrinsic, index): TxWithEventAndFee => {
-    let dispatchError: DispatchError | undefined;
-    let dispatchInfo: DispatchInfo | undefined;
+  feeMultiplier: u128
+) => {
+  return Promise.all(
+    extrinsics.map(async (extrinsic, index) => {
+      let dispatchError: DispatchError | undefined;
+      let dispatchInfo: DispatchInfo | undefined;
 
-    const events = records
-      .filter(({ phase }) => phase.isApplyExtrinsic && phase.asApplyExtrinsic.eq(index))
-      .map(({ event }) => {
-        if (event.section === "system") {
-          if (event.method === "ExtrinsicSuccess") {
-            dispatchInfo = event.data[0] as DispatchInfo;
-          } else if (event.method === "ExtrinsicFailed") {
-            dispatchError = event.data[0] as DispatchError;
-            dispatchInfo = event.data[1] as DispatchInfo;
+      const events = records
+        .filter(({ phase }) => phase.isApplyExtrinsic && phase.asApplyExtrinsic.eq(index))
+        .map(({ event }) => {
+          if (event.section === "system") {
+            if (event.method === "ExtrinsicSuccess") {
+              dispatchInfo = event.data[0] as DispatchInfo;
+            } else if (event.method === "ExtrinsicFailed") {
+              dispatchError = event.data[0] as DispatchError;
+              dispatchInfo = event.data[1] as DispatchInfo;
+            }
           }
-        }
 
-        return event;
-      });
+          return event;
+        });
 
-    let computedFees: ComputedFees;
-    const feeDetails = fees[index];
+      const unadjustedWeightFee = (
+        (await api.call.transactionPaymentApi.queryWeightToFee(dispatchInfo.weight)) as any
+      ).toBigInt();
+      const lengthFee = (
+        (await api.call.transactionPaymentApi.queryLengthToFee(extrinsic.encodedLength)) as any
+      ).toBigInt();
 
-    const refTime = (dispatchInfo.weight as any).toBn
-      ? (dispatchInfo.weight as any).toBn()
-      : dispatchInfo.weight.refTime?.toBn();
-    const frac = weightToFees[0].coeffFrac.mul(refTime);
-    const integer = weightToFees[0].coeffInteger.mul(refTime);
+      // TODO: should be doing this at api.at() the original block
+      const feeMultiplier = await api.query.transactionPayment.nextFeeMultiplier();
+      const weightFee =
+        (unadjustedWeightFee * feeMultiplier.toBigInt()) / 1_000_000_000_000_000_000n;
 
-    const unadjustedFee = frac.add(integer);
+      const baseFee = (
+        (await api.call.transactionPaymentApi.queryWeightToFee({
+          refTime: EXTRINSIC_BASE_WEIGHT,
+          proofSize: 0n,
+        })) as any
+      ).toBigInt();
 
-    const adjustedFee = BigInt(
-      unadjustedFee.mul(feeMultiplier.toBn()).div(new BN("1000000000000000000")).toString()
-    );
+      const tip = extrinsic.tip.toBigInt();
 
-    computedFees = {
-      baseFee: feeDetails.baseFee.toBigInt(),
-      lenFee: feeDetails.lenFee.toBigInt(),
-      weightFee: adjustedFee,
-      totalFees: adjustedFee + feeDetails.baseFee.toBigInt() + feeDetails.lenFee.toBigInt(),
-    };
-    return { dispatchError, dispatchInfo, events, extrinsic, fees: computedFees };
-  });
-}
+      const totalFees = lengthFee + weightFee + baseFee + tip;
+
+      const computedFees: ComputedFees = {
+        baseFee,
+        lenFee: lengthFee,
+        weightFee,
+        totalFees,
+      };
+      return { dispatchError, dispatchInfo, events, extrinsic, fees: computedFees };
+    })
+  );
+};

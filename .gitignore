@@ -108,3 +108,5 @@ build
 test/*-result.json
 
 binaries/*
+
+*.wasm
