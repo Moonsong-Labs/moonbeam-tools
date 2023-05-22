@@ -206,10 +206,10 @@ export const getAccountFromNimbusKey = async (
     !authorMappingCache[nmbsKey] ||
     authorMappingCache[nmbsKey].lastUpdate < Date.now() - 3600 * 1000
   ) {
-    const mappingData = (await api.query.authorMapping.mapping(nmbsKey)) as Option<any>;
+    const mappingData = (await api.query.authorMapping.mappingWithDeposit(nmbsKey)) as Option<any>;
     authorMappingCache[nmbsKey] = {
       lastUpdate: Date.now(),
-      account: mappingData.isEmpty ? null : ethereumEncode(mappingData.unwrap().toString()),
+      account: mappingData.isEmpty ? null : ethereumEncode(mappingData.unwrap().account.toString()),
     };
   }
   const { account } = authorMappingCache[nmbsKey];
