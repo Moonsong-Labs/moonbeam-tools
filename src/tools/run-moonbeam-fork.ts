@@ -92,6 +92,11 @@ const argv = yargs(process.argv.slice(2))
       description: "Specifies where all generated files are to be stored.",
       default: "/tmp/fork-data/",
     },
+    "relay-chain": {
+      type: "string",
+      description: "Relay chain to use.",
+      default: "rococo-local",
+    },
     "authorize-upgrade": {
       type: "string",
       description: "Hash of the runtime to authorize for upgrade",
@@ -323,7 +328,7 @@ const main = async () => {
       await fs.rm(
         path.join(
           argv["base-path"],
-          `rococo-${argv.network}-${polkadotVersion.replace(" ", "-")}-local-raw.json`
+          `${argv['relay-chain']}-${argv.network}-${polkadotVersion.replace(" ", "-")}-local-raw.json`
         ),
         { force: true }
       );
@@ -392,7 +397,7 @@ const main = async () => {
 
     const relayPlainSpecFile = path.join(
       argv["base-path"],
-      `rococo-${argv.network}-${polkadotVersion.replace(" ", "-")}-local-plain.json`
+      `${argv['relay-chain']}-${argv.network}-${polkadotVersion.replace(" ", "-")}-local-plain.json`
     );
     process.stdout.write(`\t - Checking relaychain plain spec file...`);
     if (
@@ -405,7 +410,7 @@ const main = async () => {
       hasChanged = true;
       process.stdout.write(` ${chalk.yellow(`generating`)}...`);
       await runTask(
-        `${polkadotBinaryPath} build-spec --chain rococo-local --disable-default-bootnode > ${relayPlainSpecFile}`
+        `${polkadotBinaryPath} build-spec --chain ${argv['relay-chain']} --disable-default-bootnode > ${relayPlainSpecFile}`
       );
       process.stdout.write(` ✓\n`);
 
@@ -433,7 +438,7 @@ const main = async () => {
     process.stdout.write(`\t - Checking relaychain raw spec file...`);
     relayRawSpecFile = path.join(
       argv["base-path"],
-      `rococo-${argv.network}-${polkadotVersion.replace(" ", "-")}-local-raw.json`
+      `${argv['relay-chain']}-${argv.network}-${polkadotVersion.replace(" ", "-")}-local-raw.json`
     );
     if (
       !(await fs
