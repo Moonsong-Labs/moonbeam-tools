@@ -49,8 +49,11 @@ export function mapExtrinsics(
     let computedFees: ComputedFees;
     const feeDetails = fees[index];
 
-    const frac = weightToFees[0].coeffFrac.mul((dispatchInfo.weight as any).refTime?.toBn());
-    const integer = weightToFees[0].coeffInteger.mul((dispatchInfo.weight as any).refTime?.toBn());
+    const refTime = (dispatchInfo.weight as any).toBn
+      ? (dispatchInfo.weight as any).toBn()
+      : dispatchInfo.weight.refTime?.toBn();
+    const frac = weightToFees[0].coeffFrac.mul(refTime);
+    const integer = weightToFees[0].coeffInteger.mul(refTime);
 
     const unadjustedFee = frac.add(integer);
 

@@ -14,9 +14,9 @@
   "types": "dist/index.d.ts",
   "dependencies": {
     "@moonbeam-network/api-augment": "^0.2100.0",
-    "@polkadot/api": "^9.13.6",
-    "@polkadot/util": "^10.3.1",
-    "@polkadot/util-crypto": "^10.3.1",
+    "@polkadot/api": "^10.4.1",
+    "@polkadot/util": "^12.0.1",
+    "@polkadot/util-crypto": "^12.0.1",
     "chalk": "^4.1.2",
     "cli-progress": "^3.11.2",
     "debug": "^4.3.4",

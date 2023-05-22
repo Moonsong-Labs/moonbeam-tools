@@ -253,7 +253,9 @@ export const getFeeMultiplier = async (api: ApiPromise, blockHash: string): Prom
 
 export const getBlockDetails = async (api: ApiPromise, blockHash: BlockHash) => {
   debug(`Querying ${blockHash}`);
-  const maxBlockWeight = api.consts.system.blockWeights.maxBlock.refTime.toBigInt();
+  const maxBlockWeight = (api.consts.system.blockWeights.maxBlock as any).toBigInt
+    ? (api.consts.system.blockWeights.maxBlock as any).toBigInt()
+    : api.consts.system.blockWeights.maxBlock.refTime?.toBigInt();
   const apiAt = await api.at(blockHash);
   const [{ block }, records, blockTime, collatorId] = await Promise.all([
     api.rpc.chain.getBlock(blockHash),
@@ -304,7 +306,13 @@ export const getBlockDetails = async (api: ApiPromise, blockHash: BlockHash) => 
   );
   const blockWeight = txWithEvents.reduce((totalWeight, tx, index) => {
     // TODO: support weight v1/2
-    return totalWeight + (tx.dispatchInfo && (tx.dispatchInfo.weight as any).refTime.toBigInt());
+    if (!tx.dispatchInfo) {
+      return totalWeight;
+    }
+    const refTime = (tx.dispatchInfo.weight as any).toBn
+    ? (tx.dispatchInfo.weight as any).toBigInt()
+    : tx.dispatchInfo.weight.refTime?.toBigInt();
+    return totalWeight + refTime;
   }, 0n);
   return {
     block,
@@ -490,9 +498,13 @@ export function generateBlockDetailsLog(
           ? // If gasPrice is not indicated, we should use the base fee defined in that block
             payload.asEip1559?.maxFeePerGas.toBigInt() || 0n
           : (payload as any as LegacyTransaction).gasPrice?.toBigInt();
-        return p + (BigInt(gasPrice) * (dispatchInfo.weight as any).refTime.toBigInt()) / 25000n;
+          
+      const refTime = (dispatchInfo.weight as any).toBn
+      ? (dispatchInfo.weight as any).toBigInt()
+      : dispatchInfo.weight.refTime?.toBigInt();
+        return p + (BigInt(gasPrice) * refTime) / 25000n;
       }
-      return p + (dispatchInfo.paysFee.isYes ? fees.totalFees: 0n);
+      return p + (dispatchInfo.paysFee.isYes ? fees.totalFees : 0n);
     }, 0n);
   const feesTokens = Number(fees / 10n ** 15n) / 1000;
   const feesTokenTxt = feesTokens.toFixed(3).padStart(5, " ");

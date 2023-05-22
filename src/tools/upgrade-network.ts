@@ -180,7 +180,7 @@ async function main() {
           })
         ).signAndSend(account, { nonce: nonce++ }, monitorSubmittedExtrinsic(api, { id: "vote" }));
 
-        await waitBlocks(api, 2);
+        await waitBlocks(api, 3);
 
         await tryProxy(api.tx.parachainSystem.enactAuthorizedUpgrade(codeHex)).signAndSend(
           account,
