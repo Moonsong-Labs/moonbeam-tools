@@ -62,7 +62,7 @@ export async function getParaApi(network: "kusama" | "polkadot", id: string) {
     console.log(`Trying node ${node} [${nodes.length}] for ${id}`);
     try {
       const api = await Promise.race(
-        [timeoutAfter(15), ApiPromise.create({
+        [timeoutAfter(10), ApiPromise.create({
           initWasm: false,
           noInitWarn: true,
           provider: new WsProvider(node),
@@ -112,7 +112,7 @@ const main = async () => {
   }
   await api.disconnect();
 
-  process.exit(1):
+  process.exit(1);
 };
 
 main();
