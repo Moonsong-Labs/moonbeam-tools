@@ -328,7 +328,10 @@ const main = async () => {
       await fs.rm(
         path.join(
           argv["base-path"],
-          `${argv['relay-chain']}-${argv.network}-${polkadotVersion.replace(" ", "-")}-local-raw.json`
+          `${argv["relay-chain"]}-${argv.network}-${polkadotVersion.replace(
+            " ",
+            "-"
+          )}-local-raw.json`
         ),
         { force: true }
       );
@@ -397,7 +400,7 @@ const main = async () => {
 
     const relayPlainSpecFile = path.join(
       argv["base-path"],
-      `${argv['relay-chain']}-${argv.network}-${polkadotVersion.replace(" ", "-")}-local-plain.json`
+      `${argv["relay-chain"]}-${argv.network}-${polkadotVersion.replace(" ", "-")}-local-plain.json`
     );
     process.stdout.write(`\t - Checking relaychain plain spec file...`);
     if (
@@ -410,14 +413,14 @@ const main = async () => {
       hasChanged = true;
       process.stdout.write(` ${chalk.yellow(`generating`)}...`);
       await runTask(
-        `${polkadotBinaryPath} build-spec --chain ${argv['relay-chain']} --disable-default-bootnode > ${relayPlainSpecFile}`
+        `${polkadotBinaryPath} build-spec --chain ${argv["relay-chain"]} --disable-default-bootnode > ${relayPlainSpecFile}`
       );
       process.stdout.write(` ✓\n`);
 
       process.stdout.write(`\t\t - Including parachain ${paraId} in relaychain plain specs...`);
       let relayChainSpec = JSON.parse((await fs.readFile(relayPlainSpecFile)).toString());
       relayChainSpec.bootNodes = bootNodes;
-      relayChainSpec.genesis.runtime.runtime_genesis_config.paras = [
+      const paras = [
         [
           [
             paraId,
@@ -429,6 +432,11 @@ const main = async () => {
           ],
         ],
       ];
+      if ("runtime_genesis_config" in relayChainSpec.genesis.runtime) {
+        relayChainSpec.genesis.runtime.runtime_genesis_config.paras = paras;
+      } else {
+        relayChainSpec.genesis.runtime.paras = paras ;
+      }
       await fs.writeFile(relayPlainSpecFile, JSON.stringify(relayChainSpec, null, 2));
       process.stdout.write(` ✓\n`);
       process.stdout.write(`\t - ${chalk.yellow(`Saving`)} plain relaychain spec...`);
@@ -438,7 +446,7 @@ const main = async () => {
     process.stdout.write(`\t - Checking relaychain raw spec file...`);
     relayRawSpecFile = path.join(
       argv["base-path"],
-      `${argv['relay-chain']}-${argv.network}-${polkadotVersion.replace(" ", "-")}-local-raw.json`
+      `${argv["relay-chain"]}-${argv.network}-${polkadotVersion.replace(" ", "-")}-local-raw.json`
     );
     if (
       !(await fs
