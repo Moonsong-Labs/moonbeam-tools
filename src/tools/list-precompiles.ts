@@ -1,7 +1,9 @@
 import { xxhashAsU8a, blake2AsU8a } from "@polkadot/util-crypto";
 import { u8aConcat } from "@polkadot/util";
 import yargs from "yargs";
-import { getApiFor, NETWORK_YARGS_OPTIONS } from "../utils/networks";
+import { getApiFor, getViemAccountFor, getViemFor, NETWORK_YARGS_OPTIONS } from "../utils/networks";
+import { createPublicClient, createWalletClient, encodeFunctionData, http } from "viem";
+import { privateKeyToAccount } from "viem/accounts";
 import chalk from "chalk";
 
 const debug = require("debug")("main");
@@ -15,16 +17,29 @@ const argv = yargs(process.argv.slice(2))
       type: "number",
       description: "Filter given address",
     },
-  }).argv;
+    "update-dummy-code": {
+      type: "boolean",
+      description: "Updates the dummy contract code",
+    },
+    "private-key": {
+      type: "string",
+      description: "Private key to use to update the dummy code",
+    },
+  })
+  .strict().argv;
 
-const getPrecompileStorageKey = (address: number) => {
-  const indexKey = `0x${address.toString(16).padStart(40, "0")}`;
+const getAddress = (addressNumber: number): `0x${string}` => {
+  return `0x${addressNumber.toString(16).padStart(40, "0")}`;
+};
+
+const getPrecompileStorageKey = (addressNumber: number) => {
+  const address = getAddress(addressNumber);
   return `0x${Buffer.from(
     u8aConcat(
       xxhashAsU8a("EVM", 128),
       xxhashAsU8a("AccountCodes", 128),
-      blake2AsU8a(indexKey, 128),
-      indexKey
+      blake2AsU8a(address, 128),
+      address
     )
   ).toString("hex")}`;
 };
@@ -146,26 +161,107 @@ const KNOWN_PRECOMPILES = [
     index: 2064,
     name: "TreasuryCouncilInstance",
   },
+  {
+    index: 2065,
+    name: "Referenda",
+  },
+  {
+    index: 2066,
+    name: "ConvictionVoting",
+  },
+  {
+    index: 2067,
+    name: "Preimage",
+  },
+  {
+    index: 2068,
+    name: "OpenTechCommittee",
+  },
+  {
+    index: 2069,
+    name: "PrecompileRegistry",
+  },
 ];
 
 const main = async () => {
-  const api = await getApiFor(argv);
+  if (argv["update-dummy-code"] && !argv["private-key"]) {
+    console.error("Private key is required to update the dummy code");
+    process.exit(1);
+  }
+  const viem = getViemFor(argv);
 
   const addresses = argv.address ? [argv.address] : KNOWN_PRECOMPILES.map((p) => p.index);
 
-  for (const address of addresses) {
-    const name = KNOWN_PRECOMPILES.find((p) => p.index == address)?.name || "";
-    const storageKey = getPrecompileStorageKey(address);
-    const code = (await api.rpc.state.getStorage(storageKey)) as any;
-    const hasCode = !!code.toHuman();
+  const precompileCodes: { [key: string]: boolean } = {};
+  for (const addressNumber of addresses) {
+    const name = KNOWN_PRECOMPILES.find((p) => p.index == addressNumber)?.name || "";
+    const storageKey = getPrecompileStorageKey(addressNumber);
+    const code = (await viem.getBytecode({address: getAddress(addressNumber)}));
+    const hasCode = !!code;
+    precompileCodes[addressNumber] = hasCode;
     const color = hasCode ? chalk.green : chalk.red;
     console.log(
       `${color(
-        `${(name ? `(${name}) ` : "").padStart(26)}${address.toString().padEnd(5)}`
-      )} [${storageKey}]: ${hasCode ? code.toHex() : "None"}`
+        `${(name ? `(${name}) ` : "").padStart(26)}${addressNumber.toString().padEnd(5)}`
+      )} [${storageKey}]: ${hasCode ? code : "None"}`
     );
   }
-  api.disconnect();
+
+  if (argv["update-dummy-code"]) {
+    const abiItem = {
+      inputs: [{ internalType: "address", name: "a", type: "address" }],
+      name: "updateAccountCode",
+      outputs: [],
+      stateMutability: "nonpayable",
+      type: "function",
+    };
+
+    const account = privateKeyToAccount(argv["private-key"] as `0x${string}`);
+    const wallet = getViemAccountFor(argv, account);
+    let nonce = await viem.getTransactionCount({ address: account.address });
+    const receipts = (await Promise.all(
+      addresses.map(async (addressNumber) => {
+        if (!precompileCodes[addressNumber]) {
+          try {
+            const data = encodeFunctionData({
+              abi: [abiItem],
+              functionName: "updateAccountCode",
+              args: [getAddress(addressNumber)],
+            });
+            const hash = await wallet.sendTransaction({
+              chain: null,
+              account,
+              to: "0x0000000000000000000000000000000000000815",
+              data,
+              nonce: nonce++,
+              gas: 200000n,
+            });
+            console.log(`Updating precompile ${addressNumber}: ${hash}...`);
+            return {addressNumber, hash};
+          } catch (err) {
+            debug(err);
+            console.log(
+              `Failed to update precompile ${addressNumber}: ${err.details || err.message || err}}`
+            );
+            return null;
+          }
+        }
+        return null;
+      })
+    )).filter(data => !!data);
+    console.log(`Waiting for receipts...${receipts.length}`);
+    await Promise.all(
+      receipts.map(async ({hash, addressNumber}) => {
+        if (!hash) {
+          return;
+        }
+        const receipt = await viem.waitForTransactionReceipt({ hash });
+        console.log(`|${addressNumber.toString().padStart(5, ' ')}] ${receipt.status} - ${hash} (#${receipt.gasUsed.toString()})`);
+      })
+    );
+    console.log(`Done`);
+  }
+  (await viem.transport.getSocket()).close();
 };
 
 main();
