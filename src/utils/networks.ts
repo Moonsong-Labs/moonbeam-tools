@@ -1,9 +1,21 @@
 import { WsProvider } from "@polkadot/api";
 import chalk from "chalk";
+import {
+  Chain,
+  PrivateKeyAccount,
+  PublicClient,
+  Transport,
+  WalletClient,
+  createPublicClient,
+  createWalletClient,
+  webSocket,
+} from "viem";
 import { ApiPromise } from "@polkadot/api";
 import { typesBundlePre900 } from "moonbeam-types-bundle";
 import { listenBlocks, printBlockDetails, RealtimeBlockDetails } from "./monitoring";
 import { Options } from "yargs";
+import { privateKeyToAccount } from "viem/accounts";
+import { localhost } from "viem/chains";
 
 export type MOONBEAM_NETWORK_NAME =
   | "stagenet"
@@ -114,6 +126,31 @@ export const getApiFor = async (argv: Argv) => {
     noInitWarn: true,
     provider: wsProvider,
     typesBundle: typesBundlePre900 as any,
+  });
+};
+
+export const getViemFor = (argv: Argv): PublicClient<Transport, Chain, true> => {
+  const url = isKnownNetwork(argv.network) ? NETWORK_WS_URLS[argv.network] : argv.url;
+  return createPublicClient({
+    transport: webSocket(url),
+  });
+};
+
+/**
+ *
+ * @param argv Network options
+ * @param key Private key
+ * @returns
+ */
+export const getViemAccountFor = (
+  argv: Argv,
+  account: PrivateKeyAccount
+): WalletClient<Transport, Chain, PrivateKeyAccount, true> => {
+  const url = isKnownNetwork(argv.network) ? NETWORK_WS_URLS[argv.network] : argv.url;
+  return createWalletClient({
+    transport: webSocket(url),
+    account,
+    chain: null,
   });
 };
 
