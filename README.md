@@ -185,7 +185,7 @@ Each precompile on-chain should contain some dummy code to allow Smart Contracts
 
 Verify currently existing precompiles
 
-```typescript
+```bash
 ts-node src/tools/list-precompiles.ts --network moonbeam
 ```
 
@@ -194,7 +194,7 @@ would output something like:
 
 To update the dummy code, you can use the [PrecompileRegistry](https://github.com/PureStake/moonbeam/blob/master/precompiles/precompile-registry/PrecompileRegistry.sol) with a funded account:
 
-```
+```bash
 ts-node src/tools/list-precompiles.ts --network moonbeam --update-dummy-code --private-key $PRIVATE_KEY
 ```
 
