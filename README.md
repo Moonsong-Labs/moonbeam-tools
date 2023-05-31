@@ -173,3 +173,29 @@ Options:
   -o, --base-path         Specifies where all generated files are to be stored.
                                            [string] [default: "/tmp/fork-data/"]
 ```
+
+
+------------------------
+
+# Tools
+
+## Updating Precompile Code
+
+Each precompile on-chain should contain some dummy code to allow Smart Contracts checking code before calling it to be able to call them.
+
+Verify currently existing precompiles
+
+```typescript
+ts-node src/tools/list-precompiles.ts --network moonbeam
+```
+
+would output something like:
+![Image of precompiles with their dummy code](https://github.com/PureStake/moonbeam-tools/assets/329248/13147092-6ecc-4cfe-ba53-93c40e1ff6a6)
+
+To update the dummy code, you can use the [PrecompileRegistry](https://github.com/PureStake/moonbeam/blob/master/precompiles/precompile-registry/PrecompileRegistry.sol) with a funded account:
+
+```
+ts-node src/tools/list-precompiles.ts --network moonbeam --update-dummy-code --private-key $PRIVATE_KEY
+```
+
+This will update each missing precompile (or you can use `--address 9` to upgrade only contract at address 9)
