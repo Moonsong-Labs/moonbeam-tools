@@ -435,7 +435,7 @@ const main = async () => {
       if ("runtime_genesis_config" in relayChainSpec.genesis.runtime) {
         relayChainSpec.genesis.runtime.runtime_genesis_config.paras = paras;
       } else {
-        relayChainSpec.genesis.runtime.paras = paras ;
+        relayChainSpec.genesis.runtime.paras = paras;
       }
       await fs.writeFile(relayPlainSpecFile, JSON.stringify(relayChainSpec, null, 2));
       process.stdout.write(` ✓\n`);

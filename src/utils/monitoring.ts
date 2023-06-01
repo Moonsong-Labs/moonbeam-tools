@@ -299,8 +299,8 @@ export const getBlockDetails = async (api: ApiPromise, blockHash: BlockHash) => 
       return totalWeight;
     }
     const refTime = (tx.dispatchInfo.weight as any).toBn
-    ? (tx.dispatchInfo.weight as any).toBigInt()
-    : tx.dispatchInfo.weight.refTime?.toBigInt();
+      ? (tx.dispatchInfo.weight as any).toBigInt()
+      : tx.dispatchInfo.weight.refTime?.toBigInt();
     return totalWeight + refTime;
   }, 0n);
   return {
@@ -487,10 +487,10 @@ export function generateBlockDetailsLog(
           ? // If gasPrice is not indicated, we should use the base fee defined in that block
             payload.asEip1559?.maxFeePerGas.toBigInt() || 0n
           : (payload as any as LegacyTransaction).gasPrice?.toBigInt();
-          
-      const refTime = (dispatchInfo.weight as any).toBn
-      ? (dispatchInfo.weight as any).toBigInt()
-      : dispatchInfo.weight.refTime?.toBigInt();
+
+        const refTime = (dispatchInfo.weight as any).toBn
+          ? (dispatchInfo.weight as any).toBigInt()
+          : dispatchInfo.weight.refTime?.toBigInt();
         return p + (BigInt(gasPrice) * refTime) / 25000n;
       }
       return p + (dispatchInfo.paysFee.isYes ? fees.totalFees : 0n);

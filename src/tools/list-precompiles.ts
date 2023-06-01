@@ -196,7 +196,7 @@ const main = async () => {
   for (const addressNumber of addresses) {
     const name = KNOWN_PRECOMPILES.find((p) => p.index == addressNumber)?.name || "";
     const storageKey = getPrecompileStorageKey(addressNumber);
-    const code = (await viem.getBytecode({address: getAddress(addressNumber)}));
+    const code = await viem.getBytecode({ address: getAddress(addressNumber) });
     const hasCode = !!code;
     precompileCodes[addressNumber] = hasCode;
     const color = hasCode ? chalk.green : chalk.red;
@@ -219,44 +219,52 @@ const main = async () => {
     const account = privateKeyToAccount(argv["private-key"] as `0x${string}`);
     const wallet = getViemAccountFor(argv, account);
     let nonce = await viem.getTransactionCount({ address: account.address });
-    const receipts = (await Promise.all(
-      addresses.map(async (addressNumber) => {
-        if (!precompileCodes[addressNumber]) {
-          try {
-            const data = encodeFunctionData({
-              abi: [abiItem],
-              functionName: "updateAccountCode",
-              args: [getAddress(addressNumber)],
-            });
-            const hash = await wallet.sendTransaction({
-              chain: null,
-              account,
-              to: "0x0000000000000000000000000000000000000815",
-              data,
-              nonce: nonce++,
-              gas: 200000n,
-            });
-            console.log(`Updating precompile ${addressNumber}: ${hash}...`);
-            return {addressNumber, hash};
-          } catch (err) {
-            debug(err);
-            console.log(
-              `Failed to update precompile ${addressNumber}: ${err.details || err.message || err}}`
-            );
-            return null;
+    const receipts = (
+      await Promise.all(
+        addresses.map(async (addressNumber) => {
+          if (!precompileCodes[addressNumber]) {
+            try {
+              const data = encodeFunctionData({
+                abi: [abiItem],
+                functionName: "updateAccountCode",
+                args: [getAddress(addressNumber)],
+              });
+              const hash = await wallet.sendTransaction({
+                chain: null,
+                account,
+                to: "0x0000000000000000000000000000000000000815",
+                data,
+                nonce: nonce++,
+                gas: 200000n,
+              });
+              console.log(`Updating precompile ${addressNumber}: ${hash}...`);
+              return { addressNumber, hash };
+            } catch (err) {
+              debug(err);
+              console.log(
+                `Failed to update precompile ${addressNumber}: ${
+                  err.details || err.message || err
+                }}`
+              );
+              return null;
+            }
           }
-        }
-        return null;
-      })
-    )).filter(data => !!data);
+          return null;
+        })
+      )
+    ).filter((data) => !!data);
     console.log(`Waiting for receipts...${receipts.length}`);
     await Promise.all(
-      receipts.map(async ({hash, addressNumber}) => {
+      receipts.map(async ({ hash, addressNumber }) => {
         if (!hash) {
           return;
         }
         const receipt = await viem.waitForTransactionReceipt({ hash });
-        console.log(`|${addressNumber.toString().padStart(5, ' ')}] ${receipt.status} - ${hash} (#${receipt.gasUsed.toString()})`);
+        console.log(
+          `|${addressNumber.toString().padStart(5, " ")}] ${
+            receipt.status
+          } - ${hash} (#${receipt.gasUsed.toString()})`
+        );
       })
     );
     console.log(`Done`);
