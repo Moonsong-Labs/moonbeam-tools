@@ -1,7 +1,7 @@
 import Debug from "debug";
 import { ApiPromise, Keyring } from "@polkadot/api";
 import { SubmittableExtrinsic } from "@polkadot/api/types";
-import { ISubmittableResult } from "@polkadot/types/types";
+import { ISubmittableResult, Callback } from "@polkadot/types/types";
 import type { MoonbeamRuntimeProxyType } from "@polkadot/types/lookup";
 import { KeyringPair } from "@polkadot/keyring/types";
 import { Options } from "yargs";
@@ -130,24 +130,28 @@ export class ProxyChainSigner {
     );
   }
 
-  async signWithNonce(
+  async signAndSendWithNonce(
     call: SubmittableExtrinsic<"promise", ISubmittableResult>,
     nonce: number,
-    tip: bigint = 0n
+    tip: bigint = 0n,
+    optionalStatusCb?: Callback<ISubmittableResult>
   ) {
     if (nonce >= this.nonce) {
       this.nonce = nonce + 1;
     }
-    console.log(`${call.method.method.toString().padStart(30)}: ${nonce}`);
     return this.chain
       .applyChain(this.api, call)
-      .signAndSend(this.signer, { nonce, tip })
+      .signAndSend(this.signer, { nonce, tip }, optionalStatusCb)
       .catch((e) => {
         console.log(`Error: ${e}`);
       });
   }
 
-  async sign(call: SubmittableExtrinsic<"promise", ISubmittableResult>, tip: bigint = 0n) {
-    return this.signWithNonce(call, this.nonce++, tip);
+  async signAndSend(
+    call: SubmittableExtrinsic<"promise", ISubmittableResult>,
+    tip: bigint = 0n,
+    optionalStatusCb?: Callback<ISubmittableResult>
+  ) {
+    return this.signAndSendWithNonce(call, this.nonce++, tip, optionalStatusCb);
   }
 }

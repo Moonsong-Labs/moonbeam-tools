@@ -22,6 +22,7 @@ export default [
       file: pkg.browser,
       format: "umd",
       sourcemap: true,
+      inlineDynamicImports: true,
     },
     plugins: [
       resolve({
