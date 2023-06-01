@@ -80,7 +80,8 @@
     "@polkadot/types-support": "$@polkadot/api",
     "@polkadot/types-codec": "$@polkadot/api",
     "@polkadot/types": "$@polkadot/api",
-    "@polkadot/types-known": "$@polkadot/api"
+    "@polkadot/types-known": "$@polkadot/api",
+    "ws@3": "8"
   },
   "scripts": {
     "test": "jest",
