@@ -157,10 +157,20 @@ const main = async () => {
       alarm: [proposalBlockTarget + 1, [proposalBlockTarget + 1, 0]],
     },
   };
-  const fastProposal = api.registry.createType(
-    `Option<PalletReferendaReferendumInfo>`,
-    fastProposalData
-  );
+
+  let fastProposal;
+  try {
+    fastProposal = api.registry.createType(
+      `Option<PalletReferendaReferendumInfo>`,
+      fastProposalData
+    );
+  } catch {
+    fastProposal = api.registry.createType(
+      `Option<PalletReferendaReferendumInfoConvictionVotingTally>`,
+      fastProposalData
+    );
+  }
+
   console.log(
     `${chalk.blue("SetStorage")} Fast Proposal: ${chalk.red(
       proposalIndex.toString()
