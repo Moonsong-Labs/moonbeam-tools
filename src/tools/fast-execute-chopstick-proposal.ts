@@ -101,11 +101,11 @@ const generateProposal = async (api: ApiPromise, proposalIndex: number) => {
 };
 
 const main = async () => {
-  if (argv["generate-proposal"] && argv["proposal-index"]) {
+  if (argv["generate-proposal"] && "proposal-index" in argv) {
     console.log("--generate-proposal not compatible with --proposal-index");
     return;
   }
-  if (!argv["generate-proposal"] && !argv["proposal-index"]) {
+  if (!argv["generate-proposal"] && !("proposal-index" in argv)) {
     console.log("Missing --generate-proposal or --proposal-index");
     return;
   }
