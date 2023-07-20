@@ -1,10 +1,10 @@
-
 import yargs from "yargs";
 import fs from "fs";
 import "@polkadot/api-augment";
 import "@moonbeam-network/api-augment";
 import { getWsProviderFor, NETWORK_YARGS_OPTIONS } from "../utils/networks";
 import { hexToNumber } from "@polkadot/util";
+import { processAllStorage } from "../utils/storage";
 
 const argv = yargs(process.argv.slice(2))
   .usage("Usage: $0")
@@ -12,7 +12,8 @@ const argv = yargs(process.argv.slice(2))
   .options({
     ...NETWORK_YARGS_OPTIONS,
     "at-block": { type: "number", demandOption: false },
-    file: { type: "string", demandOption: true },
+    "raw-spec": { type: "string", demandOption: true },
+    output: { alias: "o", type: "string", demandOption: true },
   }).argv;
 
 async function main() {
@@ -25,28 +26,49 @@ async function main() {
 
   const blockHash = await ws.send("chain_getBlockHash", [atBlock]);
 
-  const file = fs.createWriteStream(argv.file, "utf8");
+  const file = fs.createWriteStream(argv.output, "utf8");
+  const rawSpec = JSON.parse(fs.readFileSync(argv["raw-spec"], "utf8"));
+  rawSpec["bootNodes"] = [];
+  rawSpec["telemetryEndpoints"] = [];
+  rawSpec["name"] = rawSpec["name"] + " FORK";
+  rawSpec["id"] = rawSpec["id"] + "_fork";
+  rawSpec["chainType"] = "Local";
+  rawSpec["genesis"]["raw"]["top"] = {
+    // Add the storage ":fork": "0x01" for information (not useful)
+    "0x3A666F726B": "0x01",
+  };
+  rawSpec["protocolId"] = (rawSpec["protocolId"] || "unk") + "fork";
 
-  const maxKeys = 1000;
-  let count = 0;
   try {
-    let startKey = null;
+    let t0 = performance.now();
+    const rawSpecLines = JSON.stringify(rawSpec, null, 2).split(/\r?\n/);
     while (true) {
-      const keys = await ws.send("state_getKeysPaged", ["", maxKeys, startKey, blockHash]);
-      const values = await ws.send("state_queryStorageAt", [keys, blockHash]);
-
-      count += keys.length;
-      if (count % 100000 == 0 && keys.length > 0) {
-        console.log("count: ", count, keys[keys.length - 1]);
+      const line = rawSpecLines.shift();
+      if (line === undefined) {
+        throw new Error("No spec line found");
       }
-
-      file.write(values[0].changes.map((c) => `  "${c[0]}": "${c[1]}",\n`).join(""));
-      if (keys.length != maxKeys) {
-        console.log("total: ", count);
+      file.write(line + "\n");
+      if (/\ +"top"/.test(line)) {
         break;
       }
-      startKey = keys[keys.length - 1];
     }
+    let total = 0;
+    await processAllStorage(ws, { prefix: "0x", blockHash, splitDepth: 2 }, (batchResult) => {
+      total += batchResult.length;
+      file.write(batchResult.map((c) => `  "${c.key}": "${c.value}",\n`).join(""));
+    });
+    file.write(`  \n`);
+    while (true) {
+      const line = rawSpecLines.shift();
+      if (line === undefined) {
+        break;
+      }
+      file.write(line + "\n");
+    }
+    const t1 = performance.now();
+    const duration = t1 - t0;
+    const qps = total / (duration / 1000);
+    console.log(`Written ${total} keys in ${duration}: ${qps.toFixed(0)} keys/sec`);
   } finally {
     file.close();
     await ws.disconnect();

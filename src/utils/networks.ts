@@ -1,4 +1,4 @@
-import { WsProvider } from "@polkadot/api";
+import { WsProvider, HttpProvider } from "@polkadot/api";
 import chalk from "chalk";
 import {
   Chain,
@@ -118,6 +118,18 @@ export const getWsProviderFor = (argv: Argv) => {
     return getWsProviderForNetwork(argv.network);
   }
   return new WsProvider(argv.url);
+};
+
+export const getHttpProviderForNetwork = (name: NETWORK_NAME) => {
+  return new HttpProvider(NETWORK_HTTP_URLS[name]);
+};
+
+// Supports providing an URL or a known network
+export const getHttpProviderFor = (argv: Argv) => {
+  if (isKnownNetwork(argv.network)) {
+    return getHttpProviderForNetwork(argv.network);
+  }
+  return new HttpProvider(argv.url);
 };
 
 export const getApiFor = async (argv: Argv) => {
