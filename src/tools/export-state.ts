@@ -5,6 +5,7 @@ import "@moonbeam-network/api-augment";
 import { getWsProviderFor, NETWORK_YARGS_OPTIONS } from "../utils/networks";
 import { hexToNumber } from "@polkadot/util";
 import { processAllStorage } from "../utils/storage";
+import moment from "moment";
 
 const argv = yargs(process.argv.slice(2))
   .usage("Usage: $0")
@@ -68,7 +69,7 @@ async function main() {
     const t1 = performance.now();
     const duration = t1 - t0;
     const qps = total / (duration / 1000);
-    console.log(`Written ${total} keys in ${duration}: ${qps.toFixed(0)} keys/sec`);
+    console.log(`Written ${total} keys in ${moment.duration(duration / 1000, "seconds").humanize()}: ${qps.toFixed(0)} keys/sec`);
   } finally {
     file.close();
     await ws.disconnect();
