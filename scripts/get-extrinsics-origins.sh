@@ -1,6 +1,6 @@
 #!/bin/bash
 
-echo -n "Enter the relative path from here ($(pwd)) to the directory that contains Moonbeam's repos (moonbeam, polkadot-sdk, frontier, etc..):"
+echo -n "Enter the relative path (from $(pwd)) to the directory that contains all of Moonbeam's repos (moonbeam, polkadot-sdk, frontier, etc..): "
 read projects_root
 
 # Paths to all the pallets being used in Moonbeam
