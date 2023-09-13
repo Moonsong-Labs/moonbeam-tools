@@ -1,5 +1,6 @@
 import yargs from "yargs";
 import fs from "fs";
+import path from "path";
 import "@polkadot/api-augment";
 import "@moonbeam-network/api-augment";
 import { getWsProviderFor, NETWORK_YARGS_OPTIONS } from "../utils/networks";
@@ -14,7 +15,7 @@ const argv = yargs(process.argv.slice(2))
     ...NETWORK_YARGS_OPTIONS,
     "at-block": { type: "number", demandOption: false },
     "raw-spec": { type: "string", demandOption: true },
-    output: { alias: "o", type: "string", demandOption: true },
+    "path-prefix": { type: "string", demandOption: true },
   }).argv;
 
 async function main() {
@@ -25,9 +26,30 @@ async function main() {
     argv["at-block"] || hexToNumber((await ws.send("chain_getBlock", [])).block.header.number);
   console.log("atBlock: ", atBlock);
 
+  const chainName = await ws.send("system_chain", [])
   const blockHash = await ws.send("chain_getBlockHash", [atBlock]);
+  const runtimeVersion = await ws.send("state_getRuntimeVersion", [blockHash]);
+  const chainId = await ws.send("net_version", [blockHash]);
 
-  const file = fs.createWriteStream(argv.output, "utf8");
+  const now = moment();
+  const filename = `${argv["path-prefix"]}-${now.format('YYYY-MM-DD')}.json`;
+  const metaFilename = `${argv["path-prefix"]}-${now.format('YYYY-MM-DD')}.info.json`;
+  const infoFilename = `${argv["path-prefix"]}.info.json`;
+
+  const file = fs.createWriteStream(filename, "utf8");
+
+  fs.writeFileSync(
+    metaFilename,
+    JSON.stringify({
+      "file": path.basename(filename),
+      "name": chainName,
+      "chain_id": chainId,
+      "hash": blockHash,
+      "block": atBlock,
+      "runtime": runtimeVersion,
+      "finalized_number": "3066941"
+    }, null, 2),
+    "utf8");
   const rawSpec = JSON.parse(fs.readFileSync(argv["raw-spec"], "utf8"));
   rawSpec["bootNodes"] = [];
   rawSpec["telemetryEndpoints"] = [];
@@ -70,6 +92,7 @@ async function main() {
     const duration = t1 - t0;
     const qps = total / (duration / 1000);
     console.log(`Written ${total} keys in ${moment.duration(duration / 1000, "seconds").humanize()}: ${qps.toFixed(0)} keys/sec`);
+    fs.cpSync(metaFilename, infoFilename);
   } finally {
     file.close();
     await ws.disconnect();
