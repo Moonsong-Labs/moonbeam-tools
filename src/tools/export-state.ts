@@ -14,6 +14,8 @@ const argv = yargs(process.argv.slice(2))
   .options({
     ...NETWORK_YARGS_OPTIONS,
     "at-block": { type: "number", demandOption: false },
+    "concurrency": { type: "number", demandOption: false, default: 10 },
+    "delay": { type: "number", demandOption: false, default: 0 },
     "raw-spec": { type: "string", demandOption: true },
     "path-prefix": { type: "string", demandOption: true },
   }).argv;
@@ -22,18 +24,23 @@ async function main() {
   const ws = await getWsProviderFor(argv);
   await ws.isReady;
 
+  const now = moment().format('YYYY-MM-DD');
+
   const atBlock =
     argv["at-block"] || hexToNumber((await ws.send("chain_getBlock", [])).block.header.number);
-  console.log("atBlock: ", atBlock);
+
+  const concurrency = argv.concurrency || 10;
+  const delay = argv.delay;
+  console.log(`${now}: Exporting at block ${atBlock} using ${ws.endpoint} and ${concurrency} threads (+${delay}ms delay)`);
 
   const chainName = await ws.send("system_chain", [])
   const blockHash = await ws.send("chain_getBlockHash", [atBlock]);
   const runtimeVersion = await ws.send("state_getRuntimeVersion", [blockHash]);
   const chainId = await ws.send("net_version", [blockHash]);
 
-  const now = moment();
-  const filename = `${argv["path-prefix"]}-${now.format('YYYY-MM-DD')}.json`;
-  const metaFilename = `${argv["path-prefix"]}-${now.format('YYYY-MM-DD')}.info.json`;
+
+  const filename = `${argv["path-prefix"]}-${now}.json`;
+  const metaFilename = `${argv["path-prefix"]}-${now}.info.json`;
   const infoFilename = `${argv["path-prefix"]}.info.json`;
 
   const file = fs.createWriteStream(filename, "utf8");
@@ -47,7 +54,6 @@ async function main() {
       "hash": blockHash,
       "block": atBlock,
       "runtime": runtimeVersion,
-      "finalized_number": "3066941"
     }, null, 2),
     "utf8");
   const rawSpec = JSON.parse(fs.readFileSync(argv["raw-spec"], "utf8"));
@@ -57,7 +63,7 @@ async function main() {
   rawSpec["id"] = rawSpec["id"] + "_fork";
   rawSpec["chainType"] = "Local";
   rawSpec["genesis"]["raw"]["top"] = {
-    // Add the storage ":fork": "0x01" for information (not useful)
+    // Add the storage ":fork": "0x01" for information (not directly useful)
     "0x3A666F726B": "0x01",
   };
   rawSpec["protocolId"] = (rawSpec["protocolId"] || "unk") + "fork";
@@ -76,7 +82,7 @@ async function main() {
       }
     }
     let total = 0;
-    await processAllStorage(ws, { prefix: "0x", blockHash, splitDepth: 2 }, (batchResult) => {
+    await processAllStorage(ws, { prefix: "0x", blockHash, splitDepth: 2, concurrency, delayMS: delay }, (batchResult) => {
       total += batchResult.length;
       file.write(batchResult.map((c) => `  "${c.key}": "${c.value}",\n`).join(""));
     });
@@ -93,7 +99,13 @@ async function main() {
     const qps = total / (duration / 1000);
     console.log(`Written ${total} keys in ${moment.duration(duration / 1000, "seconds").humanize()}: ${qps.toFixed(0)} keys/sec`);
     fs.cpSync(metaFilename, infoFilename);
-  } finally {
+  } catch (e) {
+    console.log("ERROR:");
+    console.log(e);
+    console.trace(e);
+  }
+  finally {
+
     file.close();
     await ws.disconnect();
   }

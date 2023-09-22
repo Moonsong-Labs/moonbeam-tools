@@ -91,11 +91,11 @@ export async function queryUnorderedRawStorage(
 
 export async function processAllStorage(
   provider: ProviderInterface,
-  options: {prefix: string, blockHash: string, splitDepth?: number, concurrency?: number},
+  options: { prefix: string, blockHash: string, splitDepth?: number, concurrency?: number, delayMS?: number },
   processor: (batchResult: { key: `0x${string}`; value: string }[]) => void
 ) {
-  const {prefix, blockHash, splitDepth, concurrency} = options;
-  
+  const { prefix, blockHash, splitDepth, concurrency, delayMS } = options;
+
   const maxKeys = 1000;
   let total = 0;
   let prefixes = splitPrefix(prefix, splitDepth || 1);
@@ -132,6 +132,10 @@ export async function processAllStorage(
             break;
           }
           startKey = keys[keys.length - 1];
+
+          if (delayMS) {
+            await new Promise(resolve => setTimeout(resolve, delayMS));
+          }
         }
       },
       prefixes

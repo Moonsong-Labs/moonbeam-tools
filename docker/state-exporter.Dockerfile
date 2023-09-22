@@ -26,6 +26,7 @@ COPY networks/moonriver/moonriver-raw-specs.json /networks/moonriver/moonriver-r
 COPY networks/moonbeam/moonbeam-raw-specs.json /networks/moonbeam/moonbeam-raw-specs.json
 
 COPY --from=builder /build/dist/export-state /export-state
+COPY --from=builder /build/dist/export-state.cjs /export-state.cjs
 
 # Prepare generate all networks folder
 
