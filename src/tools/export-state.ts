@@ -41,7 +41,6 @@ async function main() {
 
   const filename = `${argv["path-prefix"]}-${now}.json`;
   const metaFilename = `${argv["path-prefix"]}-${now}.info.json`;
-  const infoFilename = `${argv["path-prefix"]}.info.json`;
 
   const file = fs.createWriteStream(filename, "utf8");
 
@@ -50,9 +49,9 @@ async function main() {
     JSON.stringify({
       "file": path.basename(filename),
       "name": chainName,
-      "chain_id": chainId,
-      "hash": blockHash,
-      "block": atBlock,
+      "chainId": chainId,
+      "blockHash": blockHash,
+      "blockNumber": atBlock,
       "runtime": runtimeVersion,
     }, null, 2),
     "utf8");
@@ -98,7 +97,6 @@ async function main() {
     const duration = t1 - t0;
     const qps = total / (duration / 1000);
     console.log(`Written ${total} keys in ${moment.duration(duration / 1000, "seconds").humanize()}: ${qps.toFixed(0)} keys/sec`);
-    fs.cpSync(metaFilename, infoFilename);
   } catch (e) {
     console.log("ERROR:");
     console.log(e);
