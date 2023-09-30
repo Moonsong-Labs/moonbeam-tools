@@ -2,52 +2,49 @@
 import yargs from "yargs";
 import { table } from "table";
 
-import {
-  getApiFor,
-  NETWORK_YARGS_OPTIONS,
-  getWsProviderFor,
-} from "..";
+import { getApiFor, NETWORK_YARGS_OPTIONS } from "..";
+import { bnMax } from "@polkadot/util";
+import Web3 from "web3";
 
 const argv = yargs(process.argv.slice(2))
   .usage("Usage: $0")
   .version("1.0.0")
   .options({
-    ...NETWORK_YARGS_OPTIONS
+    ...NETWORK_YARGS_OPTIONS,
   }).argv;
 
 const main = async () => {
   // Instantiate Api
   const api = await getApiFor(argv);
 
-
-  const [allLocks] = await Promise.all([
-    api.query.balances.locks.entries(),
-  ]);
+  const [allLocks] = await Promise.all([api.query.balances.locks.entries()]);
 
   const addressesToCheck: string[] = [];
-  
+
   allLocks.map((lock) => {
     if (lock[1].length > 0) {
-        addressesToCheck.push(`0x${lock[0].toHex().slice(-40)}`);
+      addressesToCheck.push(`0x${lock[0].toHex().slice(-40)}`);
     }
-  })
+  });
 
   const systemAccounts = await api.query.system.account.multi(addressesToCheck);
 
   const affectedAccounts = [];
-  systemAccounts.map(async (acc, idx) => {
-    if (acc.data.free.lt(acc.data.frozen)) {
+  systemAccounts.map(async ({ data: { free, reserved, frozen } }, idx) => {
+    if (free.lt(frozen)) {
+      const transferableNew = free.add(reserved).sub(bnMax(reserved, frozen));
       affectedAccounts.push([
         addressesToCheck[idx],
-        acc.data.free.toHuman(),
-        acc.data.reserved.toHuman(),
-        acc.data.frozen.toHuman(),
+        Web3.utils.fromWei(free),
+        Web3.utils.fromWei(reserved),
+        Web3.utils.fromWei(frozen),
+        Web3.utils.fromWei(transferableNew),
       ]);
     }
-  })
+  });
 
   const tableData = (
-    [["Account", "Free", "Reserved", "Frozen"]] as any[]
+    [["Account", "Free", "Reserved", "Frozen", "TransferableNew"]] as any[]
   ).concat(affectedAccounts);
 
   console.log(`preparing the table: ${tableData.length} entries`);
