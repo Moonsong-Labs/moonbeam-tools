@@ -93,7 +93,7 @@
     "build:bins:export-state": "node_modules/.bin/esbuild src/tools/export-state.ts --bundle --outfile=dist/export-state.cjs --format=cjs --platform=node --loader:.html=text && node_modules/.bin/pkg -t node18-linux-x64 dist/export-state.cjs -o dist/export-state",
     "build:readme": "./scripts/update-readme.sh",
     "lint": "npx prettier --write .",
-    "fork": "npx ts-node ./src/tools/run-moonbeam-fork.ts --base-path /tmp/fork-data/ -n moonbeam"
+    "fork": "npx ts-node ./src/tools/run-moonbeam-fork.ts --base-path /tmp/fork-data/ --network moonbeam --smaller-state"
   },
   "repository": {
     "type": "git",

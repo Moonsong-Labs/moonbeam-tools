@@ -47,6 +47,11 @@ const argv = yargs(process.argv.slice(2))
       description: "Removes ALL files at the base-path directory, use with CAUTION.",
       default: false,
     },
+    "smaller-state": {
+      type: "boolean",
+      description: "Downloads the smaller state version (without super heavy contracts)",
+      default: true,
+    },
     sealing: {
       type: "string",
       alias: "s",
@@ -282,10 +287,13 @@ const main = async () => {
 
   process.stdout.write(`\t - Checking exported state...`);
   let progressBar: SingleBar;
-  const { file: stateFile, blockNumber } = await downloadExportedState(
-    argv.network as NetworkName,
-    argv["base-path"],
-    argv.latest,
+  const { stateFile, stateInfo } = await downloadExportedState(
+    {
+      network: argv.network as NetworkName,
+      outPath: argv["base-path"],
+      checkLatest: argv.latest,
+      useCleanState: argv["smaller-state"]
+    },
     (length) => {
       process.stdout.write(`${chalk.yellow(`Downloading`)}\n`);
       progressBar = new SingleBar({
@@ -310,7 +318,7 @@ const main = async () => {
       process.stdout.write(`\t - ${chalk.yellow(`Saving`)} ${argv.network} exported state...`);
     }
   );
-  process.stdout.write(` ${chalk.green(stateFile)} (#${chalk.yellow(blockNumber)}) ✓\n`);
+  process.stdout.write(` ${chalk.green(stateFile)} (#${chalk.yellow(stateInfo.blockNumber)}) ✓\n`);
 
   process.stdout.write(`\t - Checking parachain id...`);
   const paraId = parseInt(
@@ -369,7 +377,7 @@ const main = async () => {
     hasChanged = true;
     process.stdout.write(` ${chalk.yellow(`extracting`)}...`);
     const grepLine = await runTask(
-      `grep '        "0x3a636f6465"' ${stateFile} | cut -c 26- | rev | cut -c 3- | rev | tr -d '\n' | tee ${codeFile} | wc -c`
+      `grep -m 1 '"0x3a636f6465"' ${stateFile} | head -1 | sed 's/[ \",]//g' | cut -d ':' -f 2 | tr -d '\n' | tee ${codeFile} | wc -c`
     );
     process.stdout.write(` ${prettyBytes(parseInt(grepLine) / 2)} ✓\n`);
     process.stdout.write(`\t - ${chalk.yellow(`Saving`)} wasm code...`);
@@ -486,8 +494,7 @@ const main = async () => {
     await fs.mkdir(aliceFolder, { recursive: true });
     aliceLogHandler = await fs.open(aliceLogs, "w");
     aliceProcess = await spawnTask(
-      `${polkadotBinaryPath} --database paritydb --base-path ${aliceFolder} --alice --chain ${relayRawSpecFile} --rpc-port 12001 --port 10001 --node-key ${
-        Object.keys(NODE_KEYS)[0]
+      `${polkadotBinaryPath} --database paritydb --base-path ${aliceFolder} --log=debug,parachain=trace,netlink=info,sync=info,lib=info,multi=info,trie=info,grandpa=info,wasm_overrides=info,wasmtime_cranelift=info,parity-db=info --alice --chain ${relayRawSpecFile} --rpc-port 12001 --port 10001 --node-key ${Object.keys(NODE_KEYS)[0]
       } --validator`
     );
     process.stdout.write(` ✓\n`);
@@ -498,8 +505,7 @@ const main = async () => {
     await fs.mkdir(bobFolder, { recursive: true });
     bobLogHandler = await fs.open(bobLogs, "w");
     bobProcess = await spawnTask(
-      `${polkadotBinaryPath} --database paritydb --base-path ${bobFolder} --bob --chain ${relayRawSpecFile} --rpc-port 12002 --port 10002  --node-key ${
-        Object.keys(NODE_KEYS)[1]
+      `${polkadotBinaryPath} --database paritydb --base-path ${bobFolder} --bob --chain ${relayRawSpecFile} --rpc-port 12002 --port 10002  --node-key ${Object.keys(NODE_KEYS)[1]
       } --validator`
     );
     process.stdout.write(` ✓\n`);
@@ -512,15 +518,15 @@ const main = async () => {
   process.stdout.write(`\t\t - ${chalk.yellow(`Logs`)}: ${alithLogs}`);
   await fs.mkdir(alithFolder, { recursive: true });
   const alithLogHandler = await fs.open(alithLogs, "w");
+  // const logs="--log=trace,netlink=trace,sync=trace,lib=trace,sub=trace,multi=trace,evm=debug,parity-db=info,trie=info,wasmtime_cranelift=info";
+  const logs="";
   const alithProcess = argv.dev
     ? await spawnTask(
-        `${moonbeamBinaryPath} --database paritydb --base-path ${alithFolder} --execution native --log=info,netlink=info,sync=info,lib=info,multi=info,evm=debug --alice --collator --db-cache 4096 --trie-cache-size ${argv["trie-cache-size"]} --chain ${modFile} --no-hardware-benchmarks --no-prometheus --no-telemetry --sealing=${argv.sealing}`
+        `${moonbeamBinaryPath} --database paritydb --base-path ${alithFolder} --execution native ${logs} --alice --collator --db-cache 4096 --trie-cache-size ${argv["trie-cache-size"]} --chain ${modFile} --no-hardware-benchmarks --no-prometheus --no-telemetry --sealing=${argv.sealing}`
       )
     : await spawnTask(
-        `${moonbeamBinaryPath} --database paritydb --base-path ${alithFolder} --execution native --log=debug,netlink=info,sync=info,lib=info,multi=info,evm=debug --alice --collator --db-cache 4096 --trie-cache-size ${
-          argv["trie-cache-size"]
-        } --chain ${modFile} --  --chain ${relayRawSpecFile} --rpc-port 12003 --port 10003 --node-key ${
-          Object.keys(NODE_KEYS)[2]
+      `${moonbeamBinaryPath} --database paritydb --base-path ${alithFolder} --execution native ${logs} --alice --collator --db-cache 4096 --trie-cache-size ${argv["trie-cache-size"]
+      } --chain ${modFile} --  --chain ${relayRawSpecFile} --rpc-port 12003 --port 10003 --node-key ${Object.keys(NODE_KEYS)[2]
         }`
       );
   process.stdout.write(` ✓\n`);
@@ -535,7 +541,7 @@ const main = async () => {
       process.on("exit", () => {
         try {
           alithProcess.kill();
-        } catch (e) {}
+        } catch (e) { }
       });
     }),
   ];
@@ -552,7 +558,7 @@ const main = async () => {
         process.on("exit", () => {
           try {
             aliceProcess.kill();
-          } catch (e) {}
+          } catch (e) { }
         });
       }),
       new Promise<void>((resolve) => {
@@ -565,7 +571,7 @@ const main = async () => {
         process.on("exit", () => {
           try {
             bobProcess.kill();
-          } catch (e) {}
+          } catch (e) { }
         });
       })
     );

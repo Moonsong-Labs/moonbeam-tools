@@ -34,26 +34,54 @@ export const STORAGE_NAMES: { [name in NetworkName]: string } = {
   stagenet: "stagenet",
 };
 
+export interface StateInfo {
+  "file": string,
+  "cleanFile"?: string,
+  "name": string,
+  "chainId": string,
+  "blockHash": string,
+  "blockNumber": number,
+  "runtime": {
+    "specName": string,
+    "implName": string,
+    "authoringVersion": number,
+    "specVersion": number,
+    "implVersion": number,
+    "apis": [string, number][],
+    "transactionVersion": 2,
+    "stateVersion": 0
+  },
+}
+
+export interface DownloadOptions {
+  network: string;
+  outPath: string;
+
+  // Download new state if available
+  checkLatest?: boolean;
+
+  // Prefers clean state (without heavy contract, 80% smaller on moonbeam)
+  useCleanState?: boolean;
+}
+
 // Downloads the exported state from s3. Only if the xxx-chain-info.json file hasn't changed
 // 2 files are created:
 export async function downloadExportedState(
-  network: NetworkName,
-  outPath: string,
-  checkLatest = true,
+  options: DownloadOptions,
   onStart?: (size: number) => void,
   onProgress?: (bytes: number) => void,
   onComplete?: () => void
-): Promise<{ file: string; blockNumber: number }> {
+): Promise<{ stateFile: string; stateInfo: StateInfo }> {
+  const { network, outPath, checkLatest, useCleanState } = options;
+
   if (!STORAGE_NAMES[network]) {
     throw new Error(
       `Invalid network ${network}, expecting ${Object.keys(STORAGE_NAMES).join(", ")}`
     );
   }
 
-  const stateInfoFileName = `${network}-chain-info.json`;
+  const stateInfoFileName = `${network}-state.info.json`;
   const stateInfoFile = path.join(outPath, stateInfoFileName);
-  const stateFileName = `${network}-state.json`;
-  const stateFile = path.join(outPath, stateFileName);
 
   debug(`Checking ${STORAGE_NAMES[network]} in ${stateInfoFile}`);
 
@@ -63,40 +91,59 @@ export async function downloadExportedState(
     .access(stateInfoFile)
     .then(() => true)
     .catch(() => null);
-  const stateExist = await fs
-    .access(stateInfoFile)
-    .then(() => true)
-    .catch(() => false);
 
-  const stateInfo = await fs
+  const stateInfo: StateInfo = await fs
     .readFile(stateInfoFile)
     .then((d) => JSON.parse(d.toString()))
     .catch(() => null);
 
   // No check for latest, skip if files already exists
-  if (stateInfoExists && stateExist && !checkLatest) {
-    return { file: stateFile, blockNumber: parseInt(stateInfo.best_number) };
+  if (stateInfoExists && !checkLatest) {
+    const stateFileName = (useCleanState && stateInfo.cleanFile) ? stateInfo.cleanFile : stateInfo.file;
+    const stateFile = path.join(outPath, stateFileName);
+
+    const stateExist = await fs
+      .access(stateFile)
+      .then(() => true)
+      .catch(() => false);
+
+    if (stateExist) {
+      return { stateFile, stateInfo };
+    }
   }
-  const client = new Client(`https://s3.us-east-2.amazonaws.com`);
-  const downloadedStateInfo = await (
+  const client = new Client(`https://states.kaki.dev`);
+  const downloadedStateInfo: StateInfo = await (
     await client.request({
       path:
-        `/chain-state.moonbeam.network/${STORAGE_NAMES[network]}/` +
-        `latest/${STORAGE_NAMES[network]}-chain-info.json`,
+        `/${network}-state.info.json`,
       method: "GET",
     })
   ).body.json();
 
   // Already latest version
-  if (stateInfo && stateInfo.best_hash == downloadedStateInfo.best_hash) {
-    client.close();
-    return { file: stateFile, blockNumber: parseInt(stateInfo.best_number) };
+  if (stateInfo && stateInfo.blockHash == downloadedStateInfo.blockHash) {
+
+    const stateFileName = (useCleanState && stateInfo.cleanFile) ? stateInfo.cleanFile : stateInfo.file;
+    const stateFile = path.join(outPath, stateFileName);
+
+    const stateExist = await fs
+      .access(stateFile)
+      .then(() => true)
+      .catch(() => false);
+
+    if (stateExist) {
+      client.close();
+      return { stateFile, stateInfo };
+    }
   }
+
+  const stateFileName = (useCleanState && downloadedStateInfo.cleanFile) ? downloadedStateInfo.cleanFile : downloadedStateInfo.file;
+  const stateFile = path.join(outPath, stateFileName);
 
   const fileStream = (await fs.open(stateFile, "w")).createWriteStream();
 
   debug(
-    `Preparing to download ${stateFileName} (best-hash: ${downloadedStateInfo.best_hash}) to ${stateFile}`
+    `Preparing to download ${stateFileName} (best-hash: ${downloadedStateInfo.blockHash}) to ${stateFile}`
   );
 
   let transferredBytes = 0;
@@ -104,12 +151,11 @@ export async function downloadExportedState(
     client.dispatch(
       {
         path:
-          `/chain-state.moonbeam.network/${STORAGE_NAMES[network]}/` +
-          `latest/${STORAGE_NAMES[network]}-state.json`,
+          `/${stateFileName}`,
         method: "GET",
       },
       {
-        onConnect: () => {},
+        onConnect: () => { },
         onError: (error) => {
           reject(error);
         },
@@ -142,7 +188,7 @@ export async function downloadExportedState(
   await fs.writeFile(stateInfoFile, JSON.stringify(downloadedStateInfo));
   debug(`Downloaded ${stateFileName} to ${stateFile}`);
 
-  return { file: stateFile, blockNumber: parseInt(downloadedStateInfo.best_number) };
+  return { stateFile, stateInfo: downloadedStateInfo };
 }
 
 // Customize a Moonbeam exported state spec to make it usable locally
@@ -168,17 +214,17 @@ export async function neutralizeExportedState(
     new HRMPManipulator(),
     dev
       ? new SpecManipulator({
-          name: `Forked Dev Network`,
-          chainType: `Development`,
-          relayChain: `dev-service`,
-          devService: true,
-          paraId: 0,
-          protocolId: "",
-        })
+        name: `Forked Dev Network`,
+        chainType: `Development`,
+        relayChain: `dev-service`,
+        devService: true,
+        paraId: 0,
+        protocolId: "",
+      })
       : new SpecManipulator({
-          name: `Fork Network`,
-          relayChain: `rococo-local`,
-        }),
+        name: `Fork Network`,
+        relayChain: `rococo-local`,
+      }),
     new CollectiveManipulator("TechCommitteeCollective", [ALITH_ADDRESS]),
     new CollectiveManipulator("CouncilCollective", [ALITH_ADDRESS]),
     new ValidationManipulator(),
