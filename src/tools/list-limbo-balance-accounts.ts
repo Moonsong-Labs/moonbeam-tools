@@ -47,16 +47,13 @@ const main = async () => {
         Web3.utils.fromWei(reserved),
         Web3.utils.fromWei(frozen),
         Web3.utils.fromWei(transferableNew),
+        Web3.utils.fromWei(frozen.sub(free).toString()),
       ]);
     }
   });
 
-  // const identities = await Promise.all(
-  //   affectedAccounts.map((c) => getAccountIdentity(api, c[0]))
-  // );
-
   const tableData = (
-    [["Account", "Identity", "Free", "Reserved", "Frozen", "TransferableNew"]] as any[]
+    [["Account", "Identity", "Free", "Reserved", "Frozen", "TransferableNew", "Frozen-Free"]] as any[]
   ).concat(affectedAccounts);
 
   console.log(`preparing the table: ${tableData.length} entries`);
