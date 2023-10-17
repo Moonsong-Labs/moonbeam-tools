@@ -32,9 +32,7 @@ const main = async () => {
 
   const systemAccounts = await apiAt.query.system.account.multi(addressesToCheck);
 
-  const identities = await Promise.all(
-    addressesToCheck.map((d) => getAccountIdentity(api, d))
-  );
+  const identities = await Promise.all(addressesToCheck.map((d) => getAccountIdentity(api, d)));
 
   const affectedAccounts = [];
   systemAccounts.map(async ({ data: { free, reserved, frozen } }, idx) => {
@@ -52,7 +50,9 @@ const main = async () => {
   });
 
   const tableData = (
-    [["Account", "Identity", "Free", "Reserved", "Frozen", "Negative Transferable Balance"]] as any[]
+    [
+      ["Account", "Identity", "Free", "Reserved", "Frozen", "Negative Transferable Balance"],
+    ] as any[]
   ).concat(affectedAccounts);
 
   console.log(`preparing the table: ${tableData.length} entries`);
