@@ -342,6 +342,29 @@ export const exploreBlockRange = async (
   );
 };
 
+// Explore blocks in reverse order
+export const reverseBlocks = async (
+  api: ApiPromise,
+  { from, concurrency = 1 }: Omit<BlockRangeOption, "to">,
+  callBack: (blockDetails: BlockDetails) => Promise<void>
+) => {
+  let blockNumber = from;
+  while (blockNumber > 0) {
+    await promiseConcurrent(
+      concurrency,
+      async (_, i) => {
+        const current = blockNumber - i;
+        const blockDetails = await api.rpc.chain
+          .getBlockHash(current)
+          .then((hash) => getBlockDetails(api, hash));
+        await callBack(blockDetails);
+      },
+      new Array(blockNumber - Math.min(concurrency, blockNumber)).fill(0)
+    );
+    blockNumber -= concurrency;
+  }
+};
+
 export interface RealtimeBlockDetails extends BlockDetails {
   elapsedMilliSecs: number;
   pendingTxs: Extrinsic[];
