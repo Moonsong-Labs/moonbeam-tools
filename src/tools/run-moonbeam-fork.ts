@@ -149,7 +149,7 @@ const main = async () => {
   let polkadotBinaryPath: string;
   if (!argv.dev) {
     const polkadotReleases = (await (
-      await fetch("https://api.github.com/repos/paritytech/polkadot/releases")
+      await fetch("https://api.github.com/repos/paritytech/polkadot-sdk/releases")
     ).json()) as any;
 
     const latestPolkadotVersion = polkadotReleases.find((release: any) =>
@@ -195,13 +195,17 @@ const main = async () => {
         process.stdout.write(
           `\t - Requested Polkadot ${argv["polkadot-binary"]} binary not found, downloading client ....`
         );
-        const asset = release.assets.find((asset) => asset.name === "polkadot");
-        const response = await fetch(asset.browser_download_url);
-        if (!response.ok) {
-          throw new Error(`unexpected response ${response.statusText}`);
+
+        for (const binary of ["polkadot", "polkadot-execute-worker", "polkadot-prepare-worker"]) {
+          const filePath = path.join(path.dirname(polkadotBinaryPath), binary);
+          const asset = release.assets.find((asset) => asset.name === binary);
+          const response = await fetch(asset.browser_download_url);
+          if (!response.ok) {
+            throw new Error(`unexpected response ${response.statusText}`);
+          }
+          await fs.writeFile(filePath, response.body);
+          await fs.chmod(filePath, "755");
         }
-        await fs.writeFile(polkadotBinaryPath, response.body);
-        await fs.chmod(polkadotBinaryPath, "755");
         process.stdout.write(` ${chalk.green("done")} ✓\n`);
       } catch (e) {
         console.error(e);
@@ -292,7 +296,7 @@ const main = async () => {
       network: argv.network as NetworkName,
       outPath: argv["base-path"],
       checkLatest: argv.latest,
-      useCleanState: argv["smaller-state"]
+      useCleanState: argv["smaller-state"],
     },
     (length) => {
       process.stdout.write(`${chalk.yellow(`Downloading`)}\n`);
@@ -494,7 +498,8 @@ const main = async () => {
     await fs.mkdir(aliceFolder, { recursive: true });
     aliceLogHandler = await fs.open(aliceLogs, "w");
     aliceProcess = await spawnTask(
-      `${polkadotBinaryPath} --database paritydb --base-path ${aliceFolder} --log=debug,parachain=trace,netlink=info,sync=info,lib=info,multi=info,trie=info,grandpa=info,wasm_overrides=info,wasmtime_cranelift=info,parity-db=info --alice --chain ${relayRawSpecFile} --rpc-port 12001 --port 10001 --node-key ${Object.keys(NODE_KEYS)[0]
+      `${polkadotBinaryPath} --database paritydb --base-path ${aliceFolder} --log=debug,parachain=trace,netlink=info,sync=info,lib=info,multi=info,trie=info,grandpa=info,wasm_overrides=info,wasmtime_cranelift=info,parity-db=info --alice --chain ${relayRawSpecFile} --rpc-port 12001 --port 10001 --node-key ${
+        Object.keys(NODE_KEYS)[0]
       } --validator`
     );
     process.stdout.write(` ✓\n`);
@@ -505,7 +510,8 @@ const main = async () => {
     await fs.mkdir(bobFolder, { recursive: true });
     bobLogHandler = await fs.open(bobLogs, "w");
     bobProcess = await spawnTask(
-      `${polkadotBinaryPath} --database paritydb --base-path ${bobFolder} --bob --chain ${relayRawSpecFile} --rpc-port 12002 --port 10002  --node-key ${Object.keys(NODE_KEYS)[1]
+      `${polkadotBinaryPath} --database paritydb --base-path ${bobFolder} --bob --chain ${relayRawSpecFile} --rpc-port 12002 --port 10002  --node-key ${
+        Object.keys(NODE_KEYS)[1]
       } --validator`
     );
     process.stdout.write(` ✓\n`);
@@ -519,14 +525,17 @@ const main = async () => {
   await fs.mkdir(alithFolder, { recursive: true });
   const alithLogHandler = await fs.open(alithLogs, "w");
   // const logs="--log=trace,netlink=trace,sync=trace,lib=trace,sub=trace,multi=trace,evm=debug,parity-db=info,trie=info,wasmtime_cranelift=info";
-  const logs="";
+  // const logs="-lruntime=debug";
+  const logs = "";
   const alithProcess = argv.dev
     ? await spawnTask(
         `${moonbeamBinaryPath} --database paritydb --base-path ${alithFolder} --execution native ${logs} --alice --collator --db-cache 4096 --trie-cache-size ${argv["trie-cache-size"]} --chain ${modFile} --no-hardware-benchmarks --no-prometheus --no-telemetry --sealing=${argv.sealing}`
       )
     : await spawnTask(
-      `${moonbeamBinaryPath} --database paritydb --base-path ${alithFolder} --execution native ${logs} --alice --collator --db-cache 4096 --trie-cache-size ${argv["trie-cache-size"]
-      } --chain ${modFile} --  --chain ${relayRawSpecFile} --rpc-port 12003 --port 10003 --node-key ${Object.keys(NODE_KEYS)[2]
+        `${moonbeamBinaryPath} --database paritydb --base-path ${alithFolder} --execution native ${logs} --alice --collator --db-cache 4096 --trie-cache-size ${
+          argv["trie-cache-size"]
+        } --chain ${modFile} --  --chain ${relayRawSpecFile} --rpc-port 12003 --port 10003 --node-key ${
+          Object.keys(NODE_KEYS)[2]
         }`
       );
   process.stdout.write(` ✓\n`);
@@ -541,7 +550,7 @@ const main = async () => {
       process.on("exit", () => {
         try {
           alithProcess.kill();
-        } catch (e) { }
+        } catch (e) {}
       });
     }),
   ];
@@ -558,7 +567,7 @@ const main = async () => {
         process.on("exit", () => {
           try {
             aliceProcess.kill();
-          } catch (e) { }
+          } catch (e) {}
         });
       }),
       new Promise<void>((resolve) => {
@@ -571,7 +580,7 @@ const main = async () => {
         process.on("exit", () => {
           try {
             bobProcess.kill();
-          } catch (e) { }
+          } catch (e) {}
         });
       })
     );
