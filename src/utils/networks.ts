@@ -33,8 +33,8 @@ export const NETWORK_WS_URLS: { [name in NETWORK_NAME]: string } = {
   alphanet: "wss://wss.api.moonbase.moonbeam.network",
   moonsama: "wss://wss.moonsama.gcp.purestake.run",
   moonsilver: "wss://wss.moonsilver.moonbeam.network",
-  moonriver: "wss://moonriver.unitedbloc.com",
-  moonbeam: "wss://moonbeam.unitedbloc.com",
+  moonriver: "wss://wss.api.moonriver.moonbeam.network",
+  moonbeam: "wss://wss.api.moonbeam.network",
   kusama: "wss://kusama-rpc.polkadot.io",
   polkadot: "wss://rpc.polkadot.io",
 };
