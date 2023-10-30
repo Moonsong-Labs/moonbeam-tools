@@ -26,8 +26,11 @@ const argv = yargs(process.argv.slice(2))
 
 const main = async () => {
   // await fs.mkdir(argv["state-folder"], { recursive: true });
-  const file = await downloadExportedState(argv.network as NetworkName, argv["state-folder"]);
-  await neutralizeExportedState(file.file, file.file.replace(/.json$/, ".mod.json"));
+  const file = await downloadExportedState({
+    network: argv.network as NetworkName,
+    outPath: argv["state-folder"],
+  });
+  await neutralizeExportedState(file.stateFile, file.stateFile.replace(/.json$/, ".mod.json"));
 };
 
 main();
