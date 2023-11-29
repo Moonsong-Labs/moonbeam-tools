@@ -24,11 +24,11 @@ export class AuthorizeUpgradeManipulator implements StateManipulator {
     if (key.startsWith(this.lastRelayChainBlockNumberKey)) {
       debug(`Adding Authorized Upgrade Hash: ${this.runtimeHash}`);
       return {
-        action: "keep" as Action,
+        action: "remove" as Action,
         extraLines: [
           {
             key: this.storageKey,
-            value: this.runtimeHash,
+            value: `${this.runtimeHash}01`, // 01 for "true" check version
           },
         ],
       };

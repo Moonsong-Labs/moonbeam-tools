@@ -40,7 +40,7 @@ export interface StateManipulator {
 
   // Will get executed for each line of the state file during the write phase
   // Can decide to remove/keep the original line and also add extra lines
-  processWrite: (line: StateLine) => { action: Action; extraLines?: StateLine[] } | undefined;
+  processWrite: (line: StateLine) => { action: Action; extraLines?: StateLine[] } | undefined | void;
 }
 
 export function encodeStorageKey(module, name) {
