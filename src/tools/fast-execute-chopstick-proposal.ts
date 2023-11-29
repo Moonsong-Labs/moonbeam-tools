@@ -199,7 +199,7 @@ const main = async () => {
       (await api.rpc.chain.getHeader()).number.toNumber() + 1
     )}`
   );
-  await api.rpc("dev_newBlock", 1);
+  await api.rpc("dev_newBlock", { count: 1 });
 
   // Fast forward the scheduled proposal
   console.log(
@@ -214,7 +214,7 @@ const main = async () => {
       (await api.rpc.chain.getHeader()).number.toNumber() + 1
     )}`
   );
-  await api.rpc("dev_newBlock", 1);
+  await api.rpc("dev_newBlock", { count: 1 });
   await api.disconnect();
   process.exit(0);
 };
