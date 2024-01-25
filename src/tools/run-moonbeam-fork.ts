@@ -451,7 +451,7 @@ const main = async () => {
       } else if ("paras" in relayChainSpec.genesis?.runtime) {
         relayChainSpec.genesis.runtime.paras = paras;
       } else {
-        process.stdout.write(` X - Could not find parachain genesis format.\n`);
+        process.stdout.write(` X - Could not find parachain format in relay genesis file.\n`);
         process.exit(1);
       }
       await fs.writeFile(relayPlainSpecFile, JSON.stringify(relayChainSpec, null, 2));
