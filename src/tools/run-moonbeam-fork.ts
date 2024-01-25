@@ -444,14 +444,16 @@ const main = async () => {
           ],
         ],
       ];
-      relayChainSpec.genesis.runtimeGenesis.patch.paras = paras;
-      /*
-      if ("runtime_genesis_config" in relayChainSpec.genesis.runtime) {
+      if ("patch" in relayChainSpec.genesis?.runtimeGenesis) {
+        relayChainSpec.genesis.runtimeGenesis.patch.paras = paras;
+      } else if ("runtime_genesis_config" in relayChainSpec.genesis?.runtime) {
         relayChainSpec.genesis.runtime.runtime_genesis_config.paras = paras;
-      } else {
+      } else if ("paras" in relayChainSpec.genesis?.runtime) {
         relayChainSpec.genesis.runtime.paras = paras;
+      } else {
+        process.stdout.write(` X - Could not find parachain genesis format.\n`);
+        process.exit(1);
       }
-      */
       await fs.writeFile(relayPlainSpecFile, JSON.stringify(relayChainSpec, null, 2));
       process.stdout.write(` ✓\n`);
       process.stdout.write(`\t - ${chalk.yellow(`Saving`)} plain relaychain spec...`);
