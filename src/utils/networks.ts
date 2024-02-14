@@ -39,7 +39,7 @@ export const NETWORK_WS_URLS: { [name in NETWORK_NAME]: string } = {
   polkadot: "wss://rpc.polkadot.io",
 };
 export const NETWORK_HTTP_URLS: { [name in NETWORK_NAME]: string } = {
-  stagenet: "https://frag-stagenet-relay-rpc-ws.g.moondev.network",
+  stagenet: "https://deo-moon-moondev-1-stagenet-relay-rpc-1.rv.moondev.network",
   alphanet: "https://rpc.api.moonbase.moonbeam.network",
   moonsama: "https://rpc.moonsama.gcp.purestake.run",
   moonsilver: "https://rpc.moonsilver.moonbeam.network",

@@ -35,22 +35,22 @@ export const STORAGE_NAMES: { [name in NetworkName]: string } = {
 };
 
 export interface StateInfo {
-  "file": string,
-  "cleanFile"?: string,
-  "name": string,
-  "chainId": string,
-  "blockHash": string,
-  "blockNumber": number,
-  "runtime": {
-    "specName": string,
-    "implName": string,
-    "authoringVersion": number,
-    "specVersion": number,
-    "implVersion": number,
-    "apis": [string, number][],
-    "transactionVersion": 2,
-    "stateVersion": 0
-  },
+  file: string;
+  cleanFile?: string;
+  name: string;
+  chainId: string;
+  blockHash: string;
+  blockNumber: number;
+  runtime: {
+    specName: string;
+    implName: string;
+    authoringVersion: number;
+    specVersion: number;
+    implVersion: number;
+    apis: [string, number][];
+    transactionVersion: 2;
+    stateVersion: 0;
+  };
 }
 
 export interface DownloadOptions {
@@ -75,9 +75,7 @@ export async function downloadExportedState(
   const { network, outPath, checkLatest, useCleanState } = options;
 
   if (!STORAGE_NAMES[network]) {
-    throw new Error(
-      `Invalid network ${network}, expecting ${Object.keys(STORAGE_NAMES).join(", ")}`
-    );
+    console.warn(`Invalid network ${network}, expecting ${Object.keys(STORAGE_NAMES).join(", ")}`);
   }
 
   const stateInfoFileName = `${network}-state.info.json`;
@@ -99,7 +97,8 @@ export async function downloadExportedState(
 
   // No check for latest, skip if files already exists
   if (stateInfoExists && !checkLatest) {
-    const stateFileName = (useCleanState && stateInfo.cleanFile) ? stateInfo.cleanFile : stateInfo.file;
+    const stateFileName =
+      useCleanState && stateInfo.cleanFile ? stateInfo.cleanFile : stateInfo.file;
     const stateFile = path.join(outPath, stateFileName);
 
     const stateExist = await fs
@@ -114,16 +113,15 @@ export async function downloadExportedState(
   const client = new Client(`https://states.kaki.dev`);
   const downloadedStateInfo: StateInfo = await (
     await client.request({
-      path:
-        `/${network}-state.info.json`,
+      path: `/${network}-state.info.json`,
       method: "GET",
     })
   ).body.json();
 
   // Already latest version
   if (stateInfo && stateInfo.blockHash == downloadedStateInfo.blockHash) {
-
-    const stateFileName = (useCleanState && stateInfo.cleanFile) ? stateInfo.cleanFile : stateInfo.file;
+    const stateFileName =
+      useCleanState && stateInfo.cleanFile ? stateInfo.cleanFile : stateInfo.file;
     const stateFile = path.join(outPath, stateFileName);
 
     const stateExist = await fs
@@ -137,7 +135,10 @@ export async function downloadExportedState(
     }
   }
 
-  const stateFileName = (useCleanState && downloadedStateInfo.cleanFile) ? downloadedStateInfo.cleanFile : downloadedStateInfo.file;
+  const stateFileName =
+    useCleanState && downloadedStateInfo.cleanFile
+      ? downloadedStateInfo.cleanFile
+      : downloadedStateInfo.file;
   const stateFile = path.join(outPath, stateFileName);
 
   const fileStream = (await fs.open(stateFile, "w")).createWriteStream();
@@ -150,12 +151,11 @@ export async function downloadExportedState(
   await new Promise<void>((resolve, reject) => {
     client.dispatch(
       {
-        path:
-          `/${stateFileName}`,
+        path: `/${stateFileName}`,
         method: "GET",
       },
       {
-        onConnect: () => { },
+        onConnect: () => {},
         onError: (error) => {
           reject(error);
         },
@@ -214,17 +214,17 @@ export async function neutralizeExportedState(
     new HRMPManipulator(),
     dev
       ? new SpecManipulator({
-        name: `Forked Dev Network`,
-        chainType: `Development`,
-        relayChain: `dev-service`,
-        devService: true,
-        paraId: 0,
-        protocolId: "",
-      })
+          name: `Forked Dev Network`,
+          chainType: `Development`,
+          relayChain: `dev-service`,
+          devService: true,
+          paraId: 0,
+          protocolId: "",
+        })
       : new SpecManipulator({
-        name: `Fork Network`,
-        relayChain: `rococo-local`,
-      }),
+          name: `Fork Network`,
+          relayChain: `rococo-local`,
+        }),
     new CollectiveManipulator("TechCommitteeCollective", [ALITH_ADDRESS]),
     new CollectiveManipulator("CouncilCollective", [ALITH_ADDRESS]),
     new ValidationManipulator(),
