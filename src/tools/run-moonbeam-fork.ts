@@ -503,7 +503,9 @@ const main = async () => {
     await fs.mkdir(aliceFolder, { recursive: true });
     aliceLogHandler = await fs.open(aliceLogs, "w");
     aliceProcess = await spawnTask(
-      `${polkadotBinaryPath} --database paritydb --base-path ${aliceFolder} --log=debug,parachain=trace,netlink=info,sync=info,lib=info,multi=info,trie=info,grandpa=info,wasm_overrides=info,wasmtime_cranelift=info,parity-db=info --alice --chain ${relayRawSpecFile} --rpc-port 12001 --port 10001 --node-key ${
+      `${polkadotBinaryPath} --database paritydb --base-path ${
+        aliceFolder
+      } --log=debug,parachain=trace,netlink=info,sync=info,lib=info,multi=info,trie=info,grandpa=info,wasm_overrides=info,wasmtime_cranelift=info,parity-db=info --alice --chain ${relayRawSpecFile} --rpc-port 12001 --port 10001 --rpc-cors all --node-key ${
         Object.keys(NODE_KEYS)[0]
       } --validator`
     );
@@ -515,7 +517,7 @@ const main = async () => {
     await fs.mkdir(bobFolder, { recursive: true });
     bobLogHandler = await fs.open(bobLogs, "w");
     bobProcess = await spawnTask(
-      `${polkadotBinaryPath} --database paritydb --base-path ${bobFolder} --bob --chain ${relayRawSpecFile} --rpc-port 12002 --port 10002  --node-key ${
+      `${polkadotBinaryPath} --database paritydb --base-path ${bobFolder} --bob --chain ${relayRawSpecFile} --rpc-port 12002 --port 10002 --rpc-cors all --node-key ${
         Object.keys(NODE_KEYS)[1]
       } --validator`
     );
@@ -534,12 +536,14 @@ const main = async () => {
   const logs = "";
   const alithProcess = argv.dev
     ? await spawnTask(
-        `${moonbeamBinaryPath} --database paritydb --base-path ${alithFolder} --execution native ${logs} --alice --collator --db-cache 4096 --trie-cache-size ${argv["trie-cache-size"]} --chain ${modFile} --no-hardware-benchmarks --no-prometheus --no-telemetry --sealing=${argv.sealing}`
+        `${moonbeamBinaryPath} --database paritydb --base-path ${alithFolder} --execution native ${logs} --alice --collator --db-cache 4096 --trie-cache-size ${
+          argv["trie-cache-size"]
+        } --chain ${modFile} --no-hardware-benchmarks --no-prometheus --no-telemetry --sealing=${argv.sealing} --rpc-cors all`
       )
     : await spawnTask(
         `${moonbeamBinaryPath} --database paritydb --base-path ${alithFolder} --execution native ${logs} --alice --collator --db-cache 4096 --trie-cache-size ${
           argv["trie-cache-size"]
-        } --chain ${modFile} --  --chain ${relayRawSpecFile} --rpc-port 12003 --port 10003 --node-key ${
+        } --chain ${modFile} --  --chain ${relayRawSpecFile} --rpc-port 12003 --port 10003 --rpc-cors all --node-key ${
           Object.keys(NODE_KEYS)[2]
         }`
       );
