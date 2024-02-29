@@ -5,7 +5,17 @@ import { Keyring } from "@polkadot/api";
 import { getApiFor } from "../utils/networks";
 import { getAccountIdentity } from "../utils/monitoring";
 import { BN } from "@polkadot/util";
-import { isBigInt, isBn, isHex, isNumber, isU8a, u8aConcat, u8aToBn, u8aToHex, u8aToU8a } from '@polkadot/util';
+import {
+  isBigInt,
+  isBn,
+  isHex,
+  isNumber,
+  isU8a,
+  u8aConcat,
+  u8aToBn,
+  u8aToHex,
+  u8aToU8a,
+} from "@polkadot/util";
 
 const argv = yargs(process.argv.slice(2))
   .usage("Usage: $0")
@@ -18,8 +28,8 @@ const argv = yargs(process.argv.slice(2))
       demandOption: true,
     },
     para: {
-        type: "number",
-        description: "ParaId to which the messages are sent",
+      type: "number",
+      description: "ParaId to which the messages are sent",
     },
     numMessages: {
       type: "number",
@@ -31,31 +41,27 @@ const argv = yargs(process.argv.slice(2))
     },
   }).argv;
 
-
 const main = async () => {
   const api = await getApiFor(argv);
 
   let sendExtrinsic = api.tx.xcmPallet.send(
-    { V2: { parents: new BN(0), interior: { X1: { Parachain: argv.para }} } },
+    { V2: { parents: new BN(0), interior: { X1: { Parachain: argv.para } } } },
     {
-      V2: [
-        { ClearOrigin: null }
-      ]
+      V2: [{ ClearOrigin: null }],
     }
   );
   let Txs = [];
 
   // If several calls, we just push alltogether to batch
   for (let i = 0; i < argv.numMessages; i++) {
-    Txs.push(sendExtrinsic)
+    Txs.push(sendExtrinsic);
   }
-
 
   const batchCall = api.tx.utility.batchAll(Txs);
   let account;
   let nonce;
   [account, nonce] = await accountWrapper(api, argv.privKey);
-  console.log(account )
+  console.log(account);
   await api.tx(batchCall.toHex()).signAndSend(account);
 
   await api.disconnect();
@@ -76,7 +82,7 @@ async function accountWrapper(api, privateKey) {
 
   // Create account and get nonce
   let account = await keyring.addFromUri(privateKey, null, "sr25519");
-  console.log(account.address)
+  console.log(account.address);
   const { nonce: rawNonce } = (await api.query.system.account(account.address)) as any;
   let nonce = BigInt(rawNonce.toString());
 

@@ -1,4 +1,4 @@
-import type { ProviderInterface } from '@polkadot/rpc-provider/types';
+import type { ProviderInterface } from "@polkadot/rpc-provider/types";
 import { promiseConcurrent } from "./functions";
 
 const debug = require("debug")("utils:storage-query");
@@ -27,12 +27,18 @@ const startReport = (total: () => number) => {
 };
 
 export function splitPrefix(prefix: string, splitDepth) {
-  return new Array(256 ** splitDepth).fill(0).map((_, i) => `${prefix}${i.toString(16).padStart(splitDepth * 2, "0")}`);
+  return new Array(256 ** splitDepth)
+    .fill(0)
+    .map((_, i) => `${prefix}${i.toString(16).padStart(splitDepth * 2, "0")}`);
 }
 
 // Only works with keys longer than keyPrefix
 // Is effective only on well spread keys
-export async function concurrentGetKeys(provider: ProviderInterface, keyPrefix: string, blockHash: string) {
+export async function concurrentGetKeys(
+  provider: ProviderInterface,
+  keyPrefix: string,
+  blockHash: string
+) {
   const maxKeys = 1000;
   let total = 0;
 
@@ -88,10 +94,15 @@ export async function queryUnorderedRawStorage(
   }));
 }
 
-
 export async function processAllStorage(
   provider: ProviderInterface,
-  options: { prefix: string, blockHash: string, splitDepth?: number, concurrency?: number, delayMS?: number },
+  options: {
+    prefix: string;
+    blockHash: string;
+    splitDepth?: number;
+    concurrency?: number;
+    delayMS?: number;
+  },
   processor: (batchResult: { key: `0x${string}`; value: string }[]) => void
 ) {
   const { prefix, blockHash, splitDepth, concurrency, delayMS } = options;
@@ -116,10 +127,7 @@ export async function processAllStorage(
           if (keys.length == 0) {
             break;
           }
-          const response = await provider.send("state_queryStorageAt", [
-            keys,
-            blockHash,
-          ]);
+          const response = await provider.send("state_queryStorageAt", [keys, blockHash]);
 
           if (!response[0]) {
             throw new Error(`No response: ${JSON.stringify(response)}`);
@@ -134,7 +142,7 @@ export async function processAllStorage(
           startKey = keys[keys.length - 1];
 
           if (delayMS) {
-            await new Promise(resolve => setTimeout(resolve, delayMS));
+            await new Promise((resolve) => setTimeout(resolve, delayMS));
           }
         }
       },
