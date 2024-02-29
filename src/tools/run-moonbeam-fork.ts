@@ -444,9 +444,15 @@ const main = async () => {
           ],
         ],
       ];
-      if (relayChainSpec.genesis?.runtimeGenesis && "patch" in relayChainSpec.genesis?.runtimeGenesis) {
+      if (
+        relayChainSpec.genesis?.runtimeGenesis &&
+        "patch" in relayChainSpec.genesis?.runtimeGenesis
+      ) {
         relayChainSpec.genesis.runtimeGenesis.patch.paras = paras;
-      } else if (relayChainSpec.genesis?.runtime && "runtime_genesis_config" in relayChainSpec.genesis?.runtime) {
+      } else if (
+        relayChainSpec.genesis?.runtime &&
+        "runtime_genesis_config" in relayChainSpec.genesis?.runtime
+      ) {
         relayChainSpec.genesis.runtime.runtime_genesis_config.paras = paras;
       } else if (relayChainSpec.genesis?.runtime && "paras" in relayChainSpec.genesis?.runtime) {
         relayChainSpec.genesis.runtime.paras = paras;
