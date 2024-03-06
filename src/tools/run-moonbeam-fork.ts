@@ -444,9 +444,15 @@ const main = async () => {
           ],
         ],
       ];
-      if (relayChainSpec.genesis?.runtimeGenesis && "patch" in relayChainSpec.genesis?.runtimeGenesis) {
+      if (
+        relayChainSpec.genesis?.runtimeGenesis &&
+        "patch" in relayChainSpec.genesis?.runtimeGenesis
+      ) {
         relayChainSpec.genesis.runtimeGenesis.patch.paras = paras;
-      } else if (relayChainSpec.genesis?.runtime && "runtime_genesis_config" in relayChainSpec.genesis?.runtime) {
+      } else if (
+        relayChainSpec.genesis?.runtime &&
+        "runtime_genesis_config" in relayChainSpec.genesis?.runtime
+      ) {
         relayChainSpec.genesis.runtime.runtime_genesis_config.paras = paras;
       } else if (relayChainSpec.genesis?.runtime && "paras" in relayChainSpec.genesis?.runtime) {
         relayChainSpec.genesis.runtime.paras = paras;
@@ -495,12 +501,7 @@ const main = async () => {
   let bobLogHandler: fs.FileHandle;
 
   // these params are used by both relay and parachain nodes
-  const commonParams = [
-    "--database paritydb",
-    "--rpc-cors all",
-    "--no-private-ipv4",
-    "--no-mdns",
-  ]
+  const commonParams = ["--database paritydb", "--rpc-cors all", "--no-private-ipv4", "--no-mdns"];
 
   if (!argv.dev) {
     process.stdout.write(`\t - ${chalk.yellow(`Starting`)} relay nodes...\n`);
@@ -521,7 +522,9 @@ const main = async () => {
       `--node-key ${Object.keys(NODE_KEYS)[0]}`,
       "--validator",
     ];
-    aliceProcess = await spawnTask(`${polkadotBinaryPath}  ${commonParams.join(" ")} ${aliceValidatorParams.join(" ")}`);
+    aliceProcess = await spawnTask(
+      `${polkadotBinaryPath}  ${commonParams.join(" ")} ${aliceValidatorParams.join(" ")}`
+    );
     process.stdout.write(` ✓\n`);
     process.stdout.write(`\t\t - ${chalk.green(`Starting`)} Bob node...\n`);
     const bobFolder = path.join(baseDataFolder, `relay-bob`);
@@ -539,7 +542,9 @@ const main = async () => {
       `--node-key ${Object.keys(NODE_KEYS)[1]}`,
       "--validator",
     ];
-    bobProcess = await spawnTask(`${polkadotBinaryPath} ${commonParams.join(" ")} ${bobValidatorParams.join(" ")}`);
+    bobProcess = await spawnTask(
+      `${polkadotBinaryPath} ${commonParams.join(" ")} ${bobValidatorParams.join(" ")}`
+    );
     process.stdout.write(` ✓\n`);
   }
 
@@ -566,10 +571,10 @@ const main = async () => {
     "--no-hardware-benchmarks",
     "--no-prometheus",
     "--no-telemetry",
-    `--sealing=${argv.sealing}`
-  ]
+    `--sealing=${argv.sealing}`,
+  ];
   const noDevParams = [
-    "--", // TODO is this needed? 
+    "--", // TODO is this needed?
     `--chain ${relayRawSpecFile}`,
     "--rpc-port 12003",
     "--port 10003",
@@ -577,10 +582,14 @@ const main = async () => {
   ];
   const alithProcess = argv.dev
     ? await spawnTask(
-        `${moonbeamBinaryPath} ${logs} ${commonParams.join(" ")} ${alithCollatorBaseParams.join(" ")} ${devParams.join(" ")}`
+        `${moonbeamBinaryPath} ${logs} ${commonParams.join(" ")} ${alithCollatorBaseParams.join(
+          " "
+        )} ${devParams.join(" ")}`
       )
     : await spawnTask(
-        `${moonbeamBinaryPath} ${logs} ${commonParams.join(" ")} ${alithCollatorBaseParams.join(" ")} ${noDevParams.join(" ")}`
+        `${moonbeamBinaryPath} ${logs} ${commonParams.join(" ")} ${alithCollatorBaseParams.join(
+          " "
+        )} ${noDevParams.join(" ")}`
       );
   process.stdout.write(` ✓\n`);
 

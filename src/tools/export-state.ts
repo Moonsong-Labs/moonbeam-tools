@@ -99,7 +99,8 @@ async function main() {
             if (line.key.startsWith(storagePrefix)) {
               storageCount[storagePrefix] += 1n;
               storageKeySize[storagePrefix] = line.key.length / 2 - 1;
-              storageSize[storagePrefix] += BigInt(line.key.length / 2) + BigInt(line.value.length / 2) - 2n;
+              storageSize[storagePrefix] +=
+                BigInt(line.key.length / 2) + BigInt(line.value.length / 2) - 2n;
             }
           }
         }
