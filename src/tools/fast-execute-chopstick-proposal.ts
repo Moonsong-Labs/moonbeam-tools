@@ -7,6 +7,8 @@ const debug = require("debug")("fast-executor");
 
 import { ALITH_PRIVATE_KEY, getApiFor, NETWORK_YARGS_OPTIONS } from "..";
 import { ApiPromise, Keyring } from "@polkadot/api";
+import { blake2AsHex } from "@polkadot/util-crypto";
+
 const argv = yargs(process.argv.slice(2))
   .usage("Usage: $0")
   .version("1.0.0")
@@ -139,7 +141,13 @@ const main = async () => {
 
   const ongoingData = referendumInfo.asOngoing;
   const ongoingJson = ongoingData.toJSON();
-  const callHash = ongoingData.proposal.asLookup.toHex();
+  // Support Lookup, Inline or Legacy
+  const callHash = ongoingData.proposal.isLookup
+    ? ongoingData.proposal.asLookup.toHex()
+    : ongoingData.proposal.isInline
+    ? blake2AsHex(ongoingData.proposal.asInline.toHex())
+    : ongoingData.proposal.asLegacy.toHex();
+
   const proposalBlockTarget = (await api.rpc.chain.getHeader()).number.toNumber();
   const fastProposalData = {
     ongoing: {
@@ -207,7 +215,13 @@ const main = async () => {
       (await api.rpc.chain.getHeader()).number.toNumber() + 2
     )}`
   );
-  await moveScheduledCallTo(api, 1, (call) => call.isLookup && call.asLookup.toHex() == callHash);
+  await moveScheduledCallTo(api, 1, (call) =>
+    call.isLookup
+      ? call.asLookup.toHex() == callHash
+      : call.isInline
+      ? blake2AsHex(call.asInline.toHex()) == callHash
+      : call.asLegacy.toHex() == callHash
+  );
 
   console.log(
     `${chalk.yellow("Fast forward")} ${chalk.green(1)} to #${chalk.green(
