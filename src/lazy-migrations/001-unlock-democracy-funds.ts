@@ -5,7 +5,7 @@
   This script will continuously call and wait for completion of unlockDemocracyFunds
   extrinsic from pallet moonbeam-lazy-migrations until the migration is completed.
 
-Ex: ./node_modules/.bin/ts-node unlock-democracy-funds.ts \
+Ex: npx ts-node src/lazy-migrations/001-unlock-democracy-funds.ts \
    --url ws://127.0.0.1:34102 \
    --account-priv-key <key> \
 */
@@ -50,7 +50,6 @@ const main = async () => {
   ).toHuman();
   if (migrationCompleted === true) {
     console.log("Democracy locks migration already completed. Exiting...");
-    return;
   } else {
     console.log("Unlocking democracy funds...");
     while (migrationCompleted === false) {

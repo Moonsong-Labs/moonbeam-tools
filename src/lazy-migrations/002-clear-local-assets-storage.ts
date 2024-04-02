@@ -1,7 +1,7 @@
 /*
   Clears the unused storage of pallet LocalAssets removed in runtime 2800
 
-Ex: ./node_modules/.bin/ts-node-transpile-only src/tools/clear-local-assets-storage.ts \
+Ex: npx ts-node src/lazy-migrations/002-clear-local-assets-storage.ts \
    --url ws://localhost:9944 \
    --max-assets 10 \
    --limit 1000 \
@@ -69,8 +69,6 @@ async function main() {
     }
 
     const isMigrationCompleted = (await api.query["moonbeamLazyMigrations"].localAssetsMigrationCompleted()).toPrimitive();
-    const isMigrationComplete2 = (await api.query.state.localAssetsMigrationCompleted()).toPrimitive();
-    console.log(isMigrationCompleted)
     if (isMigrationCompleted) {
       throw new Error("Migration completed, all keys have been removed!")
     }
