@@ -1,7 +1,7 @@
 /*
   Clears the unused storage of pallet LocalAssets removed in runtime 2800
 
-Ex: npx ts-node src/lazy-migrations/002-clear-local-assets-storage.ts \
+Ex: ./node_modules/.bin/ts-node src/lazy-migrations/002-clear-local-assets-storage.ts \
    --url ws://localhost:9944 \
    --max-assets 10 \
    --limit 1000 \

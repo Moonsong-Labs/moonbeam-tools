@@ -5,7 +5,7 @@
   This script will continuously call and wait for completion of unlockDemocracyFunds
   extrinsic from pallet moonbeam-lazy-migrations until the migration is completed.
 
-Ex: npx ts-node src/lazy-migrations/001-unlock-democracy-funds.ts \
+Ex: ./node_modules/.bin/ts-node src/lazy-migrations/001-unlock-democracy-funds.ts \
    --url ws://127.0.0.1:34102 \
    --account-priv-key <key> \
 */
