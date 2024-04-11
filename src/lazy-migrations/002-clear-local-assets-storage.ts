@@ -62,19 +62,26 @@ async function main() {
     const privKey = argv["alith"] ? ALITH_PRIVATE_KEY : argv["account-priv-key"];
     if (privKey) {
       account = keyring.addFromUri(privKey, null, "ethereum");
-      const { nonce: rawNonce, data: balance } = (await api.query.system.account(
-        account.address
-      ));
+      const { nonce: rawNonce, data: balance } = await api.query.system.account(account.address);
       nonce = BigInt(rawNonce.toString());
     }
 
-    const isMigrationCompleted = (await api.query["moonbeamLazyMigrations"].localAssetsMigrationCompleted()).toPrimitive();
+    const isMigrationCompleted = (
+      await api.query["moonbeamLazyMigrations"].localAssetsMigrationCompleted()
+    ).toPrimitive();
     if (isMigrationCompleted) {
-      throw new Error("Migration completed, all keys have been removed!")
+      throw new Error("Migration completed, all keys have been removed!");
     }
 
-    const extrinsicCall = api.tx["moonbeamLazyMigrations"].clearLocalAssetsStorage(max_assets, entries_to_remove)
-    await extrinsicCall.signAndSend(account, { nonce: nonce++ }, monitorSubmittedExtrinsic(api, { id: "migration" }));
+    const extrinsicCall = api.tx["moonbeamLazyMigrations"].clearLocalAssetsStorage(
+      max_assets,
+      entries_to_remove
+    );
+    await extrinsicCall.signAndSend(
+      account,
+      { nonce: nonce++ },
+      monitorSubmittedExtrinsic(api, { id: "migration" })
+    );
   } finally {
     await waitForAllMonitoredExtrinsics();
     await api.disconnect();
