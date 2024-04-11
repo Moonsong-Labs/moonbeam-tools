@@ -561,7 +561,6 @@ const main = async () => {
   const alithCollatorBaseParams = [
     `--base-path ${alithFolder}`,
     `--chain ${modFile}`,
-    "--execution native",
     "--alice",
     "--collator",
     "--db-cache 4096",
