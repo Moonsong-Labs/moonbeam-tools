@@ -500,6 +500,9 @@ const main = async () => {
   let bobProcess: ChildProcessWithoutNullStreams;
   let bobLogHandler: fs.FileHandle;
 
+  // these params are used by both relay and parachain nodes
+  const commonParams = ["--database paritydb", "--rpc-cors all", "--no-private-ipv4", "--no-mdns"];
+
   if (!argv.dev) {
     process.stdout.write(`\t - ${chalk.yellow(`Starting`)} relay nodes...\n`);
     process.stdout.write(`\t\t - ${chalk.green(`Starting`)} Alice node...\n`);
@@ -508,10 +511,19 @@ const main = async () => {
     process.stdout.write(`\t\t - ${chalk.yellow(`Logs`)}: ${aliceLogs}`);
     await fs.mkdir(aliceFolder, { recursive: true });
     aliceLogHandler = await fs.open(aliceLogs, "w");
+
+    const aliceValidatorParams = [
+      "--log=debug,parachain=trace,netlink=info,sync=info,lib=info,multi=info,trie=info,grandpa=info,wasm_overrides=info,wasmtime_cranelift=info,parity-db=info",
+      "--alice",
+      `--base-path ${aliceFolder}`,
+      `--chain ${relayRawSpecFile}`,
+      "--rpc-port 12001",
+      "--port 10001",
+      `--node-key ${Object.keys(NODE_KEYS)[0]}`,
+      "--validator",
+    ];
     aliceProcess = await spawnTask(
-      `${polkadotBinaryPath} --database paritydb --base-path ${aliceFolder} --log=debug,parachain=trace,netlink=info,sync=info,lib=info,multi=info,trie=info,grandpa=info,wasm_overrides=info,wasmtime_cranelift=info,parity-db=info --alice --chain ${relayRawSpecFile} --rpc-port 12001 --port 10001 --node-key ${
-        Object.keys(NODE_KEYS)[0]
-      } --validator`
+      `${polkadotBinaryPath}  ${commonParams.join(" ")} ${aliceValidatorParams.join(" ")}`
     );
     process.stdout.write(` ✓\n`);
     process.stdout.write(`\t\t - ${chalk.green(`Starting`)} Bob node...\n`);
@@ -520,10 +532,18 @@ const main = async () => {
     process.stdout.write(`\t\t - ${chalk.yellow(`Logs`)}: ${bobLogs}`);
     await fs.mkdir(bobFolder, { recursive: true });
     bobLogHandler = await fs.open(bobLogs, "w");
+
+    const bobValidatorParams = [
+      "--bob",
+      `--base-path ${bobFolder}`,
+      `--chain ${relayRawSpecFile}`,
+      "--rpc-port 12002",
+      "--port 10002",
+      `--node-key ${Object.keys(NODE_KEYS)[1]}`,
+      "--validator",
+    ];
     bobProcess = await spawnTask(
-      `${polkadotBinaryPath} --database paritydb --base-path ${bobFolder} --bob --chain ${relayRawSpecFile} --rpc-port 12002 --port 10002  --node-key ${
-        Object.keys(NODE_KEYS)[1]
-      } --validator`
+      `${polkadotBinaryPath} ${commonParams.join(" ")} ${bobValidatorParams.join(" ")}`
     );
     process.stdout.write(` ✓\n`);
   }
@@ -538,16 +558,37 @@ const main = async () => {
   // const logs="--log=trace,netlink=trace,sync=trace,lib=trace,sub=trace,multi=trace,evm=debug,parity-db=info,trie=info,wasmtime_cranelift=info";
   // const logs="-lruntime=debug";
   const logs = "";
+  const alithCollatorBaseParams = [
+    `--base-path ${alithFolder}`,
+    `--chain ${modFile}`,
+    "--alice",
+    "--collator",
+    "--db-cache 4096",
+    `--trie-cache-size ${argv["trie-cache-size"]}`,
+  ];
+  const devParams = [
+    "--no-hardware-benchmarks",
+    "--no-prometheus",
+    "--no-telemetry",
+    `--sealing=${argv.sealing}`,
+  ];
+  const noDevParams = [
+    "--", // TODO is this needed?
+    `--chain ${relayRawSpecFile}`,
+    "--rpc-port 12003",
+    "--port 10003",
+    `--node-key ${Object.keys(NODE_KEYS)[2]}`,
+  ];
   const alithProcess = argv.dev
     ? await spawnTask(
-        `${moonbeamBinaryPath} --database paritydb --base-path ${alithFolder} --execution native ${logs} --alice --collator --db-cache 4096 --trie-cache-size ${argv["trie-cache-size"]} --chain ${modFile} --no-hardware-benchmarks --no-prometheus --no-telemetry --sealing=${argv.sealing}`
+        `${moonbeamBinaryPath} ${logs} ${commonParams.join(" ")} ${alithCollatorBaseParams.join(
+          " "
+        )} ${devParams.join(" ")}`
       )
     : await spawnTask(
-        `${moonbeamBinaryPath} --database paritydb --base-path ${alithFolder} --execution native ${logs} --alice --collator --db-cache 4096 --trie-cache-size ${
-          argv["trie-cache-size"]
-        } --chain ${modFile} --  --chain ${relayRawSpecFile} --rpc-port 12003 --port 10003 --node-key ${
-          Object.keys(NODE_KEYS)[2]
-        }`
+        `${moonbeamBinaryPath} ${logs} ${commonParams.join(" ")} ${alithCollatorBaseParams.join(
+          " "
+        )} ${noDevParams.join(" ")}`
       );
   process.stdout.write(` ✓\n`);
 
