@@ -21,6 +21,7 @@ export type MOONBEAM_NETWORK_NAME =
   | "stagenet"
   | "alphanet"
   | "moonsama"
+  | "moonlama"
   | "moonsilver"
   | "moonriver"
   | "moonbeam";
@@ -31,7 +32,8 @@ export type NETWORK_NAME = MOONBEAM_NETWORK_NAME | POLKADOT_NETWORK_NAME;
 export const NETWORK_WS_URLS: { [name in NETWORK_NAME]: string } = {
   stagenet: "wss://wss.api.moondev.network",
   alphanet: "wss://wss.api.moonbase.moonbeam.network",
-  moonsama: "wss://wss.moonsama.gcp.purestake.run",
+  moonsama: "wss://fro-moon-moondev-1-moonsama-rpc-1.rv.moondev.network",
+  moonlama: "wss://deo-moon-moondev-1-moonlama-rpc-1.rv.moondev.network",
   moonsilver: "wss://wss.moonsilver.moonbeam.network",
   moonriver: "wss://wss.api.moonriver.moonbeam.network",
   moonbeam: "wss://wss.api.moonbeam.network",
@@ -41,7 +43,8 @@ export const NETWORK_WS_URLS: { [name in NETWORK_NAME]: string } = {
 export const NETWORK_HTTP_URLS: { [name in NETWORK_NAME]: string } = {
   stagenet: "https://deo-moon-moondev-1-stagenet-relay-rpc-1.rv.moondev.network",
   alphanet: "https://rpc.api.moonbase.moonbeam.network",
-  moonsama: "https://rpc.moonsama.gcp.purestake.run",
+  moonsama: "https://fro-moon-moondev-1-moonsama-rpc-1.rv.moondev.network",
+  moonlama: "https://deo-moon-moondev-1-moonlama-rpc-1.rv.moondev.network",
   moonsilver: "https://rpc.moonsilver.moonbeam.network",
   moonriver: "https://rpc.api.moonriver.moonbeam.network",
   moonbeam: "https://rpc.api.moonbeam.network",
@@ -59,12 +62,14 @@ export const NETWORK_CHAIN_MAPPING: { [name: string]: NETWORK_NAME } = {
   Moonbeam: "moonbeam",
   Kusama: "kusama",
   Polkadot: "polkadot",
+  Moonlama: "moonlama"
 };
 
 export const NETWORK_COLORS: { [name in NETWORK_NAME]: chalk.ChalkFunction } = {
   stagenet: chalk.blueBright,
   alphanet: chalk.greenBright,
   moonsama: chalk.magentaBright,
+  moonlama: chalk.magentaBright,
   moonsilver: chalk.yellowBright,
   moonriver: chalk.redBright,
   moonbeam: chalk.magentaBright,
