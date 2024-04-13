@@ -41,7 +41,7 @@ export const NETWORK_WS_URLS: { [name in NETWORK_NAME]: string } = {
   polkadot: "wss://rpc.polkadot.io",
 };
 export const NETWORK_HTTP_URLS: { [name in NETWORK_NAME]: string } = {
-  stagenet: "https://deo-moon-moondev-1-stagenet-relay-rpc-1.rv.moondev.network",
+  stagenet: "https://rpc.api.moondev.network",
   alphanet: "https://rpc.api.moonbase.moonbeam.network",
   moonsama: "https://fro-moon-moondev-1-moonsama-rpc-1.rv.moondev.network",
   moonlama: "https://deo-moon-moondev-1-moonlama-rpc-1.rv.moondev.network",
@@ -62,7 +62,7 @@ export const NETWORK_CHAIN_MAPPING: { [name: string]: NETWORK_NAME } = {
   Moonbeam: "moonbeam",
   Kusama: "kusama",
   Polkadot: "polkadot",
-  Moonlama: "moonlama"
+  Moonlama: "moonlama",
 };
 
 export const NETWORK_COLORS: { [name in NETWORK_NAME]: chalk.ChalkFunction } = {
@@ -161,7 +161,7 @@ export const getViemFor = (argv: Argv): PublicClient<Transport, Chain, true> => 
  */
 export const getViemAccountFor = (
   argv: Argv,
-  account: PrivateKeyAccount
+  account: PrivateKeyAccount,
 ): WalletClient<Transport, Chain, PrivateKeyAccount, true> => {
   const url = isKnownNetwork(argv.network) ? NETWORK_WS_URLS[argv.network] : argv.url;
   return createWalletClient({
@@ -191,7 +191,7 @@ export const getMonitoredApiFor = async (argv: Argv) => {
           ? NETWORK_COLORS[networkName](networkName.padStart(10, " "))
           : undefined,
       },
-      previousBlockDetails
+      previousBlockDetails,
     );
     previousBlockDetails = blockDetails;
   });

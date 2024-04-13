@@ -39,8 +39,8 @@ const getPrecompileStorageKey = (addressNumber: number) => {
       xxhashAsU8a("EVM", 128),
       xxhashAsU8a("AccountCodes", 128),
       blake2AsU8a(address, 128),
-      address
-    )
+      address,
+    ),
   ).toString("hex")}`;
 };
 
@@ -202,8 +202,8 @@ const main = async () => {
     const color = hasCode ? chalk.green : chalk.red;
     console.log(
       `${color(
-        `${(name ? `(${name}) ` : "").padStart(26)}${addressNumber.toString().padEnd(5)}`
-      )} [${storageKey}]: ${hasCode ? code : "None"}`
+        `${(name ? `(${name}) ` : "").padStart(26)}${addressNumber.toString().padEnd(5)}`,
+      )} [${storageKey}]: ${hasCode ? code : "None"}`,
     );
   }
 
@@ -244,13 +244,13 @@ const main = async () => {
               console.log(
                 `Failed to update precompile ${addressNumber}: ${
                   err.details || err.message || err
-                }}`
+                }}`,
               );
               return null;
             }
           }
           return null;
-        })
+        }),
       )
     ).filter((data) => !!data);
     console.log(`Waiting for receipts...${receipts.length}`);
@@ -263,9 +263,9 @@ const main = async () => {
         console.log(
           `|${addressNumber.toString().padStart(5, " ")}] ${
             receipt.status
-          } - ${hash} (#${receipt.gasUsed.toString()})`
+          } - ${hash} (#${receipt.gasUsed.toString()})`,
         );
-      })
+      }),
     );
     console.log(`Done`);
   }

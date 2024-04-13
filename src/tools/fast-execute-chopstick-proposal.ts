@@ -25,7 +25,7 @@ const argv = yargs(process.argv.slice(2))
 async function moveScheduledCallTo(
   api: ApiPromise,
   blockCounts: number,
-  verifier: (call: FrameSupportPreimagesBounded) => boolean
+  verifier: (call: FrameSupportPreimagesBounded) => boolean,
 ) {
   const blockNumber = (await api.rpc.chain.getHeader()).number.toNumber();
   // Fast forward the nudge referendum to the next block to get the refendum to be scheduled
@@ -44,7 +44,7 @@ async function moveScheduledCallTo(
           const id = scheduledEntry.unwrap().maybeId.unwrap().toHex();
           const lookup = await api.query.scheduler.lookup(id);
           debug(
-            `Checking lookup ${scheduledEntry.unwrap().maybeId.unwrap().toHex()}: ${lookup.isSome}`
+            `Checking lookup ${scheduledEntry.unwrap().maybeId.unwrap().toHex()}: ${lookup.isSome}`,
           );
           if (lookup.isSome) {
             const lookupKey = await api.query.scheduler.lookup.key(id);
@@ -87,7 +87,7 @@ const generateProposal = async (api: ApiPromise, proposalIndex: number) => {
             System: "Root",
           } as any,
           { Lookup: { Hash: preimage.method.hash.toHex(), len: preimage.method.encodedLength } },
-          { At: 0 }
+          { At: 0 },
         ),
         api.tx.referenda.placeDecisionDeposit(proposalIndex),
       ])
@@ -119,8 +119,8 @@ const main = async () => {
 
   console.log(
     `[#${chalk.green((await api.rpc.chain.getHeader()).number.toNumber())}]: Referedum ${chalk.red(
-      proposalIndex
-    )}`
+      proposalIndex,
+    )}`,
   );
 
   if (argv["generate-proposal"]) {
@@ -162,27 +162,27 @@ const main = async () => {
   try {
     fastProposal = api.registry.createType(
       `Option<PalletReferendaReferendumInfo>`,
-      fastProposalData
+      fastProposalData,
     );
   } catch {
     fastProposal = api.registry.createType(
       `Option<PalletReferendaReferendumInfoConvictionVotingTally>`,
-      fastProposalData
+      fastProposalData,
     );
   }
 
   console.log(
     `${chalk.blue("SetStorage")} Fast Proposal: ${chalk.red(
-      proposalIndex.toString()
-    )} referendumKey ${referendumKey}`
+      proposalIndex.toString(),
+    )} referendumKey ${referendumKey}`,
   );
   const result = await api.rpc("dev_setStorage", [[referendumKey, fastProposal.toHex()]]);
 
   // Fast forward the nudge referendum to the next block to get the refendum to be scheduled
   console.log(
     `${chalk.yellow("Rescheduling")} ${chalk.red("scheduler.nudgeReferendum")} to #${chalk.green(
-      (await api.rpc.chain.getHeader()).number.toNumber() + 2
-    )}`
+      (await api.rpc.chain.getHeader()).number.toNumber() + 2,
+    )}`,
   );
   await moveScheduledCallTo(api, 1, (call) => {
     if (!call.isInline) {
@@ -196,23 +196,23 @@ const main = async () => {
 
   console.log(
     `${chalk.yellow("Fast forward")} ${chalk.green(1)} to #${chalk.green(
-      (await api.rpc.chain.getHeader()).number.toNumber() + 1
-    )}`
+      (await api.rpc.chain.getHeader()).number.toNumber() + 1,
+    )}`,
   );
   await api.rpc("dev_newBlock", { count: 1 });
 
   // Fast forward the scheduled proposal
   console.log(
     `${chalk.yellow("Rescheduling")} proposal ${chalk.red(proposalIndex)} to #${chalk.green(
-      (await api.rpc.chain.getHeader()).number.toNumber() + 2
-    )}`
+      (await api.rpc.chain.getHeader()).number.toNumber() + 2,
+    )}`,
   );
   await moveScheduledCallTo(api, 1, (call) => call.isLookup && call.asLookup.toHex() == callHash);
 
   console.log(
     `${chalk.yellow("Fast forward")} ${chalk.green(1)} to #${chalk.green(
-      (await api.rpc.chain.getHeader()).number.toNumber() + 1
-    )}`
+      (await api.rpc.chain.getHeader()).number.toNumber() + 1,
+    )}`,
   );
   await api.rpc("dev_newBlock", { count: 1 });
   await api.disconnect();

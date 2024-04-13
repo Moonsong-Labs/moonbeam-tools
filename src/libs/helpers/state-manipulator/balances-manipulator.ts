@@ -48,13 +48,13 @@ export class BalancesManipulator implements StateManipulator {
     if (key.startsWith(this.totalIssuanceKey)) {
       const diff = this.balancesData.reduce(
         (p, { currentAmount, targetAmount }) => p + targetAmount - currentAmount,
-        0n
+        0n,
       );
       debug(
         `Found total issuance from ${this.totalIssuance} to ${this.totalIssuance + diff} [${
           diff > 0 ? "+" : ""
         }${diff}]`,
-        value
+        value,
       );
       const newTotalIssuance = this.totalIssuance + diff;
       return {
@@ -90,7 +90,7 @@ export class BalancesManipulator implements StateManipulator {
     const balance = this.balancesData.find((balance) => key.startsWith(balance.key));
     if (balance) {
       debug(
-        `Found balance account ${balance.account}, from ${balance.currentAmount} to ${balance.targetAmount}`
+        `Found balance account ${balance.account}, from ${balance.currentAmount} to ${balance.targetAmount}`,
       );
       return {
         action: "remove" as Action,

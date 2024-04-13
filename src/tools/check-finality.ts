@@ -40,16 +40,16 @@ const main = async () => {
         if (!final.isTrue) {
           console.log(
             `Block #${blockNumber.toString().padEnd(10, " ")} ${new Date(
-              parseInt(block.timestamp.toString()) * 1000
+              parseInt(block.timestamp.toString()) * 1000,
             ).toISOString()} (${block.hash}): ${final.isTrue} ${await getAccountIdentity(
               api,
-              block.author.toString()
-            )}`
+              block.author.toString(),
+            )}`,
           );
           return;
         }
       },
-      new Array(batchSize).fill(0)
+      new Array(batchSize).fill(0),
     ).catch(async (err) => {
       debug(`Failed ${i} retrying`, err);
       i -= batchSize;

@@ -33,7 +33,7 @@ const main = async () => {
     }
 
     const extrinsics = blockDetails.block.extrinsics.filter(
-      (e) => e.signer.toString().toLocaleLowerCase() == argv.address.toLocaleLowerCase()
+      (e) => e.signer.toString().toLocaleLowerCase() == argv.address.toLocaleLowerCase(),
     );
 
     if (extrinsics.length > 0) {

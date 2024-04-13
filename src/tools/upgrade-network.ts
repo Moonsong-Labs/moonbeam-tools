@@ -98,7 +98,7 @@ async function main() {
     if (privKey) {
       account = keyring.addFromUri(privKey, null, "ethereum");
       const { nonce: rawNonce, data: balance } = (await api.query.system.account(
-        account.address
+        account.address,
       )) as any;
       nonce = BigInt(rawNonce.toString());
     }
@@ -121,7 +121,7 @@ async function main() {
       await tryProxy(api.tx.sudo.sudo(proposal)).signAndSend(
         account,
         { nonce: nonce++ },
-        monitorSubmittedExtrinsic(api, { id: "sudo" })
+        monitorSubmittedExtrinsic(api, { id: "sudo" }),
       );
     } else {
       const proposal = api.tx.parachainSystem.authorizeUpgrade(codeHash);
@@ -137,12 +137,12 @@ async function main() {
             {
               Inline: encodedProposal,
             },
-            proposalAmount
-          )
+            proposalAmount,
+          ),
         ).signAndSend(
           account,
           { nonce: nonce++ },
-          monitorSubmittedExtrinsic(api, { id: "proposal" })
+          monitorSubmittedExtrinsic(api, { id: "proposal" }),
         );
       } else if (argv["send-proposal-as"] == "council-external") {
         let external = api.tx.democracy.externalProposeMajority({
@@ -150,22 +150,26 @@ async function main() {
         });
 
         await tryProxy(
-          api.tx.councilCollective.propose(collectiveThreshold, external, external.length)
+          api.tx.councilCollective.propose(collectiveThreshold, external, external.length),
         ).signAndSend(
           account,
           { nonce: nonce++ },
-          monitorSubmittedExtrinsic(api, { id: "proposal" })
+          monitorSubmittedExtrinsic(api, { id: "proposal" }),
         );
 
         if (argv["fast-track"]) {
           let fastTrack = api.tx.democracy.fastTrack(encodedHash, 1, 0);
 
           await tryProxy(
-            api.tx.techCommitteeCollective.propose(collectiveThreshold, fastTrack, fastTrack.length)
+            api.tx.techCommitteeCollective.propose(
+              collectiveThreshold,
+              fastTrack,
+              fastTrack.length,
+            ),
           ).signAndSend(
             account,
             { nonce: nonce++ },
-            monitorSubmittedExtrinsic(api, { id: "fast-track" })
+            monitorSubmittedExtrinsic(api, { id: "fast-track" }),
           );
         }
       }
@@ -177,7 +181,7 @@ async function main() {
               balance: 1n * 10n ** BigInt(api.registry.chainDecimals[0]),
               vote: { aye: true, conviction: 1 },
             },
-          })
+          }),
         ).signAndSend(account, { nonce: nonce++ }, monitorSubmittedExtrinsic(api, { id: "vote" }));
 
         await waitBlocks(api, 3);
@@ -185,7 +189,7 @@ async function main() {
         await tryProxy(api.tx.parachainSystem.enactAuthorizedUpgrade(codeHex)).signAndSend(
           account,
           { nonce: nonce++ },
-          monitorSubmittedExtrinsic(api, { id: "enactment" })
+          monitorSubmittedExtrinsic(api, { id: "enactment" }),
         );
       }
     }

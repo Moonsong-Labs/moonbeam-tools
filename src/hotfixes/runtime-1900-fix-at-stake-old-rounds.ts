@@ -100,12 +100,12 @@ async function main() {
       console.log(
         `[#${atBlock}] Proxying account: ${argv["proxy"]} ${
           argv["proxy-type"] ? `(${argv["proxy"]})` : ""
-        }`
+        }`,
       );
     }
 
     const { nonce: rawNonce, data: balance } = await api.query.system.account(
-      account.address as string
+      account.address as string,
     );
     nonce = BigInt(rawNonce.toString());
   }
@@ -114,7 +114,7 @@ async function main() {
     const currentRound = await apiAt.query.parachainStaking.round();
     console.log(`[#${atBlock}]         Starting: ${currentRound}`);
     const maxUnpaidRound = currentRound.current.sub(
-      apiAt.consts.parachainStaking.rewardPaymentDelay
+      apiAt.consts.parachainStaking.rewardPaymentDelay,
     );
 
     const checkedRounds = {};
@@ -151,7 +151,7 @@ async function main() {
           // skip if unpaid round
           if (round.gte(maxUnpaidRound)) {
             debug(
-              `Skipping round ${round} (current: ${currentRound.current.toNumber()}): ${candidate.toString()}`
+              `Skipping round ${round} (current: ${currentRound.current.toNumber()}): ${candidate.toString()}`,
             );
             return;
           }
@@ -165,7 +165,7 @@ async function main() {
           if (!(checkKey in checkedRounds)) {
             if (!(await apiAt.query.parachainStaking.points.size(round)).isZero()) {
               console.warn(
-                `Storage "Points" is not empty for round ${round.toString()}, entries will not be cleaned`
+                `Storage "Points" is not empty for round ${round.toString()}, entries will not be cleaned`,
               );
               checkedRounds[checkKey] = false;
               return;
@@ -173,7 +173,7 @@ async function main() {
 
             if (!(await apiAt.query.parachainStaking.delayedPayouts.size(round)).isZero()) {
               console.warn(
-                `Storage "DelayedPayouts" is not empty for round ${round.toString()}, entries will not be cleaned`
+                `Storage "DelayedPayouts" is not empty for round ${round.toString()}, entries will not be cleaned`,
               );
               checkedRounds[checkKey] = false;
               return;
@@ -186,7 +186,7 @@ async function main() {
           debug(
             `Round ${round.toString().padStart(5, " ")} [${storageSize
               .toString()
-              .padStart(5, " ")} Bytes]: ${candidate.toString()}`
+              .padStart(5, " ")} Bytes]: ${candidate.toString()}`,
           );
 
           return {
@@ -196,7 +196,7 @@ async function main() {
             key: key.toHex(),
           };
         },
-        query
+        query,
       );
       keysToRemove.push(...newKeysToRemove.filter((data) => !!data));
       if (queryCount % limit == 0) {
@@ -220,10 +220,10 @@ async function main() {
       `Found ${keysToRemove.length} keys through ${Object.keys(roundsToRemove).length} rounds ${
         keysToRemove.length > 0
           ? `(oldest: ${Math.min(...(Object.keys(roundsToRemove) as any))}, most recent: ${Math.max(
-              ...(Object.keys(roundsToRemove) as any)
+              ...(Object.keys(roundsToRemove) as any),
             )})`
           : ``
-      }`
+      }`,
     );
 
     if (keysToRemove.length == 0) {
@@ -238,30 +238,38 @@ async function main() {
 
     console.log(
       `Applying batch limits: [storage: ${Math.floor(
-        maxStorageSize / 1000
-      )}kB, extrinsic: ${Math.floor(maxExtrinsicSize / 1000)}kB, calls: ${maxCall}]`
+        maxStorageSize / 1000,
+      )}kB, extrinsic: ${Math.floor(maxExtrinsicSize / 1000)}kB, calls: ${maxCall}]`,
     );
 
     // We make batches of maxium ${maxAccountPerBatch} by adding 1 by 1
-    const batches = Object.keys(roundsToRemove).reduce((p, roundNumber: any) => {
-      const round = roundsToRemove[roundNumber];
-      const extrinsicSize = api.tx.system
-        .killPrefix(api.query.parachainStaking.atStake.keyPrefix(roundNumber), 1000)
-        .toU8a().length;
-      if (
-        p.length == 0 ||
-        p[p.length - 1].storageSize + round.storageSize > maxStorageSize ||
-        p[p.length - 1].extrinsicSize + extrinsicSize > maxExtrinsicSize ||
-        p[p.length - 1].rounds.length == maxCall
-      ) {
-        p.push({ totalCandidates: 0, storageSize: 0, extrinsicSize: 0, rounds: [] });
-      }
-      p[p.length - 1].totalCandidates += round.candidates;
-      p[p.length - 1].storageSize += round.storageSize;
-      p[p.length - 1].extrinsicSize += extrinsicSize;
-      p[p.length - 1].rounds.push({ round: roundNumber, candidates: round.candidates });
-      return p;
-    }, [] as { totalCandidates: number; extrinsicSize: number; storageSize: number; rounds: { round: number; candidates: number }[] }[]);
+    const batches = Object.keys(roundsToRemove).reduce(
+      (p, roundNumber: any) => {
+        const round = roundsToRemove[roundNumber];
+        const extrinsicSize = api.tx.system
+          .killPrefix(api.query.parachainStaking.atStake.keyPrefix(roundNumber), 1000)
+          .toU8a().length;
+        if (
+          p.length == 0 ||
+          p[p.length - 1].storageSize + round.storageSize > maxStorageSize ||
+          p[p.length - 1].extrinsicSize + extrinsicSize > maxExtrinsicSize ||
+          p[p.length - 1].rounds.length == maxCall
+        ) {
+          p.push({ totalCandidates: 0, storageSize: 0, extrinsicSize: 0, rounds: [] });
+        }
+        p[p.length - 1].totalCandidates += round.candidates;
+        p[p.length - 1].storageSize += round.storageSize;
+        p[p.length - 1].extrinsicSize += extrinsicSize;
+        p[p.length - 1].rounds.push({ round: roundNumber, candidates: round.candidates });
+        return p;
+      },
+      [] as {
+        totalCandidates: number;
+        extrinsicSize: number;
+        storageSize: number;
+        rounds: { round: number; candidates: number }[];
+      }[],
+    );
 
     const batchCount = batches.length;
 
@@ -272,8 +280,8 @@ async function main() {
         `propose batch ${i} for block +${i + 1}: [Rounds: ${batch.rounds.length} - Candidates: ${
           batch.totalCandidates
         } - Extrinsic: ${chalk.red(
-          `${Math.floor(batch.extrinsicSize / 1000)}kB`
-        )} - Storage: ${chalk.red(`${Math.floor(batch.storageSize / 1000)}kB`)}]`
+          `${Math.floor(batch.extrinsicSize / 1000)}kB`,
+        )} - Storage: ${chalk.red(`${Math.floor(batch.storageSize / 1000)}kB`)}]`,
       );
       // prepare the proposals
       return api.tx.scheduler.scheduleAfter(i + 1, null, 0, {
@@ -283,18 +291,18 @@ async function main() {
                 api.tx.system.remark(
                   `State cleanup: at-stake-old-round storage batch ${i + 1}/${batchCount} (keys: ${
                     batch.rounds.length
-                  } - storage: ~${Math.floor(batch.storageSize / 1000)}kB)`
+                  } - storage: ~${Math.floor(batch.storageSize / 1000)}kB)`,
                 ),
                 ...batch.rounds.map(({ round, candidates }) =>
                   api.tx.system.killPrefix(
                     api.query.parachainStaking.atStake.keyPrefix(round),
-                    candidates + 1
-                  )
+                    candidates + 1,
+                  ),
                 ),
               ])
             : api.tx.system.killPrefix(
                 api.query.parachainStaking.atStake.keyPrefix(batch.rounds[0].round),
-                batch.rounds[0].candidates + 1
+                batch.rounds[0].candidates + 1,
               ),
       });
     });
@@ -306,12 +314,12 @@ async function main() {
 
     console.log(
       `propose all-in batch Extrinsic: ${chalk.red(
-        `${Math.floor(finalProposal.toU8a().length / 1000)}kB`
-      )} - hash: ${encodedHash}`
+        `${Math.floor(finalProposal.toU8a().length / 1000)}kB`,
+      )} - hash: ${encodedHash}`,
     );
     if (finalProposal.toU8a().length > maxExtrinsicSize) {
       throw new Error(
-        `Final proposal is too big: ${finalProposal.toU8a().length} (limit: ${maxExtrinsicSize})`
+        `Final proposal is too big: ${finalProposal.toU8a().length} (limit: ${maxExtrinsicSize})`,
       );
     }
 
@@ -326,7 +334,7 @@ async function main() {
       await proxyTx(api.tx.sudo.sudo(finalProposal)).signAndSend(
         account,
         { nonce: nonce++ },
-        monitorSubmittedExtrinsic(api, { id: "sudo" })
+        monitorSubmittedExtrinsic(api, { id: "sudo" }),
       );
     } else {
       let refCount = (await api.query.democracy.referendumCount()).toNumber();
@@ -334,7 +342,7 @@ async function main() {
         await proxyTx(api.tx.democracy.notePreimage(encodedProposal)).signAndSend(
           account,
           { nonce: nonce++ },
-          monitorSubmittedExtrinsic(api, { id: "preimage" })
+          monitorSubmittedExtrinsic(api, { id: "preimage" }),
         );
       }
 
@@ -342,28 +350,32 @@ async function main() {
         await proxyTx(api.tx.democracy.propose(encodedHash, proposalAmount)).signAndSend(
           account,
           { nonce: nonce++ },
-          monitorSubmittedExtrinsic(api, { id: "proposal" })
+          monitorSubmittedExtrinsic(api, { id: "proposal" }),
         );
       } else if (argv["send-proposal-as"] == "council-external") {
         let external = api.tx.democracy.externalProposeMajority(encodedHash);
 
         await proxyTx(
-          api.tx.councilCollective.propose(collectiveThreshold, external, external.length)
+          api.tx.councilCollective.propose(collectiveThreshold, external, external.length),
         ).signAndSend(
           account,
           { nonce: nonce++ },
-          monitorSubmittedExtrinsic(api, { id: "proposal" })
+          monitorSubmittedExtrinsic(api, { id: "proposal" }),
         );
 
         if (argv["fast-track"]) {
           let fastTrack = api.tx.democracy.fastTrack(encodedHash, 1, 0);
 
           await proxyTx(
-            api.tx.techCommitteeCollective.propose(collectiveThreshold, fastTrack, fastTrack.length)
+            api.tx.techCommitteeCollective.propose(
+              collectiveThreshold,
+              fastTrack,
+              fastTrack.length,
+            ),
           ).signAndSend(
             account,
             { nonce: nonce++ },
-            monitorSubmittedExtrinsic(api, { id: "fast-track" })
+            monitorSubmittedExtrinsic(api, { id: "fast-track" }),
           );
         }
       }
@@ -375,7 +387,7 @@ async function main() {
               balance: 1n * 10n ** BigInt(api.registry.chainDecimals[0]),
               vote: { aye: true, conviction: 1 },
             },
-          })
+          }),
         ).signAndSend(account, { nonce: nonce++ }, monitorSubmittedExtrinsic(api, { id: "vote" }));
       }
     }

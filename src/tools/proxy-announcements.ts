@@ -106,7 +106,7 @@ const main = async () => {
       .flat(),
     ...Object.keys(sumByAddress).map((from) => [
       ["Total", from, "", numberWithCommas(sumByAddress[from]), ""],
-    ])
+    ]),
   );
 
   console.log(
@@ -123,7 +123,7 @@ const main = async () => {
         { alignment: "right" },
         { alignment: "left" },
       ],
-    })
+    }),
   );
 
   await api.disconnect();

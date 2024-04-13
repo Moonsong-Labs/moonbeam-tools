@@ -89,14 +89,14 @@ async function main() {
     const fastrack = api.tx.democracy.fastTrack(
       argv["proposal"],
       argv["voting"],
-      argv["enactment"]
+      argv["enactment"],
     );
     await tryProxy(
-      api.tx.techCommitteeCollective.propose(collectiveThreshold, fastrack, fastrack.length)
+      api.tx.techCommitteeCollective.propose(collectiveThreshold, fastrack, fastrack.length),
     ).signAndSend(
       account,
       { nonce: nonce++ },
-      monitorSubmittedExtrinsic(api, { id: "fast-track" })
+      monitorSubmittedExtrinsic(api, { id: "fast-track" }),
     );
   } finally {
     await waitForAllMonitoredExtrinsics();

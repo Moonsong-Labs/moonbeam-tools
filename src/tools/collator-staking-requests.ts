@@ -43,7 +43,7 @@ const main = async () => {
 
   if (specVersion >= 1500) {
     const delegationRequests = (await apiAt.query.parachainStaking.delegationScheduledRequests(
-      formattedCollator
+      formattedCollator,
     )) as any;
     for (const request of delegationRequests) {
       requests.push({
@@ -87,8 +87,8 @@ const main = async () => {
       tokens > 20000n
         ? chalk.red(tokens.toString().padStart(6))
         : tokens > 2000n
-        ? chalk.yellow(tokens.toString().padStart(6))
-        : tokens.toString().padStart(6);
+          ? chalk.yellow(tokens.toString().padStart(6))
+          : tokens.toString().padStart(6);
 
     const blockLefts =
       (req.when - roundInfo.current.toNumber()) * roundInfo.length.toNumber() + roundBlockLefts;
@@ -96,7 +96,7 @@ const main = async () => {
     console.log(
       `#${req.when} (${Math.floor(timeLeft / 60 / 60)
         .toString()
-        .padStart(5)}h): ${req.action.padStart(10)} ${tokenString} by ${req.delegatorId}`
+        .padStart(5)}h): ${req.action.padStart(10)} ${tokenString} by ${req.delegatorId}`,
     );
   }
   console.log(`Pending revoke: ${totalRevoked / 10n ** 18n}`);

@@ -56,7 +56,7 @@ const main = async () => {
   const gasPrice = await web3.eth.getGasPrice();
 
   const formattedCollators = argv.collators.map(
-    (collator) => api.registry.createType("EthereumAccountId", collator).toHex() as string
+    (collator) => api.registry.createType("EthereumAccountId", collator).toHex() as string,
   );
 
   const chainId = (await api.query.ethereumChainId.chainId()).toNumber();
@@ -87,7 +87,7 @@ const main = async () => {
       return p;
     }, 0n);
     const hasDelegationsToCollators = stateData.delegations.find((delegation) =>
-      formattedCollators.includes(delegation.owner.toHex())
+      formattedCollators.includes(delegation.owner.toHex()),
     );
     if (!hasDelegationsToCollators) {
       continue;
@@ -137,8 +137,8 @@ const main = async () => {
         tokens > 20000n
           ? chalk.red(tokens.toString().padStart(6))
           : tokens > 2000n
-          ? chalk.yellow(tokens.toString().padStart(6))
-          : tokens.toString().padStart(6);
+            ? chalk.yellow(tokens.toString().padStart(6))
+            : tokens.toString().padStart(6);
 
       console.log(`${req.collatorId}: ${tokenString} by ${req.delegatorId}`);
 
@@ -163,8 +163,8 @@ const main = async () => {
         tokens > 20000n
           ? chalk.red(tokens.toString().padStart(6))
           : tokens > 2000n
-          ? chalk.yellow(tokens.toString().padStart(6))
-          : tokens.toString().padStart(6);
+            ? chalk.yellow(tokens.toString().padStart(6))
+            : tokens.toString().padStart(6);
 
       console.log(`Leave: ${tokenString} by ${delegatorId}`);
 
@@ -189,7 +189,7 @@ const main = async () => {
     10,
     (tx) =>
       web3.eth.sendSignedTransaction(tx.rawTransaction).catch((e) => console.log(`Error: ${e}`)),
-    txs
+    txs,
   );
 
   console.log(`Sent ${revokes.length} revokes`);

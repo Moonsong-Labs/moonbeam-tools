@@ -129,7 +129,7 @@ const main = async () => {
 
       const sourceData = await axios
         .get(
-          `https://api-${runtimeName}.moonscan.io/api?module=contract&action=getsourcecode&address=${address}`
+          `https://api-${runtimeName}.moonscan.io/api?module=contract&action=getsourcecode&address=${address}`,
         )
         .then((res) => {
           const jsonResp = res.data;

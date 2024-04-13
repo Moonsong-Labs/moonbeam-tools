@@ -40,8 +40,8 @@ const main = async () => {
   const toBlockNumber = argv.to
     ? argv.to
     : argv.during && argv.from
-    ? argv.during + argv.from
-    : (await api.rpc.chain.getBlock()).block.header.number.toNumber();
+      ? argv.during + argv.from
+      : (await api.rpc.chain.getBlock()).block.header.number.toNumber();
   const fromBlockNumber = argv.from ? argv.from : argv.during ? toBlockNumber - argv.during : 0;
 
   const collators = {};
@@ -65,11 +65,11 @@ const main = async () => {
       }
 
       const parachainData = blockDetails.block.extrinsics.find(
-        (e) => e.method.section == "parachainSystem" && e.method.method == "setValidationData"
+        (e) => e.method.section == "parachainSystem" && e.method.method == "setValidationData",
       ).args[0] as ParachainInherentData;
 
       const round = Math.ceil(
-        (blockDetails.block.header.number.toNumber() - INITIAL_ROUND_BLOCK["moonbeam"]) / 1800
+        (blockDetails.block.header.number.toNumber() - INITIAL_ROUND_BLOCK["moonbeam"]) / 1800,
       );
       blocksPerRound;
       if (!blocksPerRound[round]) {
@@ -87,7 +87,7 @@ const main = async () => {
       }
       collators[blockDetails.authorName]++;
       blockCount++;
-    }
+    },
   );
 
   fs.writeFileSync("rewards.json", JSON.stringify(blocksPerRound, null, 2));
@@ -96,7 +96,7 @@ const main = async () => {
     for (const blockNumber of Object.keys(blocksPerRound[round]).sort()) {
       const paraBlock = blocksPerRound[round][blockNumber];
       console.log(
-        `${round}: #${blockNumber} (r: ${paraBlock.blockRelayNumber}) - ${paraBlock.author}`
+        `${round}: #${blockNumber} (r: ${paraBlock.blockRelayNumber}) - ${paraBlock.author}`,
       );
     }
   }

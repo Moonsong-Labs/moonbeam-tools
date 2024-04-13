@@ -39,7 +39,7 @@ const main = async () => {
   const runtimeVersion = upgradeInfo.specVersion.toNumber();
 
   console.log(
-    `Using data from block #${atBlockNumber} (${api.runtimeVersion.specName.toString()}-${runtimeVersion})`
+    `Using data from block #${atBlockNumber} (${api.runtimeVersion.specName.toString()}-${runtimeVersion})`,
   );
 
   // We retrieve all storage keys. Since we do not have access to the storage item
@@ -68,7 +68,7 @@ const main = async () => {
     const keyring = new Keyring({ type: "ethereum" });
     const account = await keyring.addFromUri(argv["account-priv-key"], null, "ethereum");
     const { nonce: rawNonce, data: balance } = (await api.query.system.account(
-      account.address
+      account.address,
     )) as any;
     let nonce = BigInt(rawNonce.toString());
 

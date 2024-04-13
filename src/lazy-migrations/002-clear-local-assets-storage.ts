@@ -75,12 +75,12 @@ async function main() {
 
     const extrinsicCall = api.tx["moonbeamLazyMigrations"].clearLocalAssetsStorage(
       max_assets,
-      entries_to_remove
+      entries_to_remove,
     );
     await extrinsicCall.signAndSend(
       account,
       { nonce: nonce++ },
-      monitorSubmittedExtrinsic(api, { id: "migration" })
+      monitorSubmittedExtrinsic(api, { id: "migration" }),
     );
   } finally {
     await waitForAllMonitoredExtrinsics();

@@ -68,7 +68,7 @@ const main = async () => {
       const senderKey = api.registry.createType("ParaId", key.toU8a().slice(-8, -4));
       const receiverKey = api.registry.createType("ParaId", key.toU8a().slice(-4));
       return [senderKey, receiverKey, chalk.yellow("Pending"), "", request.maxCapacity, ""];
-    })
+    }),
   );
 
   console.log(
@@ -78,7 +78,7 @@ const main = async () => {
         lineIndex == 1 ||
         lineIndex == tableData.length ||
         lineIndex == filteredChannels.length + 1,
-    })
+    }),
   );
   await api.disconnect();
 };

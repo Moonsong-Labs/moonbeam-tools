@@ -17,7 +17,7 @@ export const deployContract = async (
   contract: SolidityContractBundle,
   deployer: Account,
   nonce: number,
-  gasLimit = 1000000
+  gasLimit = 1000000,
 ) => {
   // 1M gas contract call (big_loop)
   const tokens = (await customWeb3Request(web3, "eth_getBalance", [deployer.address])).result;
@@ -40,7 +40,7 @@ export const deployContract = async (
       gas: gasLimit,
       nonce,
     },
-    deployer.privateKey
+    deployer.privateKey,
   );
   const result = await customWeb3Request(web3, "eth_sendRawTransaction", [tx.rawTransaction]);
   if (result.error) {
@@ -69,7 +69,7 @@ export const callContract = async (
   contractAddress: string,
   call: { funcName: string; params: any[]; gasLimit: number },
   caller: Account,
-  nonce: number
+  nonce: number,
 ) => {
   const contract = new web3.eth.Contract(contractBundle.abi, contractAddress);
 
@@ -84,7 +84,7 @@ export const callContract = async (
       gas: call.gasLimit,
       nonce,
     },
-    caller.privateKey
+    caller.privateKey,
   );
 
   const result = await customWeb3Request(web3, "eth_sendRawTransaction", [tx.rawTransaction]);

@@ -57,7 +57,7 @@ export async function getParaApi(network: "kusama" | "polkadot", id: string) {
       ? [...prodParasKusama, ...prodParasKusamaCommon]
       : [...prodParasPolkadot, ...prodParasPolkadotCommon];
   const nodes = Object.values(
-    prodParas.find((e) => e.paraId.toString() === id)?.providers || {}
+    prodParas.find((e) => e.paraId.toString() === id)?.providers || {},
   ).filter((e) => e.startsWith("wss://"));
 
   if (!nodes.length) {
@@ -94,8 +94,8 @@ const main = async () => {
   const network = relayRuntime.startsWith("kusama")
     ? "kusama"
     : relayRuntime.startsWith("polkadot")
-    ? "polkadot"
-    : null;
+      ? "polkadot"
+      : null;
   if (!network) {
     console.log("Unknown network", relayRuntime);
     return;
@@ -125,12 +125,12 @@ const main = async () => {
         paras[id].version[0] == ""
           ? "[DOWN]"
           : `[XCMQueue: ${paras[id].version[0]}, XCMSafe: ${paras[id].version[1]}]`
-      } has ${paras[id].connections.length} connections`
+      } has ${paras[id].connections.length} connections`,
     );
     console.log(
       `  ${paras[id].connections
         .map((c) => `${c}[${paras[c].version[0]},${paras[c].version[1]}]`)
-        .join(", ")}`
+        .join(", ")}`,
     );
   }
   await api.disconnect();

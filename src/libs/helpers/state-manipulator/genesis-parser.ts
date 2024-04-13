@@ -41,7 +41,7 @@ export interface StateManipulator {
   // Will get executed for each line of the state file during the write phase
   // Can decide to remove/keep the original line and also add extra lines
   processWrite: (
-    line: StateLine
+    line: StateLine,
   ) => { action: Action; extraLines?: StateLine[] } | undefined | void;
 }
 
@@ -51,7 +51,7 @@ export function encodeStorageKey(module, name) {
 
 export function encodeStorageBlake128MapKey(module, name, key) {
   return u8aToHex(
-    u8aConcat(xxhashAsU8a(module, 128), xxhashAsU8a(name, 128), blake2AsU8a(key, 128), key)
+    u8aConcat(xxhashAsU8a(module, 128), xxhashAsU8a(name, 128), blake2AsU8a(key, 128), key),
   );
 }
 
@@ -63,8 +63,8 @@ export function encodeStorageBlake128DoubleMapKey(module, name, [key1, key2]) {
       blake2AsU8a(key1, 128),
       key1,
       blake2AsU8a(key2, 128),
-      key2
-    )
+      key2,
+    ),
   );
 }
 
@@ -79,7 +79,7 @@ export function encodeStorageBlake128DoubleMapKey(module, name, [key1, key2]) {
 export async function processState(
   inputFile: string,
   destFile: string,
-  manipulators: StateManipulator[]
+  manipulators: StateManipulator[],
 ) {
   if (!inputFile || !destFile) {
     throw new Error("Missing input and destination file");
@@ -90,7 +90,7 @@ export async function processState(
   // Read each line and callback with the line and extracted key/value if available
   const processLines = async (
     inputFile: string,
-    callback: (line: string, stateLine?: StateLine, meta?: LineMeta) => void
+    callback: (line: string, stateLine?: StateLine, meta?: LineMeta) => void,
   ) => {
     const inFile = await fs.open(inputFile, "r");
     const lineReaderPass = readline.createInterface({
@@ -127,8 +127,8 @@ export async function processState(
           keyValue[1][0] == '"'
             ? keyValue[1].split('"')[1]
             : keyValue[1][0] == "{" || keyValue[1][0] == "["
-            ? null
-            : keyValue[1].split(",")[0];
+              ? null
+              : keyValue[1].split(",")[0];
       }
       const endWithComma = line[line.length - 1] == ",";
       let indentSpaces;
@@ -174,8 +174,8 @@ export async function processState(
         debug(
           `      - ${chalk.red(action.padStart(6, " "))} ${stateLine.key}: ${stateLine.value.slice(
             0,
-            100
-          )}`
+            100,
+          )}`,
         );
         if (action == "remove") {
           keepLine = false;
@@ -185,7 +185,7 @@ export async function processState(
             debug(
               `      - ${chalk.green("add".padStart(6, " "))} ${line.key}: ${line.value
                 .toString()
-                .slice(0, 100)}`
+                .slice(0, 100)}`,
             );
           }
 
@@ -194,7 +194,7 @@ export async function processState(
               (extraLine) =>
                 `${new Array(lineMeta.indentSpaces).fill(" ").join("")}"${extraLine.key}": ${
                   typeof extraLine.value == "string" ? `"${extraLine.value}"` : `${extraLine.value}`
-                },\n`
+                },\n`,
             )
             .join("");
         }

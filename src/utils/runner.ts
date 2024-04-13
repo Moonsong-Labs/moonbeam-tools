@@ -9,7 +9,7 @@ const execAsync = promisify(child_process.exec);
 export async function runTask(
   cmd: string,
   { cwd, env }: { cwd: string; env?: NodeJS.ProcessEnv } = { cwd: process.cwd() },
-  title?: string
+  title?: string,
 ): Promise<string> {
   debug(`${title ? `Title: ${title}\n` : ""}Running task on directory ${cwd}: ${cmd}\n`);
   try {
@@ -26,7 +26,7 @@ export async function runTask(
 export async function spawnTask(
   cmd: string,
   { cwd, env }: { cwd: string; env?: NodeJS.ProcessEnv } = { cwd: process.cwd() },
-  title?: string
+  title?: string,
 ): Promise<ChildProcessWithoutNullStreams> {
   debug(`${title ? `Title: ${title}\n` : ""}Running task on directory ${process.cwd()}: ${cmd}\n`);
   try {
@@ -39,7 +39,7 @@ export async function spawnTask(
       {
         cwd,
         env,
-      }
+      },
     );
     return process;
   } catch (error) {

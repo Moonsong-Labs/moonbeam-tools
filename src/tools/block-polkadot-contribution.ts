@@ -56,7 +56,7 @@ const main = async () => {
       const records = await api.query.system.events.at(blockHash);
 
       const contrib = records.find(
-        ({ event }) => event.section == "crowdloan" && event.method == "Contributed"
+        ({ event }) => event.section == "crowdloan" && event.method == "Contributed",
       );
       if (contrib) {
         const [account, paraId, amount] = contrib.event.data as any;
@@ -75,20 +75,20 @@ const main = async () => {
         contributor.amount += amount.toBigInt();
       }
     },
-    blockNumbers
+    blockNumbers,
   );
 
   for (const paraId in contributors) {
     console.log(`=== ${paraId}`);
     const para = contributors[paraId];
     const accounts = Object.keys(para).sort((a, b) =>
-      para[a].amount > para[b].amount ? 1 : para[a].amount < para[b].amount ? -1 : 0
+      para[a].amount > para[b].amount ? 1 : para[a].amount < para[b].amount ? -1 : 0,
     );
     for (const account of accounts) {
       console.log(
         ` - ${account.padStart(48, " ")} [${para[account].count
           .toString()
-          .padStart(6)}x]: ${printDOTs(para[account].amount)}`
+          .padStart(6)}x]: ${printDOTs(para[account].amount)}`,
       );
     }
     console.log(`\n`);

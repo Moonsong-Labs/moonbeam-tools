@@ -18,11 +18,11 @@ export async function customWeb3Request(web3: Web3, method: string, params: any[
           reject(
             `Failed to send custom request (${method} (${params.join(",")})): ${
               error.message || error.toString()
-            }`
+            }`,
           );
         }
         resolve(result);
-      }
+      },
     );
   });
 }

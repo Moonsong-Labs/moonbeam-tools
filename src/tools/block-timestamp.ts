@@ -31,10 +31,10 @@ const main = async () => {
 
   if (atBlockNumber <= currentBlock.block.header.number.toNumber()) {
     const pastBlock = await api.rpc.chain.getBlock(
-      (await api.rpc.chain.getBlockHash(atBlockNumber)).toString()
+      (await api.rpc.chain.getBlockHash(atBlockNumber)).toString(),
     );
     const timestampExt = pastBlock.block.extrinsics.find(
-      (e) => e.method.section == "timestamp" && e.method.method == "set"
+      (e) => e.method.section == "timestamp" && e.method.method == "set",
     );
 
     const timestamp = api.registry.createType("Compact<u64>", timestampExt.data);
@@ -47,15 +47,15 @@ const main = async () => {
     const currentTimestamp = api.registry.createType(
       "Compact<u64>",
       currentBlock.block.extrinsics.find(
-        (e) => e.method.section == "timestamp" && e.method.method == "set"
-      ).data
+        (e) => e.method.section == "timestamp" && e.method.method == "set",
+      ).data,
     );
 
     const targetDate = new Date(currentTimestamp.toNumber() + 6000 * diffCount);
     console.log(
       `#${currentBlock.block.header.number.toNumber()}: ${new Date(
-        currentTimestamp.toNumber()
-      ).toUTCString()}`
+        currentTimestamp.toNumber(),
+      ).toUTCString()}`,
     );
 
     // We get the timestamp from X blocks before to have a better approximation
@@ -64,21 +64,21 @@ const main = async () => {
       const previousBlock = await api.rpc.chain.getBlock(
         (
           await api.rpc.chain.getBlockHash(currentBlock.block.header.number.toNumber() - diffCount)
-        ).toString()
+        ).toString(),
       );
       const previousTimestamp = api.registry.createType(
         "Compact<u64>",
         previousBlock.block.extrinsics.find(
-          (e) => e.method.section == "timestamp" && e.method.method == "set"
-        ).data
+          (e) => e.method.section == "timestamp" && e.method.method == "set",
+        ).data,
       );
 
       const expectedDate = new Date(
-        currentTimestamp.toNumber() + (currentTimestamp.toNumber() - previousTimestamp.toNumber())
+        currentTimestamp.toNumber() + (currentTimestamp.toNumber() - previousTimestamp.toNumber()),
       );
 
       console.log(
-        `#${atBlockNumber} (+${diffCount}): target: ${targetDate.toUTCString()}, expected: ${expectedDate.toUTCString()}`
+        `#${atBlockNumber} (+${diffCount}): target: ${targetDate.toUTCString()}, expected: ${expectedDate.toUTCString()}`,
       );
     } else {
       console.log(`#${atBlockNumber} (+${diffCount}): target: ${targetDate.toUTCString()}`);

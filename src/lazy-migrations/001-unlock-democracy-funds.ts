@@ -35,7 +35,7 @@ const main = async () => {
   const runtimeVersion = upgradeInfo.specVersion.toNumber();
 
   console.log(
-    `Current block number #${atBlockNumber} with runtime version ${api.runtimeVersion.specName.toString()}-${runtimeVersion}`
+    `Current block number #${atBlockNumber} with runtime version ${api.runtimeVersion.specName.toString()}-${runtimeVersion}`,
   );
 
   const keyring = new Keyring({ type: "ethereum" });
@@ -54,12 +54,12 @@ const main = async () => {
     console.log("Unlocking democracy funds...");
     while (migrationCompleted === false) {
       const tx = api.tx.moonbeamLazyMigrations.unlockDemocracyFunds(
-        MAX_UNLOCK_DEMOCRACY_FUNDS_LIMIT
+        MAX_UNLOCK_DEMOCRACY_FUNDS_LIMIT,
       );
       await tx.signAndSend(
         account,
         { nonce: nonce++ },
-        monitorSubmittedExtrinsic(api, { id: "unlock_democracy_funds" })
+        monitorSubmittedExtrinsic(api, { id: "unlock_democracy_funds" }),
       );
       await waitForAllMonitoredExtrinsics();
       migrationCompleted = (

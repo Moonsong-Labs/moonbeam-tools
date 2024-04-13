@@ -30,7 +30,7 @@ const main = async () => {
   console.log(
     `#${blockNumber} - ${
       argv.address
-    } [free: ${account.data.free.toBigInt()}, reserved: ${account.data.reserved.toBigInt()}, miscFrozen: ${account.data.miscFrozen.toBigInt()}, feeFrozen: ${account.data.feeFrozen.toBigInt()}]`
+    } [free: ${account.data.free.toBigInt()}, reserved: ${account.data.reserved.toBigInt()}, miscFrozen: ${account.data.miscFrozen.toBigInt()}, feeFrozen: ${account.data.feeFrozen.toBigInt()}]`,
   );
   api.disconnect();
 };

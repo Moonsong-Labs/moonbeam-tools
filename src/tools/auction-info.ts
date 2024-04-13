@@ -111,7 +111,7 @@ const main = async () => {
 
     let [auctionStartTimestamp, auctionStartDate] = await calculateTimestamp(
       api,
-      Number(sortedKeys[index].toString())
+      Number(sortedKeys[index].toString()),
     );
 
     let slotsLeasedlready =
@@ -122,12 +122,12 @@ const main = async () => {
       Number(currentAuctionIndex) + Number(index) + Number(1),
       sortedKeys[index],
       auctionStartTimestamp,
-      auctionStartDate
+      auctionStartDate,
     );
     console.log(
       "It will have a duration of %s blocks for lease period %s",
       nextAuction.duration,
-      nextAuction.lease_period
+      nextAuction.lease_period,
     );
 
     let candleBeginBlock = Number(sortedKeys[index].toString()) + Number(nextAuction.duration);
@@ -138,7 +138,7 @@ const main = async () => {
       "Candle will happen at block %s, timestamp %s, date %s",
       candleBeginBlock,
       candleStartTimestamp,
-      candleStartDate
+      candleStartDate,
     );
 
     let biddingEndBlock =
@@ -152,7 +152,7 @@ const main = async () => {
       "Bidding end will happen at block %s, timestamp %s, date %s",
       biddingEndBlock,
       biddingEndTimestamp,
-      biddingDate
+      biddingDate,
     );
 
     let yourLeaseStartSlot =
@@ -168,14 +168,14 @@ const main = async () => {
       .add(u8aToBn(leaseOffset.toU8a()));
     let [leaseStartimestamp, leaseStartDate] = await calculateTimestamp(
       api,
-      Number(lease_start_block.toString())
+      Number(lease_start_block.toString()),
     );
 
     console.log(
       "The new lease will start at block %s, timestamp %s, date %s",
       lease_start_block.toString(),
       leaseStartimestamp,
-      leaseStartDate
+      leaseStartDate,
     );
 
     let lease_end_block =
@@ -183,20 +183,20 @@ const main = async () => {
       Number(leasePeriodPerSlot.toString()) * Number(leasePeriod.toString());
     let [leaseEndtimestamp, leaseEndDate] = await calculateTimestamp(
       api,
-      Number(lease_end_block.toString())
+      Number(lease_end_block.toString()),
     );
 
     console.log(
       "The new lease will end at block %s, timestamp %s, date %s",
       lease_end_block.toString(),
       leaseEndtimestamp,
-      leaseEndDate
+      leaseEndDate,
     );
 
     console.log(
       "For this auction you need to bid from %s to %s",
       Math.floor(yourLeaseStartSlot).toString(),
-      yourLeaseEndSlot.toString()
+      yourLeaseEndSlot.toString(),
     );
   }
 

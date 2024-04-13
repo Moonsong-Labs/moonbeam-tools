@@ -49,7 +49,7 @@ const main = async () => {
     api.query.parachainStaking.candidateInfo.entries(),
   ]);
   const candidateNames = await Promise.all(
-    allCandidateInfo.map((c: any) => getAccountIdentity(api, `0x${c[0].toHex().slice(-40)}`))
+    allCandidateInfo.map((c: any) => getAccountIdentity(api, `0x${c[0].toHex().slice(-40)}`)),
   );
 
   // Wait for data to be retrieved
@@ -68,7 +68,7 @@ const main = async () => {
   const delegatorRequests = combineRequestsPerDelegators(
     specVersion,
     delegationRequests,
-    delegatorState
+    delegatorState,
   );
 
   const delegators = delegatorState
@@ -111,7 +111,7 @@ const main = async () => {
         { alignment: "right" },
         { alignment: "right" },
       ],
-    })
+    }),
   );
   await api.disconnect();
 };

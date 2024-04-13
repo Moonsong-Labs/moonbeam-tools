@@ -12,8 +12,8 @@ async function getFutureBlockDate(api: ApiPromise, blockNumber: number, currentB
   const currentTimestamp = api.registry.createType(
     "Compact<u64>",
     currentBlock.block.extrinsics.find(
-      (e) => e.method.section == "timestamp" && e.method.method == "set"
-    ).data
+      (e) => e.method.section == "timestamp" && e.method.method == "set",
+    ).data,
   );
 
   // Too far in the future to compure accurately,
@@ -21,20 +21,20 @@ async function getFutureBlockDate(api: ApiPromise, blockNumber: number, currentB
   // TODO: will need to change once we go with 6s block time
   if (diffCount > currentBlock.block.header.number.toNumber()) {
     const firstBlock = await api.rpc.chain.getBlock(
-      (await api.rpc.chain.getBlockHash(1)).toString()
+      (await api.rpc.chain.getBlockHash(1)).toString(),
     );
 
     const firstTimestamp = api.registry.createType(
       "Compact<u64>",
       firstBlock.block.extrinsics.find(
-        (e) => e.method.section == "timestamp" && e.method.method == "set"
-      ).data
+        (e) => e.method.section == "timestamp" && e.method.method == "set",
+      ).data,
     );
 
     const expected = currentBlock.block.header.number.toNumber() * 12 * 1000 * 1000;
     const past = currentTimestamp.toNumber() - firstTimestamp.toNumber();
     const expectedDate = new Date(
-      currentTimestamp.toNumber() + (diffCount * 12 * 1000 * 1000 * past) / expected
+      currentTimestamp.toNumber() + (diffCount * 12 * 1000 * 1000 * past) / expected,
     );
     return moment.utc(expectedDate);
   }
@@ -42,18 +42,18 @@ async function getFutureBlockDate(api: ApiPromise, blockNumber: number, currentB
   const previousBlock = await api.rpc.chain.getBlock(
     (
       await api.rpc.chain.getBlockHash(currentBlock.block.header.number.toNumber() - diffCount)
-    ).toString()
+    ).toString(),
   );
 
   const previousTimestamp = api.registry.createType(
     "Compact<u64>",
     previousBlock.block.extrinsics.find(
-      (e) => e.method.section == "timestamp" && e.method.method == "set"
-    ).data
+      (e) => e.method.section == "timestamp" && e.method.method == "set",
+    ).data,
   );
 
   const expectedDate = new Date(
-    currentTimestamp.toNumber() + (currentTimestamp.toNumber() - previousTimestamp.toNumber())
+    currentTimestamp.toNumber() + (currentTimestamp.toNumber() - previousTimestamp.toNumber()),
   );
 
   return moment.utc(expectedDate);
@@ -67,10 +67,10 @@ async function getPastBlockDate(api: ApiPromise, blockNumber: number, currentBlo
   }
 
   const pastBlock = await api.rpc.chain.getBlock(
-    (await api.rpc.chain.getBlockHash(blockNumber)).toString()
+    (await api.rpc.chain.getBlockHash(blockNumber)).toString(),
   );
   const timestampExt = pastBlock.block.extrinsics.find(
-    (e) => e.method.section == "timestamp" && e.method.method == "set"
+    (e) => e.method.section == "timestamp" && e.method.method == "set",
   );
 
   const timestamp = api.registry.createType("Compact<u64>", timestampExt.data);
