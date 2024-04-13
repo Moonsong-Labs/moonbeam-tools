@@ -62,7 +62,7 @@ export const NETWORK_CHAIN_MAPPING: { [name: string]: NETWORK_NAME } = {
   Moonbeam: "moonbeam",
   Kusama: "kusama",
   Polkadot: "polkadot",
-  Moonlama: "moonlama"
+  Moonlama: "moonlama",
 };
 
 export const NETWORK_COLORS: { [name in NETWORK_NAME]: chalk.ChalkFunction } = {
