@@ -67,7 +67,7 @@ const main = async () => {
         { alignment: "right" },
         { alignment: "right" },
       ],
-    })
+    }),
   );
   await api.disconnect();
 };

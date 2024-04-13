@@ -77,7 +77,7 @@ async function main() {
     if (argv["account-priv-key"]) {
       account = keyring.addFromUri(argv["account-priv-key"], null, "ethereum");
       const { nonce: rawNonce, data: balance } = (await api.query.system.account(
-        account.address
+        account.address,
       )) as any;
       nonce = BigInt(rawNonce.toString());
     }
@@ -106,21 +106,21 @@ async function main() {
     console.log(
       `DelegatorReserveToLockMigrations: ${delegatorKeys.length
         .toString()
-        .padStart(6, " ")} (prefix: ${delegatorPrefix})`
+        .padStart(6, " ")} (prefix: ${delegatorPrefix})`,
     );
     console.log(
       ` CollatorReserveToLockMigrations: ${collatorKeys.length
         .toString()
-        .padStart(6, " ")} (prefix: ${collatorPrefix})`
+        .padStart(6, " ")} (prefix: ${collatorPrefix})`,
     );
 
     const proposal = api.tx.utility.batch([
       api.tx.system.remark(
-        `State cleanup: CollatorReserveToLockMigrations storage (keys: 1 - subkeys: ${collatorKeys.length})`
+        `State cleanup: CollatorReserveToLockMigrations storage (keys: 1 - subkeys: ${collatorKeys.length})`,
       ),
       api.tx.system.killPrefix(collatorPrefix, collatorKeys.length),
       api.tx.system.remark(
-        `State cleanup: DelegatorReserveToLockMigrations storage (keys: 1 - subkeys: ${delegatorKeys.length})`
+        `State cleanup: DelegatorReserveToLockMigrations storage (keys: 1 - subkeys: ${delegatorKeys.length})`,
       ),
       api.tx.system.killPrefix(delegatorPrefix, delegatorKeys.length),
     ]);
@@ -143,7 +143,7 @@ async function main() {
           .signAndSend(
             account,
             { nonce: nonce++ },
-            monitorSubmittedExtrinsic(api, { id: "preimage" })
+            monitorSubmittedExtrinsic(api, { id: "preimage" }),
           );
       }
 
@@ -153,7 +153,7 @@ async function main() {
           .signAndSend(
             account,
             { nonce: nonce++ },
-            monitorSubmittedExtrinsic(api, { id: "proposal" })
+            monitorSubmittedExtrinsic(api, { id: "proposal" }),
           );
       } else if (argv["send-proposal-as"] == "council-external") {
         let external = api.tx.democracy.externalProposeMajority(encodedHash);
@@ -163,7 +163,7 @@ async function main() {
           .signAndSend(
             account,
             { nonce: nonce++ },
-            monitorSubmittedExtrinsic(api, { id: "proposal" })
+            monitorSubmittedExtrinsic(api, { id: "proposal" }),
           );
 
         if (argv["fast-track"]) {
@@ -174,7 +174,7 @@ async function main() {
             .signAndSend(
               account,
               { nonce: nonce++ },
-              monitorSubmittedExtrinsic(api, { id: "fast-track" })
+              monitorSubmittedExtrinsic(api, { id: "fast-track" }),
             );
         }
       }

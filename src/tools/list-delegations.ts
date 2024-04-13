@@ -59,7 +59,7 @@ const main = async () => {
   const delegatorState = delegatorStateData.unwrap();
 
   const candidateNames = await Promise.all(
-    delegatorState.delegations.map((d) => getAccountIdentity(api, d.owner.toHex()))
+    delegatorState.delegations.map((d) => getAccountIdentity(api, d.owner.toHex())),
   );
 
   const delegations = delegatorState.delegations;
@@ -73,7 +73,7 @@ const main = async () => {
   const data = delegations
     .map((delegation, i) => {
       const request = delegatorRequests[delegator.toLocaleLowerCase()]?.find(
-        (req) => req.collatorId == delegation.owner.toHex()
+        (req) => req.collatorId == delegation.owner.toHex(),
       );
       total += delegation.amount.toBigInt();
       revokable += request ? request.amount / 10n ** 18n : 0n;
@@ -115,7 +115,7 @@ const main = async () => {
         { alignment: "right" },
         { alignment: "right" },
       ],
-    })
+    }),
   );
   await api.disconnect();
 };

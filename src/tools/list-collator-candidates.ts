@@ -55,7 +55,7 @@ const main = async () => {
   const candidateNames = await getAccountIdentities(
     api,
     candidateData.map((c) => `0x${c[0].toHex().slice(-40)}`),
-    blockHash
+    blockHash,
   );
 
   // Wait for data to be retrieved
@@ -89,7 +89,7 @@ const main = async () => {
   const delegatorRequests = combineRequestsPerDelegators(
     specVersion,
     delegationRequests,
-    delegatorState
+    delegatorState,
   );
 
   for (const state of delegatorState) {
@@ -110,7 +110,7 @@ const main = async () => {
       if (candidates[request.collatorId] && (!isLeavingAt || request.when < isLeavingAt)) {
         candidates[request.collatorId].pendingRevoke += BigInt(request.amount);
         const day = Math.ceil(
-          (Math.max(request.when, roundInfo.current.toNumber()) - roundInfo.current.toNumber()) / 4
+          (Math.max(request.when, roundInfo.current.toNumber()) - roundInfo.current.toNumber()) / 4,
         );
         delete delegationLeft[request.collatorId]; // The delegation will not count anymore if the delegator is leaving
         candidates[request.collatorId].totalRevokable[day] += BigInt(request.amount);
@@ -120,7 +120,7 @@ const main = async () => {
       for (const collatorId of Object.keys(delegationLeft)) {
         const delegation = delegationLeft[collatorId];
         const day = Math.ceil(
-          (Math.max(isLeavingAt, roundInfo.current.toNumber()) - roundInfo.current.toNumber()) / 4
+          (Math.max(isLeavingAt, roundInfo.current.toNumber()) - roundInfo.current.toNumber()) / 4,
         );
         candidates[collatorId].pendingRevoke += delegation.amount.toBigInt();
         candidates[collatorId].totalRevokable[day] += delegation.amount.toBigInt();
@@ -132,8 +132,8 @@ const main = async () => {
     .sort((a, b) =>
       Number(
         (candidates[b].isActive ? candidates[b].totalDelegations : 0n) -
-          (candidates[a].isActive ? candidates[a].totalDelegations : 0n)
-      )
+          (candidates[a].isActive ? candidates[a].totalDelegations : 0n),
+      ),
     )
     .map((a) => candidates[a]);
 
@@ -152,8 +152,8 @@ const main = async () => {
     return value > total / 10n
       ? chalk.red(valueWithCommas)
       : value > total / 20n
-      ? chalk.yellow(valueWithCommas)
-      : valueWithCommas;
+        ? chalk.yellow(valueWithCommas)
+        : valueWithCommas;
   };
 
   const sumRevokable = new Array(8)
@@ -177,25 +177,25 @@ const main = async () => {
         !candidate.isActive
           ? chalk.yellow(candidate.id.toString())
           : candidate.isSelected
-          ? candidate.id
-          : chalk.red(candidate.id.toString()),
+            ? candidate.id
+            : chalk.red(candidate.id.toString()),
         !candidate.isActive
           ? chalk.yellow(candidate.name.toString() + ` [off]`)
           : candidate.isSelected
-          ? candidate.name
-          : chalk.red(candidate.name.toString()),
+            ? candidate.name
+            : chalk.red(candidate.name.toString()),
         candidate.totalDelegators > 400
           ? chalk.red(candidate.totalDelegators)
           : candidate.totalDelegators > 300
-          ? chalk.yellow(candidate.totalDelegators)
-          : candidate.totalDelegators,
+            ? chalk.yellow(candidate.totalDelegators)
+            : candidate.totalDelegators,
         numberWithCommas(candidate.totalDelegations / 10n ** 18n),
         ...candidate.totalRevokable.map((r, i) => printColoredNumber(r, sumRevokable[i])),
         candidate.totalDelegations - candidate.pendingRevoke < minCollator.totalDelegations
           ? chalk.red(numberWithCommas(candidate.pendingRevoke / 10n ** 18n))
           : candidate.totalDelegations - candidate.pendingRevoke < minCollatorFifth.totalDelegations
-          ? chalk.yellow(numberWithCommas(candidate.pendingRevoke / 10n ** 18n))
-          : numberWithCommas(candidate.pendingRevoke / 10n ** 18n),
+            ? chalk.yellow(numberWithCommas(candidate.pendingRevoke / 10n ** 18n))
+            : numberWithCommas(candidate.pendingRevoke / 10n ** 18n),
       ];
     }),
     [
@@ -214,12 +214,12 @@ const main = async () => {
           .fill(0)
           .map((_, day) =>
             numberWithCommas(
-              candidateList.reduce((p, c) => p + c.totalRevokable[day], 0n) / 10n ** 18n
-            )
+              candidateList.reduce((p, c) => p + c.totalRevokable[day], 0n) / 10n ** 18n,
+            ),
           ),
         numberWithCommas(candidateList.reduce((p, c) => p + c.pendingRevoke, 0n) / 10n ** 18n),
       ],
-    ]
+    ],
   );
 
   console.log(
@@ -246,7 +246,7 @@ const main = async () => {
         { alignment: "right" },
         { alignment: "right" },
       ],
-    })
+    }),
   );
   await api.disconnect();
 };

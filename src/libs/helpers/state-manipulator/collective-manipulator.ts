@@ -27,7 +27,7 @@ export class CollectiveManipulator implements StateManipulator {
           {
             key,
             value: `0x${nToHex(this.newMembers.length * 4, { bitLength: 8 }).slice(
-              2
+              2,
             )}${this.newMembers.map((member) => member.slice(2)).join("")}`,
           },
         ],

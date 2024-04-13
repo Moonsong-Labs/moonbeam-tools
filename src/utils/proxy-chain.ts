@@ -64,7 +64,7 @@ export class ProxyChain {
         debug(
           `chain [${index}]: ${proxy.address}${proxy.type ? `:${proxy.type}` : ""} - ${
             call.method.section
-          }.${call.method.method}`
+          }.${call.method.method}`,
         );
         return api.tx.proxy.proxy(proxy.address, (proxy.type as any) || null, call);
       }, call);
@@ -126,7 +126,7 @@ export class ProxyChainSigner {
     return new ProxyChainSigner(
       api,
       await keyring.addFromUri(argv["private-key"]),
-      ProxyChain.from(argv)
+      ProxyChain.from(argv),
     );
   }
 
@@ -134,7 +134,7 @@ export class ProxyChainSigner {
     call: SubmittableExtrinsic<"promise", ISubmittableResult>,
     nonce: number,
     tip: bigint = 0n,
-    optionalStatusCb?: Callback<ISubmittableResult>
+    optionalStatusCb?: Callback<ISubmittableResult>,
   ) {
     if (nonce >= this.nonce) {
       this.nonce = nonce + 1;
@@ -150,7 +150,7 @@ export class ProxyChainSigner {
   async signAndSend(
     call: SubmittableExtrinsic<"promise", ISubmittableResult>,
     tip: bigint = 0n,
-    optionalStatusCb?: Callback<ISubmittableResult>
+    optionalStatusCb?: Callback<ISubmittableResult>,
   ) {
     return this.signAndSendWithNonce(call, this.nonce++, tip, optionalStatusCb);
   }

@@ -67,7 +67,7 @@ const main = async () => {
 
   if (!argv.execute) {
     console.log(
-      `${chalk.red("Skipping")} the transaction (add --execute to execute the transaction)`
+      `${chalk.red("Skipping")} the transaction (add --execute to execute the transaction)`,
     );
   }
 
@@ -85,7 +85,7 @@ const main = async () => {
 
     console.log(`${chalk.red("Executing")} the transaction...`);
     const txs = transfers.map(({ account, amount }) =>
-      api.tx.balances.transfer(account, BigInt(amount) * 10n ** 18n)
+      api.tx.balances.transfer(account, BigInt(amount) * 10n ** 18n),
     );
 
     // Putting all the transactions in a batchAll
@@ -97,7 +97,7 @@ const main = async () => {
           console.log(
             `Transaction status: ${
               status.type == "Ready" ? chalk.yellow(status.type) : chalk.green(status.type)
-            }`
+            }`,
           );
 
           if (status.isInBlock) {

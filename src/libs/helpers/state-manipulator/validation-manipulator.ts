@@ -13,7 +13,7 @@ export class ValidationManipulator implements StateManipulator {
     this.validationDataKey = encodeStorageKey("ParachainSystem", "ValidationData");
     this.lastRelayChainBlockNumberKey = encodeStorageKey(
       "ParachainSystem",
-      "LastRelayChainBlockNumber"
+      "LastRelayChainBlockNumber",
     );
   }
 

@@ -47,7 +47,7 @@ const main = async () => {
   const runtimeVersion = upgradeInfo.specVersion.toNumber();
 
   console.log(
-    `Using data from block #${atBlockNumber} (${api.runtimeVersion.specName.toString()}-${runtimeVersion})`
+    `Using data from block #${atBlockNumber} (${api.runtimeVersion.specName.toString()}-${runtimeVersion})`,
   );
 
   const keyring = new Keyring({ type: "ethereum" });
@@ -139,7 +139,7 @@ const main = async () => {
           depositOf[1].unwrap()[0].map((deposit) => ({
             accountId: deposit.toHex(),
             reserved: depositOf[1].unwrap()[1].toBigInt(),
-          }))
+          })),
         )
         .flat()
         .reduce(
@@ -158,8 +158,8 @@ const main = async () => {
           },
           {} as {
             [accountId: string]: { accountId: string; reserved: { [key: string]: bigint } };
-          }
-        )
+          },
+        ),
     ),
     preimages
       .filter((preimage) => preimage[1].unwrap().isAvailable)
@@ -236,10 +236,10 @@ const main = async () => {
       if (expectedReserve != reserved) {
         console.log(
           `${accountId}: reserved ${reserved} vs expected ${expectedReserve} (${Object.keys(
-            expectedReserveByAccount[accountId]?.reserved || {}
+            expectedReserveByAccount[accountId]?.reserved || {},
           )
             .map((key) => `${key}: ${expectedReserveByAccount[accountId].reserved[key]}`)
-            .join(` - `)})`
+            .join(` - `)})`,
         );
         expectedReserveByAccount[accountId];
         if (reserved < expectedReserve) {
@@ -264,21 +264,21 @@ const main = async () => {
         .reduce((p, v) => p + v.reserve, 0n)
         .toString()
         .padStart(25)} - ${accountsToAddReserve.length} accounts:\n${accountsToAddReserve
-      .map(({ accountId, reserve }) => `        - ${accountId}: ${printTokens(api, reserve)}`)
-      .join("\n")}
+        .map(({ accountId, reserve }) => `        - ${accountId}: ${printTokens(api, reserve)}`)
+        .join("\n")}
       -   extra: ${accountsToRemoveReserve
         .reduce((p, v) => p + v.reserve, 0n)
         .toString()
         .padStart(25)} - ${accountsToRemoveReserve.length} accounts:\n${accountsToRemoveReserve
-      .map(({ accountId, reserve }) => `        - ${accountId}: ${printTokens(api, reserve)}`)
-      .join("\n")}`
+        .map(({ accountId, reserve }) => `        - ${accountId}: ${printTokens(api, reserve)}`)
+        .join("\n")}`,
   );
 
   if (argv["send-preimage-hash"]) {
     const collectiveThreshold = argv["collective-threshold"] || 1;
     const account = await keyring.addFromUri(argv["account-priv-key"], null, "ethereum");
     const { nonce: rawNonce, data: balance } = (await api.query.system.account(
-      account.address
+      account.address,
     )) as any;
     let nonce = BigInt(rawNonce.toString());
     const BATCH_SIZE = 500;

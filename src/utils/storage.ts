@@ -37,7 +37,7 @@ export function splitPrefix(prefix: string, splitDepth) {
 export async function concurrentGetKeys(
   provider: ProviderInterface,
   keyPrefix: string,
-  blockHash: string
+  blockHash: string,
 ) {
   const maxKeys = 1000;
   let total = 0;
@@ -68,7 +68,7 @@ export async function concurrentGetKeys(
         global.gc();
         return keys;
       },
-      prefixes
+      prefixes,
     );
     return allKeys.flat().sort();
   } finally {
@@ -79,7 +79,7 @@ export async function concurrentGetKeys(
 export async function queryUnorderedRawStorage(
   provider: ProviderInterface,
   keys: string[],
-  blockHash: string
+  blockHash: string,
 ): Promise<
   {
     key: `0x${string}`;
@@ -103,7 +103,7 @@ export async function processAllStorage(
     concurrency?: number;
     delayMS?: number;
   },
-  processor: (batchResult: { key: `0x${string}`; value: string }[]) => void
+  processor: (batchResult: { key: `0x${string}`; value: string }[]) => void,
 ) {
   const { prefix, blockHash, splitDepth, concurrency, delayMS } = options;
 
@@ -146,7 +146,7 @@ export async function processAllStorage(
           }
         }
       },
-      prefixes
+      prefixes,
     );
   } finally {
     stopReport();

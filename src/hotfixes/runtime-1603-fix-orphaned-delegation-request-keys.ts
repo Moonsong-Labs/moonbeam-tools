@@ -45,18 +45,18 @@ async function main() {
   try {
     const scheduledRequestAccounts = new Set(
       (await apiAt.query.parachainStaking.delegationScheduledRequests.keys()).map(
-        ({ args: [accountId] }) => accountId.toString()
-      )
+        ({ args: [accountId] }) => accountId.toString(),
+      ),
     );
     const collators = new Set(
       (await apiAt.query.parachainStaking.candidateInfo.keys()).map(({ args: [accountId] }) =>
-        accountId.toString()
-      )
+        accountId.toString(),
+      ),
     );
 
     // verify empty delegation requests
     const accountsToFix = [...scheduledRequestAccounts].filter(
-      (accountId) => !collators.has(accountId)
+      (accountId) => !collators.has(accountId),
     );
     for (const account of accountsToFix) {
       const requests = await apiAt.query.parachainStaking.delegationScheduledRequests(account);
@@ -84,7 +84,7 @@ async function main() {
 async function waitTxDone(
   api: ApiPromise,
   tx: SubmittableExtrinsic,
-  timeoutMs = 120000
+  timeoutMs = 120000,
 ): Promise<string> {
   return new Promise(async (resolve, reject) => {
     let unsub = () => {};

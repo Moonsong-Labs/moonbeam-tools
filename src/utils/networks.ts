@@ -161,7 +161,7 @@ export const getViemFor = (argv: Argv): PublicClient<Transport, Chain, true> => 
  */
 export const getViemAccountFor = (
   argv: Argv,
-  account: PrivateKeyAccount
+  account: PrivateKeyAccount,
 ): WalletClient<Transport, Chain, PrivateKeyAccount, true> => {
   const url = isKnownNetwork(argv.network) ? NETWORK_WS_URLS[argv.network] : argv.url;
   return createWalletClient({
@@ -191,7 +191,7 @@ export const getMonitoredApiFor = async (argv: Argv) => {
           ? NETWORK_COLORS[networkName](networkName.padStart(10, " "))
           : undefined,
       },
-      previousBlockDetails
+      previousBlockDetails,
     );
     previousBlockDetails = blockDetails;
   });

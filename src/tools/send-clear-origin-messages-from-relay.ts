@@ -48,7 +48,7 @@ const main = async () => {
     { V2: { parents: new BN(0), interior: { X1: { Parachain: argv.para } } } },
     {
       V2: [{ ClearOrigin: null }],
-    }
+    },
   );
   let Txs = [];
 

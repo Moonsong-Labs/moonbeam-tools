@@ -30,7 +30,7 @@ export class AssetManipulator implements StateManipulator {
     this.assetSupplyPrefix = encodeStorageBlake128MapKey(
       "Assets",
       "Asset",
-      bnToHex(BigInt(assetId), { isLe: true, bitLength: 128 })
+      bnToHex(BigInt(assetId), { isLe: true, bitLength: 128 }),
     );
   }
 

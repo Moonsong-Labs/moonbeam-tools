@@ -40,11 +40,11 @@ const main = async () => {
             async (index) =>
               `${validatorIndices[index].toString().padStart(4, " ")} ${await getAccountIdentity(
                 apiAt,
-                validators[validatorIndices[index]]
-              )}`
-          )
+                validators[validatorIndices[index]],
+              )}`,
+          ),
         )
-      ).join(", ")}]`
+      ).join(", ")}]`,
     );
   }
 

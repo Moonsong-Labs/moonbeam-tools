@@ -63,7 +63,7 @@ const main = async () => {
   const runtimeVersion = upgradeInfo.specVersion.toNumber();
 
   console.log(
-    `Using data from block #${atBlockNumber} (${api.runtimeVersion.specName.toString()}-${runtimeVersion})`
+    `Using data from block #${atBlockNumber} (${api.runtimeVersion.specName.toString()}-${runtimeVersion})`,
   );
 
   const delegatorsToFix = [];
@@ -75,7 +75,7 @@ const main = async () => {
     requestData.forEach((request, collator) => {
       totalRequests++;
       const delegation = stateData.delegations.find(
-        ({ owner }) => owner.toString() == collator.toString()
+        ({ owner }) => owner.toString() == collator.toString(),
       );
       if (
         !delegation ||
@@ -84,8 +84,8 @@ const main = async () => {
         console.log(
           `${stateData.id}: ${request.whenExecutable} - ${printTokens(
             api,
-            delegation.amount.toBigInt()
-          )} vs requested ${printTokens(api, request.amount.toBigInt())}`
+            delegation.amount.toBigInt(),
+          )} vs requested ${printTokens(api, request.amount.toBigInt())}`,
         );
         delegatorsToFix.push(stateData.id);
       }
@@ -100,7 +100,7 @@ const main = async () => {
     const collectiveThreshold = argv["collective-threshold"] || 1;
     const account = await keyring.addFromUri(argv["account-priv-key"], null, "ethereum");
     const { nonce: rawNonce, data: balance } = (await api.query.system.account(
-      account.address
+      account.address,
     )) as any;
     let nonce = BigInt(rawNonce.toString());
 

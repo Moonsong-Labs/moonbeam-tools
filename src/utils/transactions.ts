@@ -35,7 +35,7 @@ export const sendAllStreamAndWaitLast = async (
     threshold: 500,
     batch: 200,
     timeout: 120000,
-  }
+  },
 ) => {
   let promises = [];
   let lastUpdateTime = Date.now();
@@ -67,8 +67,8 @@ export const sendAllStreamAndWaitLast = async (
                 }
               });
             }).catch((e) => {});
-          })
-        )
+          }),
+        ),
       );
     }
     await new Promise((resolve) => setTimeout(resolve, 2000));
@@ -80,7 +80,7 @@ export const maybeProxyCall = (
   api: ApiPromise,
   call: SubmittableExtrinsic,
   proxy?: string,
-  proxyType?: string
+  proxyType?: string,
 ) => {
   if (proxy) {
     return api.tx.proxy.proxy(proxy, (proxyType as any) || null, call);
@@ -130,10 +130,10 @@ export interface CallInterpretation {
 
 export async function callInterpreter(
   api: ApiPromise,
-  call: GenericCall
+  call: GenericCall,
 ): Promise<CallInterpretation> {
   const nested = NESTED_CALLS.find(
-    ({ section, method }) => section == call.section.toString() && method == call.method.toString()
+    ({ section, method }) => section == call.section.toString() && method == call.method.toString(),
   );
   const text = `${call.section}.${call.method}`;
   if (nested) {
@@ -144,10 +144,10 @@ export async function callInterpreter(
           ? subData
           : await api.registry.createType(
               "Vec<Call>",
-              call.args[nested.argumentPosition].toU8a(true)
+              call.args[nested.argumentPosition].toU8a(true),
             );
       const subCallsData = await Promise.all(
-        subCalls.map((subCall) => callInterpreter(api, subCall))
+        subCalls.map((subCall) => callInterpreter(api, subCall)),
       );
       return {
         text,
@@ -186,7 +186,7 @@ export async function callInterpreter(
 export function renderCallInterpretation(
   callData: CallInterpretation,
   depth = 0,
-  prefix = ""
+  prefix = "",
 ): string {
   return [
     `${prefix}${"".padStart(depth * 6, " ")}⤷ \`${callData.text}\``,

@@ -28,7 +28,7 @@ export const mapExtrinsics = async (
   extrinsics: Extrinsic[],
   records: EventRecord[],
   fees: InclusionFee[],
-  feeMultiplier: u128
+  feeMultiplier: u128,
 ) => {
   return Promise.all(
     extrinsics.map(async (extrinsic, index) => {
@@ -80,6 +80,6 @@ export const mapExtrinsics = async (
         totalFees,
       };
       return { dispatchError, dispatchInfo, events, extrinsic, fees: computedFees };
-    })
+    }),
   );
 };

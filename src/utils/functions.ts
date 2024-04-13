@@ -4,7 +4,7 @@ import pQueue from "p-queue";
 export const promiseConcurrent = <T, R>(
   concurrency: number,
   mapper: (item: T, index?: number) => Promise<R> | R,
-  list: T[]
+  list: T[],
 ): Promise<R[]> => pMap(list, mapper, { concurrency: concurrency });
 
 export const numberWithCommas = (x: number | bigint | string) => {
@@ -19,7 +19,7 @@ export const numberWithCommas = (x: number | bigint | string) => {
 // until the finishing task is complete
 export const promiseWhile = async (
   concurrency: number,
-  taskGenerator: (index?: number) => () => Promise<boolean>
+  taskGenerator: (index?: number) => () => Promise<boolean>,
 ): Promise<void> => {
   let index = 0;
   let end = false;

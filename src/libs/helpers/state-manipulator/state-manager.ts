@@ -70,7 +70,7 @@ export async function downloadExportedState(
   options: DownloadOptions,
   onStart?: (size: number) => void,
   onProgress?: (bytes: number) => void,
-  onComplete?: () => void
+  onComplete?: () => void,
 ): Promise<{ stateFile: string; stateInfo: StateInfo }> {
   const { network, outPath, checkLatest, useCleanState } = options;
 
@@ -144,7 +144,7 @@ export async function downloadExportedState(
   const fileStream = (await fs.open(stateFile, "w")).createWriteStream();
 
   debug(
-    `Preparing to download ${stateFileName} (best-hash: ${downloadedStateInfo.blockHash}) to ${stateFile}`
+    `Preparing to download ${stateFileName} (best-hash: ${downloadedStateInfo.blockHash}) to ${stateFile}`,
   );
 
   let transferredBytes = 0;
@@ -163,7 +163,7 @@ export async function downloadExportedState(
           const headerStrings = headers.map((h) => h.toString());
           onStart &&
             onStart(
-              parseInt(headerStrings[headerStrings.findIndex((h) => h == "Content-Length") + 1])
+              parseInt(headerStrings[headerStrings.findIndex((h) => h == "Content-Length") + 1]),
             );
           return true;
         },
@@ -179,7 +179,7 @@ export async function downloadExportedState(
           onComplete && onComplete();
           resolve();
         },
-      }
+      },
     );
   });
 
@@ -196,7 +196,7 @@ export async function downloadExportedState(
 export async function neutralizeExportedState(
   inFile: string,
   outFile: string,
-  option: { dev: boolean; authorizeUpgrade: string } = { dev: false, authorizeUpgrade: "" }
+  option: { dev: boolean; authorizeUpgrade: string } = { dev: false, authorizeUpgrade: "" },
 ) {
   const { dev, authorizeUpgrade } = {
     dev: false,

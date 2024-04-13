@@ -9,7 +9,7 @@ export class RoundManipulator implements StateManipulator {
   private roundProcessor: (
     current: number,
     first: number,
-    length: number
+    length: number,
   ) => { current: number; first: number; length: number };
 
   constructor(roundProcessor: RoundManipulator["roundProcessor"]) {

@@ -110,8 +110,8 @@ const main = async () => {
       .map(
         (proxy) =>
           `${proxy.slice(2)}${u8aToHex(proxyType.toU8a()).slice(2)}${u8aToHex(
-            proxyDelay.toU8a()
-          ).slice(2)}`
+            proxyDelay.toU8a(),
+          ).slice(2)}`,
       )
       .join("")}${u8aToHex(proxyDeposit.toU8a()).slice(2)}`;
   }
@@ -121,12 +121,12 @@ const main = async () => {
     const collectiveThreshold = argv["collective-threshold"] || 1;
     const account = await keyring.addFromUri(argv["account-priv-key"], null, "ethereum");
     const { nonce: rawNonce, data: balance } = (await api.query.system.account(
-      account.address
+      account.address,
     )) as any;
     let nonce = BigInt(rawNonce.toString());
 
     const setStorageTx = api.tx.system.setStorage(
-      Object.keys(storage).map((key) => [key, storage[key]] as [string, string])
+      Object.keys(storage).map((key) => [key, storage[key]] as [string, string]),
     );
 
     let encodedProposal = setStorageTx?.method.toHex() || "";

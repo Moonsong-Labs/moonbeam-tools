@@ -18,7 +18,7 @@ const main = async () => {
       console.log(
         `  ${`${section}.${method}`.padStart(50, " ")}: ${api.tx[section][method].callIndex
           .toString()
-          .padStart(6, " ")}`
+          .padStart(6, " ")}`,
       );
     }
   }

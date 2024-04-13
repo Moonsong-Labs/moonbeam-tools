@@ -74,7 +74,7 @@ async function main() {
     if (privKey) {
       account = keyring.addFromUri(privKey, null, "ethereum");
       const { nonce: rawNonce, data: balance } = (await api.query.system.account(
-        account.address
+        account.address,
       )) as any;
       nonce = BigInt(rawNonce.toString());
     }
@@ -85,7 +85,7 @@ async function main() {
 
     const external = api.tx.democracy.externalProposeMajority(argv["proposal"]);
     await tryProxy(
-      api.tx.councilCollective.propose(collectiveThreshold, external, external.length)
+      api.tx.councilCollective.propose(collectiveThreshold, external, external.length),
     ).signAndSend(account, { nonce: nonce++ }, monitorSubmittedExtrinsic(api, { id: "motion" }));
   } finally {
     await waitForAllMonitoredExtrinsics();

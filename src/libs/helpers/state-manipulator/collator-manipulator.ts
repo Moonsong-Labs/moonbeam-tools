@@ -40,7 +40,7 @@ export class CollatorManipulator implements StateManipulator {
     this.newAuthorMappingKey = encodeStorageBlake128MapKey(
       "AuthorMapping",
       "MappingWithDeposit",
-      newSessionKey
+      newSessionKey,
     );
   }
 
@@ -73,7 +73,7 @@ export class CollatorManipulator implements StateManipulator {
     this.replacedNimbusLookupKey = encodeStorageBlake128MapKey(
       "AuthorMapping",
       "NimbusLookup",
-      this.replacedCollator
+      this.replacedCollator,
     );
   };
 
@@ -95,7 +95,7 @@ export class CollatorManipulator implements StateManipulator {
             key: encodeStorageBlake128MapKey(
               "AuthorMapping",
               "MappingWithDeposit",
-              this.newSessionKey
+              this.newSessionKey,
             ),
             value: `${value.slice(0, -64)}${this.newSessionKey.slice(2)}`,
           },

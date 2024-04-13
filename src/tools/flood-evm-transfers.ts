@@ -54,7 +54,7 @@ const sendTransfer = async (web3: Web3, from: any, nonce: number) => {
       value: web3.utils.toWei("1", "Gwei"),
       nonce: nonce++,
     },
-    from.privateKey
+    from.privateKey,
   );
 
   const result = await customWeb3Request(web3, "eth_sendRawTransaction", [tx.rawTransaction]);

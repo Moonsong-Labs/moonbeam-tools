@@ -20,8 +20,8 @@ const argv = yargs(process.argv.slice(2))
 const main = async () => {
   console.log(
     `${argv.module}::${argv.name}: ${u8aToHex(
-      u8aConcat(xxhashAsU8a(argv.module, 128), xxhashAsU8a(argv.name, 128))
-    )}`
+      u8aConcat(xxhashAsU8a(argv.module, 128), xxhashAsU8a(argv.name, 128)),
+    )}`,
   );
 };
 

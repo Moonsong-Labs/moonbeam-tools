@@ -131,9 +131,9 @@ const main = async () => {
       name: "confirm",
       type: "confirm",
       message: `Are you sure you want to run this script with ${chalk.bgWhiteBright.blackBright(
-        "purge-all"
+        "purge-all",
       )} enabled? \n This will delete ${chalk.bgWhiteBright.blackBright(
-        "all"
+        "all",
       )} files in the base-path directory: ${argv["base-path"]}.`,
     });
 
@@ -153,7 +153,7 @@ const main = async () => {
     ).json()) as any;
 
     const latestPolkadotVersion = polkadotReleases.find((release: any) =>
-      release.assets.find((asset: any) => asset.name === "polkadot")
+      release.assets.find((asset: any) => asset.name === "polkadot"),
     ).tag_name;
 
     // Ensure the binaries folder is there
@@ -173,7 +173,7 @@ const main = async () => {
         (argv["polkadot-binary"] !== "latest" &&
           semver.compare(
             semver.valid(semver.coerce(await runTask(`${polkadotBinaryPath} --version`))) || "",
-            semver.valid(semver.coerce(argv["polkadot-binary"]))
+            semver.valid(semver.coerce(argv["polkadot-binary"])),
           ) !== 0) ||
         (argv["polkadot-binary"] === "latest" &&
           semver.valid(semver.coerce(await runTask(`${polkadotBinaryPath} --version`))) !==
@@ -183,7 +183,7 @@ const main = async () => {
         const release =
           argv["polkadot-binary"] === "latest"
             ? polkadotReleases.find((release) =>
-                release.assets.find((asset) => asset.name === "polkadot")
+                release.assets.find((asset) => asset.name === "polkadot"),
               )
             : polkadotReleases
                 .filter((release) => release.tag_name.includes("v" + argv["polkadot-binary"]))
@@ -193,7 +193,7 @@ const main = async () => {
           throw new Error(`Release not found for ${argv["polkadot-binary"]}`);
         }
         process.stdout.write(
-          `\t - Requested Polkadot ${argv["polkadot-binary"]} binary not found, downloading client ....`
+          `\t - Requested Polkadot ${argv["polkadot-binary"]} binary not found, downloading client ....`,
         );
 
         for (const binary of ["polkadot", "polkadot-execute-worker", "polkadot-prepare-worker"]) {
@@ -225,8 +225,8 @@ const main = async () => {
   const latestMoonbeamVersion = semver.valid(
     semver.coerce(
       moonbeamReleases.find((release) => release.assets.find((asset) => asset.name === "moonbeam"))
-        .tag_name
-    )
+        .tag_name,
+    ),
   );
 
   const moonbeamBinaryPath = path.isAbsolute(argv["moonbeam-binary"])
@@ -243,7 +243,7 @@ const main = async () => {
       (argv["moonbeam-binary"] !== "latest" &&
         semver.compare(
           semver.valid(semver.coerce(await runTask(`${moonbeamBinaryPath} --version`))),
-          semver.valid(semver.coerce(argv["moonbeam-binary"]))
+          semver.valid(semver.coerce(argv["moonbeam-binary"])),
         ) !== 0) ||
       (argv["moonbeam-binary"] === "latest" &&
         semver.valid(semver.coerce(await runTask(`${moonbeamBinaryPath} --version`))) !==
@@ -253,7 +253,7 @@ const main = async () => {
       const release =
         argv["moonbeam-binary"] === "latest"
           ? moonbeamReleases.find((release) =>
-              release.assets.find((asset) => asset.name === "moonbeam")
+              release.assets.find((asset) => asset.name === "moonbeam"),
             )
           : moonbeamReleases
               .filter((release) => release.tag_name.includes("v" + argv["moonbeam-binary"]))
@@ -262,7 +262,7 @@ const main = async () => {
         throw new Error(`Release not found for ${argv["moonbeam-binary"]}`);
       }
       process.stdout.write(
-        `\t - Requested Moonbeam ${argv["moonbeam-binary"]} binary not found, downloading client ....`
+        `\t - Requested Moonbeam ${argv["moonbeam-binary"]} binary not found, downloading client ....`,
       );
       const asset = release.assets.find((asset) => asset.name === "moonbeam");
       const response = await fetch(asset.browser_download_url);
@@ -285,7 +285,7 @@ const main = async () => {
   if (argv["purge-all"]) {
     await fs.rm(argv["base-path"], { recursive: true, force: true });
     process.stdout.write(
-      `\t - ${chalk.red(`Purged`)} all local files at:  ${argv["base-path"]} ✓\n`
+      `\t - ${chalk.red(`Purged`)} all local files at:  ${argv["base-path"]} ✓\n`,
     );
   }
 
@@ -320,13 +320,13 @@ const main = async () => {
     () => {
       progressBar.stop();
       process.stdout.write(`\t - ${chalk.yellow(`Saving`)} ${argv.network} exported state...`);
-    }
+    },
   );
   process.stdout.write(` ${chalk.green(stateFile)} (#${chalk.yellow(stateInfo.blockNumber)}) ✓\n`);
 
   process.stdout.write(`\t - Checking parachain id...`);
   const paraId = parseInt(
-    await runTask(`head -100 ${stateFile} | grep paraId  | cut -c 12- | rev | cut -c 2- | rev`)
+    await runTask(`head -100 ${stateFile} | grep paraId  | cut -c 12- | rev | cut -c 2- | rev`),
   );
   process.stdout.write(` ${chalk.green(paraId)} ✓\n`);
 
@@ -342,10 +342,10 @@ const main = async () => {
           argv["base-path"],
           `${argv["relay-chain"]}-${argv.network}-${polkadotVersion.replace(
             " ",
-            "-"
-          )}-local-raw.json`
+            "-",
+          )}-local-raw.json`,
         ),
-        { force: true }
+        { force: true },
       );
     }
   }
@@ -381,7 +381,7 @@ const main = async () => {
     hasChanged = true;
     process.stdout.write(` ${chalk.yellow(`extracting`)}...`);
     const grepLine = await runTask(
-      `grep -m 1 '"0x3a636f6465"' ${stateFile} | head -1 | sed 's/[ \",]//g' | cut -d ':' -f 2 | tr -d '\n' | tee ${codeFile} | wc -c`
+      `grep -m 1 '"0x3a636f6465"' ${stateFile} | head -1 | sed 's/[ \",]//g' | cut -d ':' -f 2 | tr -d '\n' | tee ${codeFile} | wc -c`,
     );
     process.stdout.write(` ${prettyBytes(parseInt(grepLine) / 2)} ✓\n`);
     process.stdout.write(`\t - ${chalk.yellow(`Saving`)} wasm code...`);
@@ -400,7 +400,7 @@ const main = async () => {
     hasChanged = true;
     process.stdout.write(` ${chalk.yellow(`exporting`)}...`);
     await runTask(
-      `${moonbeamBinaryPath} export-genesis-state --chain ${modFile} | tee ${genesisStateFile}`
+      `${moonbeamBinaryPath} export-genesis-state --chain ${modFile} | tee ${genesisStateFile}`,
     );
   }
   process.stdout.write(` ${chalk.green(genesisStateFile)} ✓\n`);
@@ -412,7 +412,7 @@ const main = async () => {
 
     const relayPlainSpecFile = path.join(
       argv["base-path"],
-      `${argv["relay-chain"]}-${argv.network}-${polkadotVersion.replace(" ", "-")}-local-plain.json`
+      `${argv["relay-chain"]}-${argv.network}-${polkadotVersion.replace(" ", "-")}-local-plain.json`,
     );
     process.stdout.write(`\t - Checking relaychain plain spec file...`);
     if (
@@ -425,7 +425,7 @@ const main = async () => {
       hasChanged = true;
       process.stdout.write(` ${chalk.yellow(`generating`)}...`);
       await runTask(
-        `${polkadotBinaryPath} build-spec --chain ${argv["relay-chain"]} --disable-default-bootnode > ${relayPlainSpecFile}`
+        `${polkadotBinaryPath} build-spec --chain ${argv["relay-chain"]} --disable-default-bootnode > ${relayPlainSpecFile}`,
       );
       process.stdout.write(` ✓\n`);
 
@@ -469,7 +469,7 @@ const main = async () => {
     process.stdout.write(`\t - Checking relaychain raw spec file...`);
     relayRawSpecFile = path.join(
       argv["base-path"],
-      `${argv["relay-chain"]}-${argv.network}-${polkadotVersion.replace(" ", "-")}-local-raw.json`
+      `${argv["relay-chain"]}-${argv.network}-${polkadotVersion.replace(" ", "-")}-local-raw.json`,
     );
     if (
       !(await fs
@@ -481,7 +481,7 @@ const main = async () => {
       hasChanged = true;
       process.stdout.write(` ${chalk.yellow(`generating`)}...`);
       await runTask(
-        `${polkadotBinaryPath} build-spec --raw --chain ${relayPlainSpecFile} > ${relayRawSpecFile}`
+        `${polkadotBinaryPath} build-spec --raw --chain ${relayPlainSpecFile} > ${relayRawSpecFile}`,
       );
       process.stdout.write(` ✓\n`);
       process.stdout.write(`\t - ${chalk.yellow(`Saving`)} raw relaychain spec...`);
@@ -523,7 +523,7 @@ const main = async () => {
       "--validator",
     ];
     aliceProcess = await spawnTask(
-      `${polkadotBinaryPath}  ${commonParams.join(" ")} ${aliceValidatorParams.join(" ")}`
+      `${polkadotBinaryPath}  ${commonParams.join(" ")} ${aliceValidatorParams.join(" ")}`,
     );
     process.stdout.write(` ✓\n`);
     process.stdout.write(`\t\t - ${chalk.green(`Starting`)} Bob node...\n`);
@@ -543,7 +543,7 @@ const main = async () => {
       "--validator",
     ];
     bobProcess = await spawnTask(
-      `${polkadotBinaryPath} ${commonParams.join(" ")} ${bobValidatorParams.join(" ")}`
+      `${polkadotBinaryPath} ${commonParams.join(" ")} ${bobValidatorParams.join(" ")}`,
     );
     process.stdout.write(` ✓\n`);
   }
@@ -582,13 +582,13 @@ const main = async () => {
   const alithProcess = argv.dev
     ? await spawnTask(
         `${moonbeamBinaryPath} ${logs} ${commonParams.join(" ")} ${alithCollatorBaseParams.join(
-          " "
-        )} ${devParams.join(" ")}`
+          " ",
+        )} ${devParams.join(" ")}`,
       )
     : await spawnTask(
         `${moonbeamBinaryPath} ${logs} ${commonParams.join(" ")} ${alithCollatorBaseParams.join(
-          " "
-        )} ${noDevParams.join(" ")}`
+          " ",
+        )} ${noDevParams.join(" ")}`,
       );
   process.stdout.write(` ✓\n`);
 
@@ -634,7 +634,7 @@ const main = async () => {
             bobProcess.kill();
           } catch (e) {}
         });
-      })
+      }),
     );
   }
 
@@ -649,11 +649,11 @@ const main = async () => {
 
   if (!argv.dev) {
     process.stdout.write(
-      `ℹ️  RelayChain Explorer: https://polkadot.js.org/apps/?rpc=ws://127.0.0.1:12003#/explorer\n`
+      `ℹ️  RelayChain Explorer: https://polkadot.js.org/apps/?rpc=ws://127.0.0.1:12003#/explorer\n`,
     );
   }
   process.stdout.write(
-    `ℹ️  ParaChain Explorer: https://polkadot.js.org/apps/?rpc=ws://127.0.0.1:9944#/explorer\n`
+    `ℹ️  ParaChain Explorer: https://polkadot.js.org/apps/?rpc=ws://127.0.0.1:9944#/explorer\n`,
   );
   process.stdout.write(`      Sudo: ${chalk.green("Alith")} ${ALITH_PRIVATE_KEY}\n`);
   process.stdout.write(`Council/TC: ${chalk.green("Alith")} ${ALITH_PRIVATE_KEY}\n`);

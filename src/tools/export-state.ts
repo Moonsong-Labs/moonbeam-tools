@@ -32,7 +32,7 @@ async function main() {
   const concurrency = argv.concurrency || 10;
   const delay = argv.delay;
   console.log(
-    `${now}: Exporting at block ${atBlock} using ${ws.endpoint} and ${concurrency} threads (+${delay}ms delay)`
+    `${now}: Exporting at block ${atBlock} using ${ws.endpoint} and ${concurrency} threads (+${delay}ms delay)`,
   );
 
   const chainName = await ws.send("system_chain", []);
@@ -104,7 +104,7 @@ async function main() {
             }
           }
         }
-      }
+      },
     );
     file.write(`  \n`);
     while (true) {
@@ -139,15 +139,15 @@ async function main() {
           }),
         },
         null,
-        2
+        2,
       ),
-      "utf8"
+      "utf8",
     );
 
     console.log(
       `Written ${total} keys in ${moment
         .duration(duration / 1000, "seconds")
-        .humanize()}: ${qps.toFixed(0)} keys/sec`
+        .humanize()}: ${qps.toFixed(0)} keys/sec`,
     );
   } catch (e) {
     console.log("ERROR:");

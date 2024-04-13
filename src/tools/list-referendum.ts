@@ -60,10 +60,10 @@ const main = async () => {
           ? `https://${polkadotPrefix}.polkassembly.network/referendum/${referendum.index}`
           : `${referendum.index.toString().padStart(4, " ")}`
       } - \`${imageText}\` ( 👍${humanizeNumber(yes.toNumber())} vs ${humanizeNumber(
-        no.toNumber()
+        no.toNumber(),
       )}👎 | ${moment
         .duration(moment((await getBlockDate(api, endBlock)).date).diff(moment()))
-        .humanize()} left)${subText ? `  \n${subText}` : ""}`
+        .humanize()} left)${subText ? `  \n${subText}` : ""}`,
     );
   }
 
@@ -90,11 +90,11 @@ const main = async () => {
           ? currentBlock +
             Math.max(
               ref.ongoing.enactment.asAfter.toNumber(),
-              ref.track.minEnactmentPeriod.toNumber()
+              ref.track.minEnactmentPeriod.toNumber(),
             )
           : Math.max(
               currentBlock + ref.track.minEnactmentPeriod.toNumber(),
-              ref.ongoing.enactment.asAt.toNumber()
+              ref.ongoing.enactment.asAt.toNumber(),
             );
         const isExecuted =
           ref.info.isApproved &&
@@ -109,19 +109,19 @@ const main = async () => {
             ? "⚡"
             : "✅"
           : ref.info.isCancelled
-          ? "⛔"
-          : ref.info.isKilled
-          ? "💀"
-          : ref.info.isRejected
-          ? "🟥"
-          : ref.info.isTimedOut
-          ? "🕑"
-          : ref.info.isOngoing
-          ? ref.info.asOngoing.deciding.isSome &&
-            ref.info.asOngoing.deciding.unwrap().confirming.isSome
-            ? "❗"
-            : "📰"
-          : "?";
+            ? "⛔"
+            : ref.info.isKilled
+              ? "💀"
+              : ref.info.isRejected
+                ? "🟥"
+                : ref.info.isTimedOut
+                  ? "🕑"
+                  : ref.info.isOngoing
+                    ? ref.info.asOngoing.deciding.isSome &&
+                      ref.info.asOngoing.deciding.unwrap().confirming.isSome
+                      ? "❗"
+                      : "📰"
+                    : "?";
 
         const callData = ref?.image?.proposal && (await callInterpreter(api, ref.image.proposal));
         const imageText =
@@ -131,7 +131,7 @@ const main = async () => {
                   ref.info.isOngoing
                     ? (
                         await api.query.whitelist.whitelistedCall(
-                          callData.subCalls[0].call.hash.toHex()
+                          callData.subCalls[0].call.hash.toHex(),
                         )
                       ).isSome
                       ? `🔓`
@@ -162,34 +162,34 @@ const main = async () => {
             ? `${await toBlockMoment(
                 api,
                 ref.info.asApproved[0].add(ref.ongoing.enactment.asAfter),
-                "⚡"
+                "⚡",
               )}`
             : `${await toBlockMoment(api, ref.ongoing.enactment.asAt, "⚡")}`
           : ref.info.isOngoing
-          ? ref.info.asOngoing.deciding.isSome
-            ? ref.info.asOngoing.deciding.unwrap().confirming.isSome
-              ? `${await toBlockMoment(
-                  api,
-                  ref.info.asOngoing.deciding.unwrap().confirming.unwrap(),
-                  "✅"
-                )}`
-              : ref.decidingEnd
-              ? `${await toBlockMoment(api, ref.decidingEnd, "❗")}`
+            ? ref.info.asOngoing.deciding.isSome
+              ? ref.info.asOngoing.deciding.unwrap().confirming.isSome
+                ? `${await toBlockMoment(
+                    api,
+                    ref.info.asOngoing.deciding.unwrap().confirming.unwrap(),
+                    "✅",
+                  )}`
+                : ref.decidingEnd
+                  ? `${await toBlockMoment(api, ref.decidingEnd, "❗")}`
+                  : `${await toBlockMoment(
+                      api,
+                      ref.track.preparePeriod
+                        .add(ref.info.asOngoing.submitted)
+                        .add(ref.track.decisionPeriod),
+                      "⏱",
+                    )}`
               : `${await toBlockMoment(
                   api,
                   ref.track.preparePeriod
                     .add(ref.info.asOngoing.submitted)
                     .add(ref.track.decisionPeriod),
-                  "⏱"
+                  "⏱",
                 )}`
-            : `${await toBlockMoment(
-                api,
-                ref.track.preparePeriod
-                  .add(ref.info.asOngoing.submitted)
-                  .add(ref.track.decisionPeriod),
-                "⏱"
-              )}`
-          : "";
+            : "";
 
         const additionalConfirmingTime =
           ref.info.isOngoing &&
@@ -199,8 +199,8 @@ const main = async () => {
                 .duration(
                   moment(
                     (await getBlockDate(api, ref.track.confirmPeriod.addn(currentBlock).toNumber()))
-                      .date
-                  ).diff(moment())
+                      .date,
+                  ).diff(moment()),
                 )
                 .humanize()}->✅`
             : null;
@@ -211,7 +211,7 @@ const main = async () => {
             ref.info.asOngoing.deciding.unwrap().confirming.isNone)
             ? `+${moment
                 .duration(
-                  moment((await getBlockDate(api, enactmentDelayFromNow)).date).diff(moment())
+                  moment((await getBlockDate(api, enactmentDelayFromNow)).date).diff(moment()),
                 )
                 .humanize()}->⚡`
             : null;
@@ -223,7 +223,7 @@ const main = async () => {
           `${imageText.slice(0, 40).padStart(40, " ")}` +
           `${statusIcon}` +
           ` |👍${humanizeNumber(yes.toNumber()).padStart(10, " ")} vs ${humanizeNumber(
-            no.toNumber()
+            no.toNumber(),
           ).padStart(10, " ")}👎` +
           `|${supportPercent.toFixed(2).padStart(5, " ")}%` +
           (nextStepTime ? `|${nextStepTime[isExecuted ? "padStart" : "padStart"](15, " ")}` : "") +
@@ -233,7 +233,7 @@ const main = async () => {
           (subText ? `\n${subText}` : "")
         );
       },
-      referendum
+      referendum,
     )
   ).join("\n");
   console.log(text);

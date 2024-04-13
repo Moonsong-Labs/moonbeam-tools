@@ -56,7 +56,7 @@ const args = yargs
         describe: "The key for the storage",
       },
     },
-    cmdKey
+    cmdKey,
   )
   .command(
     "encode",
@@ -71,7 +71,7 @@ const args = yargs
       value: { type: "string", demandOption: true, describe: "The JSON or Raw value for the type" },
       explain: { type: "boolean", describe: "Explain the output" },
     },
-    cmdEncode
+    cmdEncode,
   )
   .command(
     "decode",
@@ -86,7 +86,7 @@ const args = yargs
       value: { type: "string", demandOption: true, describe: "The JSON or Raw value for the type" },
       explain: { type: "boolean", describe: "Explain the output" },
     },
-    cmdDecode
+    cmdDecode,
   )
   .help()
   .demandCommand().argv;

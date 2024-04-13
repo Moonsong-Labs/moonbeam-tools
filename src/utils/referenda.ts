@@ -61,7 +61,7 @@ function getTrackName({ name }: PalletReferendaTrackInfo): string {
 }
 
 export function isConvictionTally(
-  tally: PalletRankedCollectiveTally | PalletConvictionVotingTally
+  tally: PalletRankedCollectiveTally | PalletConvictionVotingTally,
 ): tally is PalletConvictionVotingTally {
   return (
     !!(tally as PalletConvictionVotingTally).support &&
@@ -90,8 +90,8 @@ function curveDelay(curve: PalletReferendaCurve, input: BN, div: BN): BN {
     return y.lt(floor)
       ? BN_BILLION
       : y.gt(ceil)
-      ? BN_ZERO
-      : bnMin(BN_BILLION, bnMax(BN_ZERO, ceil.sub(y).mul(length).div(ceil.sub(floor))));
+        ? BN_ZERO
+        : bnMin(BN_BILLION, bnMax(BN_ZERO, ceil.sub(y).mul(length).div(ceil.sub(floor))));
   } else if (curve.isSteppedDecreasing) {
     const { begin, end, period, step } = curve.asSteppedDecreasing;
 
@@ -108,8 +108,8 @@ function curveDelay(curve: PalletReferendaCurve, input: BN, div: BN): BN {
             BN_ZERO,
             period
               .mul(begin.sub(bnMin(y, begin)).add(step.isZero() ? step : step.sub(BN_ONE)))
-              .div(step)
-          )
+              .div(step),
+          ),
         );
   } else if (curve.asReciprocal) {
     const { factor, xOffset, yOffset } = curve.asReciprocal;
@@ -131,7 +131,7 @@ function calcDecidingEnd(
   totalEligible: BN,
   tally: PalletRankedCollectiveTally | PalletConvictionVotingTally,
   { decisionPeriod, minApproval, minSupport }: PalletReferendaTrackInfo,
-  since: BN
+  since: BN,
 ): BN | undefined {
   const support = isConvictionTally(tally) ? tally.support : tally.bareAyes;
 
@@ -140,23 +140,23 @@ function calcDecidingEnd(
       .mul(
         bnMax(
           curveDelay(minApproval, tally.ayes, tally.ayes.add(tally.nays)),
-          curveDelay(minSupport, support, totalEligible)
-        )
+          curveDelay(minSupport, support, totalEligible),
+        ),
       )
-      .div(BN_BILLION)
+      .div(BN_BILLION),
   );
 }
 
 export function isConvictionVote(
   info:
     | PalletReferendaReferendumInfoConvictionVotingTally
-    | PalletReferendaReferendumInfoRankedCollectiveTally
+    | PalletReferendaReferendumInfoRankedCollectiveTally,
 ): info is PalletReferendaReferendumInfoConvictionVotingTally {
   return info.isOngoing && isConvictionTally(info.asOngoing.tally);
 }
 
 function getPreimageHash(
-  hashOrBounded: Hash | HexString | FrameSupportPreimagesBounded
+  hashOrBounded: Hash | HexString | FrameSupportPreimagesBounded,
 ): HexString {
   if (isString(hashOrBounded)) {
     return hashOrBounded;
@@ -166,15 +166,15 @@ function getPreimageHash(
   return bounded.isInline
     ? bounded.asInline.hash.toHex()
     : bounded.isLegacy
-    ? bounded.asLegacy.hash_.toHex()
-    : bounded.isLookup
-    ? bounded.asLookup.hash_.toHex()
-    : hashOrBounded.toHex();
+      ? bounded.asLegacy.hash_.toHex()
+      : bounded.isLookup
+        ? bounded.asLookup.hash_.toHex()
+        : hashOrBounded.toHex();
 }
 
 function parseImage(
   api: ApiPromise | ApiDecoration<"promise">,
-  [status, bytes]: [PalletPreimageRequestStatus | null, Bytes | null]
+  [status, bytes]: [PalletPreimageRequestStatus | null, Bytes | null],
 ): DeriveProposalImage | undefined {
   if (!status) {
     return undefined;
@@ -218,7 +218,7 @@ async function getImageProposal(api: ApiPromise | ApiDecoration<"promise">, hash
 
 // Returns the block at which the referendum ended, 0 if onGoing;
 function getReferendumConclusionBlock(
-  info: PalletReferendaReferendumInfoConvictionVotingTally
+  info: PalletReferendaReferendumInfoConvictionVotingTally,
 ): number {
   if (info.isOngoing) {
     return 0;
@@ -227,14 +227,14 @@ function getReferendumConclusionBlock(
   const blockNumber: number = info.isApproved
     ? info.asApproved[0].toNumber()
     : info.isCancelled
-    ? info.asCancelled[0].toNumber()
-    : info.isKilled
-    ? info.asKilled[0].toNumber()
-    : info.isRejected
-    ? info.asRejected[0].toNumber()
-    : info.isTimedOut
-    ? info.asTimedOut[0].toNumber()
-    : 0;
+      ? info.asCancelled[0].toNumber()
+      : info.isKilled
+        ? info.asKilled[0].toNumber()
+        : info.isRejected
+          ? info.asRejected[0].toNumber()
+          : info.isTimedOut
+            ? info.asTimedOut[0].toNumber()
+            : 0;
 
   return blockNumber;
 }
@@ -242,7 +242,7 @@ function getReferendumConclusionBlock(
 async function getReferendumOnGoing(
   api: ApiPromise,
   id: number,
-  info: PalletReferendaReferendumInfoConvictionVotingTally
+  info: PalletReferendaReferendumInfoConvictionVotingTally,
 ) {
   if (info.isOngoing) {
     return { apiAt: api, ongoing: info.asOngoing };
@@ -265,7 +265,7 @@ async function getReferendumOnGoing(
 function extendReferendum(
   totalIssuance?: BN,
   referenda?: Referendum[],
-  tracks?: TrackDescription[]
+  tracks?: TrackDescription[],
 ): Referendum[] {
   if (!referenda || !totalIssuance) {
     // return an empty group when we have no referenda
@@ -312,7 +312,7 @@ export type ReferendumLimits = {
 
 export async function getReferendumByGroups(
   api: ApiPromise,
-  limits: ReferendumLimits = { blocks: 7200 * 7 }
+  limits: ReferendumLimits = { blocks: 7200 * 7 },
 ) {
   if (!api.query.referenda) {
     return [];
@@ -340,7 +340,7 @@ export async function getReferendumByGroups(
           image: await getImageProposal(apiAt, proposalHash),
         };
       },
-      await api.query.referenda.referendumInfoFor.entries()
+      await api.query.referenda.referendumInfoFor.entries(),
     )
   ).filter((result) => !!result);
   const tracks = await (api.query.referenda && api.consts.referenda.tracks);
@@ -352,6 +352,6 @@ export async function getReferendumByGroups(
       tracks.map(([id, info]) => ({
         id,
         info,
-      }))
+      })),
   );
 }

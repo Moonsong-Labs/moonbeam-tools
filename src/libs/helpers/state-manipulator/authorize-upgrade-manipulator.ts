@@ -12,7 +12,7 @@ export class AuthorizeUpgradeManipulator implements StateManipulator {
     this.storageKey = encodeStorageKey("ParachainSystem", "AuthorizedUpgrade");
     this.lastRelayChainBlockNumberKey = encodeStorageKey(
       "ParachainSystem",
-      "LastRelayChainBlockNumber"
+      "LastRelayChainBlockNumber",
     );
   }
 

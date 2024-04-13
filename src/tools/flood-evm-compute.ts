@@ -128,9 +128,9 @@ const main = async () => {
             computerContractAddress,
             { ...compute, params: [compute.params[0], fromNonce] },
             deployer,
-            fromNonce++
+            fromNonce++,
           ).catch((e) => {});
-        })
+        }),
       );
     }
     await new Promise((resolve) => setTimeout(resolve, 2000));
