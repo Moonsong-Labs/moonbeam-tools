@@ -35,9 +35,8 @@ await processState(stateFile, stateFile.replace(/.json$/, ".mod.json"), [
     relayChain: `rococo-local`,
   }),
 
-  // Make the Council & Technical committee governed by Alith
-  new CollectiveManipulator("TechCommitteeCollective", [ALITH_ADDRESS]),
-  new CollectiveManipulator("CouncilCollective", [ALITH_ADDRESS]),
+  // Make the Open Technical committee governed by Alith
+  new CollectiveManipulator("OpenTechCommitteeCollective", [ALITH_ADDRESS]),
 
   // Reset the validation data
   new ValidationManipulator(),
