@@ -1,6 +1,8 @@
 import { ApiPromise } from "@polkadot/api";
 import { SubmittableExtrinsic } from "@polkadot/api/promise/types";
 import { GenericCall } from "@polkadot/types/generic";
+import { PalletPreimageRequestStatus } from "@polkadot/types/lookup";
+import { Option } from "@polkadot/types";
 
 export const sendAllAndWaitLast = async (extrinsics: SubmittableExtrinsic[]) => {
   return new Promise(async (resolve, reject) => {
@@ -156,22 +158,24 @@ export async function callInterpreter(
         subCalls: subCallsData,
       };
     }
+    const imageStatusFn =
+      "requestStatusFor" in api.query.preimage
+        ? api.query.preimage["requestStatusFor"]
+        : api.query.preimage.statusFor;
     const callData = nested.inlined
       ? call.args[nested.argumentPosition]
-      : await api.query.preimage
-          .statusFor(call.args[nested.argumentPosition].toHex())
-          .then((optStatus) => {
-            if (optStatus.isNone) {
-              return null;
-            }
-            const status = optStatus.unwrap();
-            const len = status.isRequested
-              ? status.asRequested.len.unwrapOr(0)
-              : status.asUnrequested.len || 0;
-            return api.query.preimage
-              .preimageFor([call.args[nested.argumentPosition].toHex(), len])
-              .then((preimage) => preimage.unwrap().toHex());
-          });
+      : await imageStatusFn(call.args[nested.argumentPosition].toHex()).then((optStatus) => {
+          if (optStatus.isNone) {
+            return null;
+          }
+          const status = optStatus.unwrap();
+          const len = status.isRequested
+            ? status.asRequested.len.unwrapOr(0)
+            : status.asUnrequested.len || 0;
+          return api.query.preimage
+            .preimageFor([call.args[nested.argumentPosition].toHex(), len])
+            .then((preimage: Option<PalletPreimageRequestStatus>) => preimage.unwrap().toHex());
+        });
     if (callData) {
       const subCall = await api.registry.createType("Call", callData);
       return { text, call, depth: 1, subCalls: [await callInterpreter(api, subCall)] };

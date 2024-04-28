@@ -183,8 +183,8 @@ export const getAccountIdentity = async (
       : [null, null];
     identityCache[account] = {
       lastUpdate: Date.now(),
-      identity,
-      superOf: superOfIdentity,
+      identity: identity && ("info" in identity ? identity : identity[0]),
+      superOf: superOfIdentity && ("info" in superOfIdentity ? superOfIdentity : superOfIdentity[0]),
     };
   }
 

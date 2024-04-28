@@ -66,7 +66,7 @@ async function main() {
   try {
     const collectiveThreshold =
       argv["collective-threshold"] ||
-      Math.ceil(((await api.query.councilCollective.members()).length * 3) / 5);
+      Math.ceil(((await api.query.openTechCommitteeCollective.members()).length * 3) / 5);
 
     let account: KeyringPair;
     let nonce;
@@ -85,7 +85,7 @@ async function main() {
 
     const external = api.tx.democracy.externalProposeMajority(argv["proposal"]);
     await tryProxy(
-      api.tx.councilCollective.propose(collectiveThreshold, external, external.length),
+      api.tx.openTechCommitteeCollective.propose(collectiveThreshold, external, external.length),
     ).signAndSend(account, { nonce: nonce++ }, monitorSubmittedExtrinsic(api, { id: "motion" }));
   } finally {
     await waitForAllMonitoredExtrinsics();

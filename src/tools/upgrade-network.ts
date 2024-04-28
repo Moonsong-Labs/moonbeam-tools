@@ -89,7 +89,7 @@ async function main() {
 
     const collectiveThreshold =
       argv["collective-threshold"] ||
-      Math.ceil(((await api.query.councilCollective.members()).length * 3) / 5);
+      Math.ceil(((await api.query.openTechCommitteeCollective.members()).length * 3) / 5);
     const proposalAmount = api.consts.democracy.minimumDeposit;
 
     let account: KeyringPair;
@@ -124,7 +124,7 @@ async function main() {
         monitorSubmittedExtrinsic(api, { id: "sudo" }),
       );
     } else {
-      const proposal = api.tx.parachainSystem.authorizeUpgrade(codeHash);
+      const proposal = api.tx.parachainSystem.authorizeUpgrade(codeHash, true);
 
       const encodedProposal = proposal.method.toHex();
       const encodedHash = blake2AsHex(encodedProposal);

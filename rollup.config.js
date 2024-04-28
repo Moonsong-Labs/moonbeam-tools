@@ -45,8 +45,8 @@ export default [
   {
     input: "src/index.ts",
     output: [
-      { file: pkg.main, format: "cjs" },
-      { file: pkg.module, format: "es" },
+      { file: pkg.main, sourcemap: true, format: "cjs" },
+      { file: pkg.module, sourcemap: true, format: "es" },
     ],
     plugins: [
       commonjs({
@@ -57,7 +57,7 @@ export default [
   },
   {
     input: "./build/src/index.d.ts",
-    output: [{ file: "dist/index.d.ts", format: "es" }],
+    output: [{ file: "dist/index.d.ts", sourcemap: true, format: "es" }],
     plugins: [dts()],
   },
 ];
