@@ -109,12 +109,13 @@ const main = async () => {
   const computeWeight = {
     "0.15": { funcName: "compute", params: [1, 1], gasLimit: 50000 }, // 0.15%
     "0.40": { funcName: "compute", params: [1, 5], gasLimit: 100000 }, // 0.40%
-    "0.75": { funcName: "compute", params: [1, 15], gasLimit: 200000 }, // 0.75%
+    "0.75": { funcName: "compute", params: [1, 15], gasLimit: 200000 }, // 0.75% 
+    "5.00": { funcName: "compute", params: [1, 100], gasLimit: 1000000 }, // 0.75% 
   };
 
   let fromNonce = (await polkadotApi.rpc.system.accountNextIndex(fromAccount.address)).toNumber();
 
-  const testSuite = new Array(argv.count).fill(computeWeight["0.40"]);
+  const testSuite = new Array(argv.count).fill(computeWeight["5.00"]);
 
   console.log(`Starting to send transactions...`);
   while (true) {

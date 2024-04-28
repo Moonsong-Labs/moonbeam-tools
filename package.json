@@ -13,7 +13,7 @@
   "browser": "dist/index.umd.js",
   "types": "dist/index.d.ts",
   "dependencies": {
-    "@moonbeam-network/api-augment": "^0.2302.0",
+    "@moonbeam-network/api-augment": "^0.2801.0",
     "@polkadot/api": "^10.7.2",
     "@polkadot/apps-config": "^0.131.3",
     "@polkadot/util": "^12.2.1",
@@ -36,6 +36,7 @@
     "pg": "^8.8.0",
     "prettier": "3.2.5",
     "pretty-bytes": "^5.6.0",
+    "rlp": "^3.0.0",
     "rollup-plugin-esbuild": "^4.6.0",
     "rollup-plugin-preserve-shebangs": "^0.2.0",
     "semver": "^7.3.8",
@@ -46,7 +47,7 @@
     "ts-node": "^10.8.1",
     "undici": "^5.11.0",
     "viem": "^0.3.40",
-    "web3": "^1.6.0",
+    "web3": "^4.7.0",
     "yargs": "^15.4.1"
   },
   "devDependencies": {

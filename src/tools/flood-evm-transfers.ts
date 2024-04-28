@@ -2,7 +2,6 @@
 
 import { ALITH_PRIVATE_KEY } from "../utils/constants";
 import { Keyring } from "@polkadot/api";
-import { TransactionReceipt } from "web3-core";
 
 import yargs from "yargs";
 import { getMonitoredApiFor, NETWORK_YARGS_OPTIONS } from "../utils/networks";
@@ -49,8 +48,8 @@ const sendTransfer = async (web3: Web3, from: any, nonce: number) => {
     {
       from: from.address,
       to: "0x17e9bfd55118c142e15d36200dcdabb3aa5a0ac9",
-      gasPrice: web3.utils.toWei("1", "Gwei"),
-      gas: 21000,
+      gasPrice: web3.utils.toWei("100", "Gwei"),
+      gas: 31000,
       value: web3.utils.toWei("1", "Gwei"),
       nonce: nonce++,
     },
@@ -75,7 +74,7 @@ const sendTransfer = async (web3: Web3, from: any, nonce: number) => {
   // console.log(`Transaction for Loop count ${loopCount} sent: ${tx.transactionHash}`);
   const startTime = Date.now();
   while (Date.now() - startTime < 60000) {
-    let rcpt: TransactionReceipt = await web3.eth.getTransactionReceipt(tx.transactionHash);
+    let rcpt = await web3.eth.getTransactionReceipt(tx.transactionHash);
     if (rcpt) {
       //console.log(`Loop count ${loopCount} - block #${rcpt.blockNumber} (${rcpt.blockHash})`);
       return;

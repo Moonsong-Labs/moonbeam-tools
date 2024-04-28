@@ -1,4 +1,4 @@
-import { JsonRpcResponse } from "web3-core-helpers";
+import { JsonRpcResponse } from 'web3-types';
 import Web3 from "web3";
 
 let globalId = 10000;
