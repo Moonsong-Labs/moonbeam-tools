@@ -202,7 +202,10 @@ function parseImage(
 }
 
 async function getImageProposal(api: ApiPromise | ApiDecoration<"promise">, hash: string) {
-  const optStatus = "requestStatusFor" in api.query.preimage ?  await api.query.preimage["requestStatusFor"](hash) :  await api.query.preimage.statusFor(hash);
+  const optStatus =
+    "requestStatusFor" in api.query.preimage
+      ? await api.query.preimage["requestStatusFor"](hash)
+      : await api.query.preimage.statusFor(hash);
   const status = optStatus.unwrapOr(null) as PalletPreimageRequestStatus;
   if (!status) {
     return null;
@@ -338,7 +341,7 @@ export async function getReferendumByGroups(
         }
         const { apiAt, ongoing } = await getReferendumOnGoing(api, id, info);
         // Old proposal had the hash directly
-        const proposalHash = getPreimageHash(ongoing.proposal || (ongoing as any).proposalHash);       
+        const proposalHash = getPreimageHash(ongoing.proposal || (ongoing as any).proposalHash);
         return {
           id,
           ongoing,
