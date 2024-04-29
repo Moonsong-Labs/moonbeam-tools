@@ -39,8 +39,7 @@ describe("State Manipulation", () => {
       ),
       new CollatorManipulator(CHARLETH_ADDRESS, CHARLETH_SESSION_ADDRESS),
       new HRMPManipulator(),
-      new CollectiveManipulator("TechCommitteeCollective", [CHARLETH_ADDRESS, HEATH_ADDRESS]),
-      new CollectiveManipulator("CouncilCollective", [JUDITH_ADDRESS]),
+      new CollectiveManipulator("OpenTechCommitteeCollective", [CHARLETH_ADDRESS, HEATH_ADDRESS]),
       new ValidationManipulator(),
       new XCMPManipulator(),
       new SpecManipulator({
