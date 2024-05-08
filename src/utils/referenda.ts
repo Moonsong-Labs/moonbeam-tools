@@ -181,8 +181,13 @@ function parseImage(
   }
 
   const [proposer, balance] = status.isUnrequested
-    ? status.asUnrequested.deposit
-    : status.asRequested.deposit.unwrapOrDefault();
+    ? "deposit" in status.asUnrequested
+      ? status.asUnrequested["deposit"]
+      : status.asUnrequested.ticket
+    : ("deposit" in status.asRequested
+        ? status.asRequested["deposit"]
+        : status.asRequested.maybeTicket
+      ).unwrapOrDefault();
   let proposal: Call | undefined;
 
   if (bytes) {
@@ -197,19 +202,25 @@ function parseImage(
 }
 
 async function getImageProposal(api: ApiPromise | ApiDecoration<"promise">, hash: string) {
-  const optStatus = await api.query.preimage.statusFor(hash);
+  const optStatus =
+    "requestStatusFor" in api.query.preimage
+      ? await api.query.preimage["requestStatusFor"](hash)
+      : await api.query.preimage.statusFor(hash);
   const status = optStatus.unwrapOr(null) as PalletPreimageRequestStatus;
   if (!status) {
     return null;
   }
   const len = status.isRequested
-    ? status.asRequested.len.unwrapOr(0)
+    ? "maybeLen" in status.asRequested
+      ? status.asRequested.maybeLen.unwrapOr(0)
+      : (status.asRequested["len"] as any).unwrapOr(0)
     : status.asUnrequested.len || 0;
+
   const h256Hash = api.registry.createType("H256", hash);
 
   try {
     const preImage = await api.query.preimage.preimageFor([h256Hash, len]);
-    return parseImage(api, [status, preImage.unwrap()]);
+    return parseImage(api, [status, (preImage as any).unwrap()]);
   } catch (e) {
     debug(e);
   }

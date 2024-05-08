@@ -32,7 +32,9 @@ const main = async () => {
     moonriver: "moonriver",
     "Moonbase Alpha": "moonbase",
   }[await api.runtimeChain.toString().toLocaleLowerCase()];
-  for (const referendum of await api.derive.democracy.referendums()) {
+
+  const demoReferendum = "democracy" in api.derive ? await api.derive.democracy.referendums() : [];
+  for (const referendum of demoReferendum) {
     let imageText = ""; // TODO refactor
     let subText = null; // TODO refactor
     if (referendum.image && referendum.image.proposal && referendum.image.proposal) {

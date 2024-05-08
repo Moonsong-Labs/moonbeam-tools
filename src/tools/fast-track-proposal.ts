@@ -71,7 +71,7 @@ async function main() {
   try {
     const collectiveThreshold =
       argv["collective-threshold"] ||
-      Math.ceil(((await api.query.councilCollective.members()).length * 3) / 5);
+      Math.ceil(((await api.query.openTechCommitteeCollective.members()).length * 3) / 5);
 
     const privKey = argv["alith"] ? ALITH_PRIVATE_KEY : argv["account-priv-key"];
     if (!privKey) {

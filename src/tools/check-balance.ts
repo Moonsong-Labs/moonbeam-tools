@@ -27,11 +27,19 @@ const main = async () => {
 
   const account = await apiAt.query.system.account(argv.address);
 
-  console.log(
-    `#${blockNumber} - ${
-      argv.address
-    } [free: ${account.data.free.toBigInt()}, reserved: ${account.data.reserved.toBigInt()}, miscFrozen: ${account.data.miscFrozen.toBigInt()}, feeFrozen: ${account.data.feeFrozen.toBigInt()}]`,
-  );
+  if ("miscFrozen" in account.data) {
+    console.log(
+      `#${blockNumber} - ${
+        argv.address
+      } [free: ${account.data.free.toBigInt()}, reserved: ${account.data.reserved.toBigInt()}, miscFrozen: ${account.data["miscFrozen"].toBigInt()}, feeFrozen: ${account.data["feeFrozen"].toBigInt()}]`,
+    );
+  } else {
+    console.log(
+      `#${blockNumber} - ${
+        argv.address
+      } [free: ${account.data.free.toBigInt()}, reserved: ${account.data.reserved.toBigInt()}, frozen: ${account.data.frozen.toBigInt()}]`,
+    );
+  }
   api.disconnect();
 };
 

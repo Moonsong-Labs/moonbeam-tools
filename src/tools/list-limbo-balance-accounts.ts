@@ -41,9 +41,9 @@ const main = async () => {
       affectedAccounts.push([
         addressesToCheck[idx],
         identities[idx],
-        Web3.utils.fromWei(free),
-        Web3.utils.fromWei(reserved),
-        Web3.utils.fromWei(frozen),
+        Web3.utils.fromWei(free.toString()),
+        Web3.utils.fromWei(reserved.toString()),
+        Web3.utils.fromWei(frozen.toString()),
         Web3.utils.fromWei(frozen.sub(free).toString()),
       ]);
     }

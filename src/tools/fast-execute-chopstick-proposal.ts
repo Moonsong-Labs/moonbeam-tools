@@ -145,8 +145,8 @@ const main = async () => {
   const callHash = ongoingData.proposal.isLookup
     ? ongoingData.proposal.asLookup.toHex()
     : ongoingData.proposal.isInline
-    ? blake2AsHex(ongoingData.proposal.asInline.toHex())
-    : ongoingData.proposal.asLegacy.toHex();
+      ? blake2AsHex(ongoingData.proposal.asInline.toHex())
+      : ongoingData.proposal.asLegacy.toHex();
 
   const proposalBlockTarget = (await api.rpc.chain.getHeader()).number.toNumber();
   const fastProposalData = {
@@ -219,8 +219,8 @@ const main = async () => {
     call.isLookup
       ? call.asLookup.toHex() == callHash
       : call.isInline
-      ? blake2AsHex(call.asInline.toHex()) == callHash
-      : call.asLegacy.toHex() == callHash
+        ? blake2AsHex(call.asInline.toHex()) == callHash
+        : call.asLegacy.toHex() == callHash,
   );
 
   console.log(
