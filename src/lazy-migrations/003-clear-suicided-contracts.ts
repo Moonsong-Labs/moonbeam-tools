@@ -74,7 +74,7 @@ async function main() {
     const chain = (await api.rpc.system.chain()).toString().toLowerCase().replaceAll(/\s/g, "-");
     const TEMPORADY_DB_FILE = path.resolve(
       __dirname,
-      `003-clear-suicided-contracts-${chain}-db.json`
+      `003-clear-suicided-contracts-${chain}-db.json`,
     );
 
     let db = {
@@ -113,7 +113,7 @@ async function main() {
         systemAccountPrefix,
         ITEMS_PER_PAGE,
         db.cursor,
-        db.at_block
+        db.at_block,
       );
       db.cursor = keys.length > 0 ? keys[keys.length - 1].toHex() : undefined;
       console.log(db.cursor, keys.length);
@@ -135,7 +135,7 @@ async function main() {
       let keys_vec = Object.keys(contract_suicided_keys);
       const is_suicided_result = (await api.rpc.state.queryStorageAt(
         keys_vec,
-        db.at_block
+        db.at_block,
       )) as unknown as Raw[];
 
       const not_suicided_contracts = is_suicided_result.reduce((s, v, idx) => {
@@ -156,7 +156,7 @@ async function main() {
       keys_vec = Object.keys(contract_code_keys);
       const has_code_result = (await api.rpc.state.queryStorageAt(
         keys_vec,
-        db.at_block
+        db.at_block,
       )) as unknown as Raw[];
 
       const codeless_contracts = has_code_result.reduce((s, v, idx) => {
@@ -199,12 +199,12 @@ async function main() {
       const corrupted_contracts = Object.keys(db.corrupted_addresses).slice(0, 100);
       const extrinsicCall = api.tx["moonbeamLazyMigrations"].clearSuicidedContracts(
         corrupted_contracts,
-        entries_to_remove
+        entries_to_remove,
       );
       await extrinsicCall.signAndSend(
         account,
         { nonce: nonce++ },
-        monitorSubmittedExtrinsic(api, { id: "migration" })
+        monitorSubmittedExtrinsic(api, { id: "migration" }),
       );
       await waitForAllMonitoredExtrinsics();
 
