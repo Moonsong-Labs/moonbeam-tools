@@ -110,7 +110,7 @@ export async function downloadExportedState(
       return { stateFile, stateInfo };
     }
   }
-  const client = new Client(`https://states.kaki.dev`);
+  const client = new Client(`http://states.kaki.dev`);
   const downloadedStateInfo: StateInfo = await (
     await client.request({
       path: `/${network}-state.info.json`,
