@@ -69,13 +69,13 @@ const main = async () => {
 
   // collect block fullness data
   let bfData = {
-    max:0,
-    maxBlock:0,
-    min:100,
-    minBlock:0,
-    sum:0,
+    max: 0,
+    maxBlock: 0,
+    min: 100,
+    minBlock: 0,
+    sum: 0,
     values: [],
-  }
+  };
 
   let txData = {
     max: 0,
@@ -84,13 +84,12 @@ const main = async () => {
     minBlock: 0,
     sum: 0,
     txPerBlock: [],
-  }
-
+  };
 
   type FeeData = {
     t: number; // target block fullness
-    f: number; // baseFee 
-  }
+    f: number; // baseFee
+  };
   type BlockData = {
     h: number; // block number (height)
     d: Array<FeeData>; // fees data
@@ -101,26 +100,26 @@ const main = async () => {
     return;
   }
 
-  let blocks:BlockData[] = [];
+  let blocks: BlockData[] = [];
   for (let i = fromBlockNumber; i <= toBlockNumber; i++) {
-    blocks.push({ h: i, d: []});
+    blocks.push({ h: i, d: [] });
   }
 
   const minBaseFee = 1;
   const maxBaseFee = 10e75;
 
-  let currentFees: FeeData[] = argv.target.map((t:number) => ({t:t, f: minBaseFee}));
+  let currentFees: FeeData[] = argv.target.map((t: number) => ({ t: t, f: minBaseFee }));
   await promiseConcurrent(
     20,
-    async (block: BlockData, i:number) => {
+    async (block: BlockData, i: number) => {
       const blockDetails = await api.rpc.chain
         .getBlockHash(block.h)
         .then((blockHash) => getBlockDetails(api, blockHash));
-      
+
       currentFees = currentFees.map((feeData: FeeData) => {
-        const eip1559 = 1 + ((blockDetails.weightPercentage - feeData.t)/feeData.t) * (1/8);
+        const eip1559 = 1 + ((blockDetails.weightPercentage - feeData.t) / feeData.t) * (1 / 8);
         const newFee = Math.min(Math.max(feeData.f * eip1559, minBaseFee), maxBaseFee);
-        return {t: feeData.t, f: newFee};
+        return { t: feeData.t, f: newFee };
       });
       blocks[i].d = currentFees;
     },
@@ -128,10 +127,10 @@ const main = async () => {
   );
 
   // write to file
-  const fs = require('fs');
-  const path = require('path');
+  const fs = require("fs");
+  const path = require("path");
   const fileName = `block-eip1559-sim-${fromBlockNumber}-${toBlockNumber}.json`;
-  const filePath = path.join(__dirname,"..","..", "notebooks", "data", fileName);
+  const filePath = path.join(__dirname, "..", "..", "notebooks", "data", fileName);
   fs.writeFileSync(filePath, JSON.stringify(blocks, null, 2));
 
   console.log(`output written to ${filePath}`);

@@ -64,13 +64,13 @@ const main = async () => {
 
   // collect block fullness data
   let bfData = {
-    max:0,
-    maxBlock:0,
-    min:100,
-    minBlock:0,
-    sum:0,
+    max: 0,
+    maxBlock: 0,
+    min: 100,
+    minBlock: 0,
+    sum: 0,
     values: [],
-  }
+  };
 
   let txData = {
     max: 0,
@@ -79,31 +79,30 @@ const main = async () => {
     minBlock: 0,
     sum: 0,
     txPerBlock: [],
-  }
+  };
 
   type BlockData = {
     number: number;
     fill: number;
   };
 
-  let blocks:BlockData[] = [];
+  let blocks: BlockData[] = [];
   for (let i = fromBlockNumber; i <= toBlockNumber; i++) {
     blocks.push({ number: i, fill: 0 });
   }
 
   await promiseConcurrent(
     20,
-    async (block: BlockData, i:number) => {
+    async (block: BlockData, i: number) => {
       const blockHash = await api.rpc.chain.getBlockHash(block.number);
       const records = await api.query.system.events.at(blockHash);
-
 
       const blockDetails = await api.rpc.chain
         .getBlockHash(block.number)
         .then((blockHash) => getBlockDetails(api, blockHash));
-      
+
       blocks[i].fill = blockDetails.weightPercentage;
-      
+
       if (blockDetails.weightPercentage > bfData.max) {
         bfData.max = blockDetails.weightPercentage;
         bfData.maxBlock = block.number;
@@ -114,7 +113,6 @@ const main = async () => {
       }
       bfData.sum += blockDetails.weightPercentage;
       bfData.values.push(blockDetails.weightPercentage);
-
 
       if (blockDetails.txWithEvents.length > txData.max) {
         txData.max = blockDetails.txWithEvents.length;
@@ -130,43 +128,48 @@ const main = async () => {
     blocks,
   );
 
-
   await api.disconnect();
 
   console.log(`Total blocks: ${toBlockNumber - fromBlockNumber}`);
-  console.log(`Block Fullness Max ${bfData.maxBlock}: ${bfData.max} (whole block: ${(bfData.max+25).toFixed(2)})`);
-  console.log(`Block Fullness Min ${bfData.minBlock}: ${bfData.min} (whole block: ${(bfData.min+25).toFixed(2)})`);
+  console.log(
+    `Block Fullness Max ${bfData.maxBlock}: ${bfData.max} (whole block: ${(bfData.max + 25).toFixed(2)})`,
+  );
+  console.log(
+    `Block Fullness Min ${bfData.minBlock}: ${bfData.min} (whole block: ${(bfData.min + 25).toFixed(2)})`,
+  );
   console.log(`Block Fullness Avg: ${(bfData.sum / blocks.length).toFixed(2)}`);
 
   const percentiles = [90, 80, 70, 60, 50, 45, 40, 37.5, 35, 30, 20, 10];
-  
-  for (let i of percentiles){
-    const full75 = percentile(i, bfData.values)
+
+  for (let i of percentiles) {
+    const full75 = percentile(i, bfData.values);
     const full = full75 + 25;
     console.log(`Block Fullness ${i}perc: ${full75.toFixed(2)} (whole block: ${full.toFixed(2)})`);
   }
 
   // simulate EIP1559
-  console.log(`------- Simulated EIP1559 -------`)
-  let sim = percentiles.reduce((p, i) => ({...p, [i]:1}), {});
+  console.log(`------- Simulated EIP1559 -------`);
+  let sim = percentiles.reduce((p, i) => ({ ...p, [i]: 1 }), {});
   let targetFullness = percentiles.map((i) => ({
-    p: i, 
-    target: percentile(i, bfData.values)
+    p: i,
+    target: percentile(i, bfData.values),
   }));
 
   blocks.forEach((block) => {
-    targetFullness.forEach(({p, target}) => {
-      const eip1559 = 1 + (block.fill - target)/target * (1/8);
+    targetFullness.forEach(({ p, target }) => {
+      const eip1559 = 1 + ((block.fill - target) / target) * (1 / 8);
       sim[p] = sim[p] * eip1559;
       // sim[p] = Math.max(sim[p], eip1559);
     });
   });
 
-  Object.entries(sim).reverse().forEach(([p, price]) => {
-    console.log(`Simulated ${p}perc, ${percentile(p, bfData.values).toFixed(2)}%: ${price}`);
-  });
+  Object.entries(sim)
+    .reverse()
+    .forEach(([p, price]) => {
+      console.log(`Simulated ${p}perc, ${percentile(p, bfData.values).toFixed(2)}%: ${price}`);
+    });
 
-  console.log(`=========== Tx stats ===========`)
+  console.log(`=========== Tx stats ===========`);
   console.log(`Total tx: ${txData.sum}`);
   console.log(`Max TXs in a block: ${txData.max} in block ${txData.maxBlock}`);
   console.log(`Min TXs in a block: ${txData.min} in block ${txData.minBlock}`);
