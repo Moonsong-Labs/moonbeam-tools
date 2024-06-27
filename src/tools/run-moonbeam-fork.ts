@@ -52,6 +52,10 @@ const argv = yargs(process.argv.slice(2))
       description: "Downloads the smaller state version (without super heavy contracts)",
       default: true,
     },
+    "state-date": {
+      type: "string",
+      description: "Specify the date of the state to download (default to latest available) ",
+    },
     sealing: {
       type: "string",
       alias: "s",
@@ -297,9 +301,10 @@ const main = async () => {
       outPath: argv["base-path"],
       checkLatest: argv.latest,
       useCleanState: argv["smaller-state"],
+      stateDate: argv["state-date"],
     },
-    (length) => {
-      process.stdout.write(`${chalk.yellow(`Downloading`)}\n`);
+    (length, filename) => {
+      process.stdout.write(`${chalk.yellow(`Downloading ${filename}...`)}\n`);
       progressBar = new SingleBar({
         etaAsynchronousUpdate: true,
         fps: 5,

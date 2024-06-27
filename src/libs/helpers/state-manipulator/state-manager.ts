@@ -62,17 +62,20 @@ export interface DownloadOptions {
 
   // Prefers clean state (without heavy contract, 80% smaller on moonbeam)
   useCleanState?: boolean;
+
+  // Will download the state of the given date or the latest if not provided
+  stateDate?: string;
 }
 
 // Downloads the exported state from s3. Only if the xxx-chain-info.json file hasn't changed
 // 2 files are created:
 export async function downloadExportedState(
   options: DownloadOptions,
-  onStart?: (size: number) => void,
+  onStart?: (size: number, filename: string) => void,
   onProgress?: (bytes: number) => void,
   onComplete?: () => void,
 ): Promise<{ stateFile: string; stateInfo: StateInfo }> {
-  const { network, outPath, checkLatest, useCleanState } = options;
+  const { network, outPath, checkLatest, useCleanState, stateDate } = options;
 
   if (!STORAGE_NAMES[network]) {
     console.warn(`Invalid network ${network}, expecting ${Object.keys(STORAGE_NAMES).join(", ")}`);
@@ -113,7 +116,7 @@ export async function downloadExportedState(
   const client = new Client(`http://states.kaki.dev`);
   const downloadedStateInfo: StateInfo = await (
     await client.request({
-      path: `/${network}-state.info.json`,
+      path: `/${network}-state${stateDate ? `-${stateDate}` : ""}.info.json`,
       method: "GET",
     })
   ).body.json();
@@ -164,6 +167,7 @@ export async function downloadExportedState(
           onStart &&
             onStart(
               parseInt(headerStrings[headerStrings.findIndex((h) => h == "Content-Length") + 1]),
+              stateFileName
             );
           return true;
         },
