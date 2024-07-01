@@ -69,7 +69,7 @@ export function isConvictionTally(
   );
 }
 
-function curveDelay(curve: PalletReferendaCurve, input: BN, div: BN): BN {
+export function curveDelay(curve: PalletReferendaCurve, input: BN, div: BN): BN {
   // if divisor is zero, we return the max
   if (div.isZero()) {
     return BN_BILLION;
@@ -181,12 +181,8 @@ function parseImage(
   }
 
   const [proposer, balance] = status.isUnrequested
-    ? "deposit" in status.asUnrequested
-      ? status.asUnrequested["deposit"]
-      : status.asUnrequested.ticket
-    : ("deposit" in status.asRequested
-        ? status.asRequested["deposit"]
-        : status.asRequested.maybeTicket
+    ? status.asUnrequested.ticket
+    : (status.asRequested.maybeTicket
       ).unwrapOrDefault();
   let proposal: Call | undefined;
 
@@ -202,10 +198,7 @@ function parseImage(
 }
 
 async function getImageProposal(api: ApiPromise | ApiDecoration<"promise">, hash: string) {
-  const optStatus =
-    "requestStatusFor" in api.query.preimage
-      ? await api.query.preimage["requestStatusFor"](hash)
-      : await api.query.preimage.statusFor(hash);
+  const optStatus = await api.query.preimage.requestStatusFor(hash);
   const status = optStatus.unwrapOr(null) as PalletPreimageRequestStatus;
   if (!status) {
     return null;
