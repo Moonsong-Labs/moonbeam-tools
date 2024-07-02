@@ -158,23 +158,19 @@ export async function callInterpreter(
         subCalls: subCallsData,
       };
     }
-    const imageStatusFn =
-      "requestStatusFor" in api.query.preimage
-        ? api.query.preimage["requestStatusFor"]
-        : api.query.preimage.statusFor;
     const callData = nested.inlined
       ? call.args[nested.argumentPosition]
-      : await imageStatusFn(call.args[nested.argumentPosition].toHex()).then((optStatus) => {
+      : await api.query.preimage.requestStatusFor(call.args[nested.argumentPosition].toHex()).then((optStatus) => {
           if (optStatus.isNone) {
             return null;
           }
           const status = optStatus.unwrap();
           const len = status.isRequested
-            ? status.asRequested.len.unwrapOr(0)
+            ? status.asRequested.maybeLen.unwrapOr(0)
             : status.asUnrequested.len || 0;
           return api.query.preimage
             .preimageFor([call.args[nested.argumentPosition].toHex(), len])
-            .then((preimage: Option<PalletPreimageRequestStatus>) => preimage.unwrap().toHex());
+            .then((preimage) => preimage.unwrap().toHex());
         });
     if (callData) {
       const subCall = await api.registry.createType("Call", callData);
