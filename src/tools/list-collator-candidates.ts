@@ -145,7 +145,7 @@ const main = async () => {
 
   const candidateOffCount = candidateList.filter((c) => !c.isActive).length;
   const nextRoundSeconds =
-    12 * (roundInfo.first.toNumber() + roundInfo.length.toNumber() - blockHeader.number.toNumber());
+    6 * (roundInfo.first.toNumber() + roundInfo.length.toNumber() - blockHeader.number.toNumber());
 
   const printColoredNumber = (value: bigint, total: bigint) => {
     const valueWithCommas = numberWithCommas(value / 10n ** 18n);
