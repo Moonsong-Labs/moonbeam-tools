@@ -570,6 +570,7 @@ const main = async () => {
     "--collator",
     "--db-cache 4096",
     `--trie-cache-size ${argv["trie-cache-size"]}`,
+    "--unsafe-force-node-key-generation",
   ];
   const devParams = [
     "--no-hardware-benchmarks",
