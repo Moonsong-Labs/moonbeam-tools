@@ -167,7 +167,7 @@ export async function downloadExportedState(
           onStart &&
             onStart(
               parseInt(headerStrings[headerStrings.findIndex((h) => h == "Content-Length") + 1]),
-              stateFileName
+              stateFileName,
             );
           return true;
         },

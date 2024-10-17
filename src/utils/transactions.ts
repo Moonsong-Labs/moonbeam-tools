@@ -160,18 +160,20 @@ export async function callInterpreter(
     }
     const callData = nested.inlined
       ? call.args[nested.argumentPosition]
-      : await api.query.preimage.requestStatusFor(call.args[nested.argumentPosition].toHex()).then((optStatus) => {
-          if (optStatus.isNone) {
-            return null;
-          }
-          const status = optStatus.unwrap();
-          const len = status.isRequested
-            ? status.asRequested.maybeLen.unwrapOr(0)
-            : status.asUnrequested.len || 0;
-          return api.query.preimage
-            .preimageFor([call.args[nested.argumentPosition].toHex(), len])
-            .then((preimage) => preimage.unwrap().toHex());
-        });
+      : await api.query.preimage
+          .requestStatusFor(call.args[nested.argumentPosition].toHex())
+          .then((optStatus) => {
+            if (optStatus.isNone) {
+              return null;
+            }
+            const status = optStatus.unwrap();
+            const len = status.isRequested
+              ? status.asRequested.maybeLen.unwrapOr(0)
+              : status.asUnrequested.len || 0;
+            return api.query.preimage
+              .preimageFor([call.args[nested.argumentPosition].toHex(), len])
+              .then((preimage) => preimage.unwrap().toHex());
+          });
     if (callData) {
       const subCall = await api.registry.createType("Call", callData);
       return { text, call, depth: 1, subCalls: [await callInterpreter(api, subCall)] };

@@ -182,8 +182,7 @@ function parseImage(
 
   const [proposer, balance] = status.isUnrequested
     ? status.asUnrequested.ticket
-    : (status.asRequested.maybeTicket
-      ).unwrapOrDefault();
+    : status.asRequested.maybeTicket.unwrapOrDefault();
   let proposal: Call | undefined;
 
   if (bytes) {
