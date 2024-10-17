@@ -376,8 +376,10 @@ export const listenBlocks = async (
   api: ApiPromise,
   finalized: boolean,
   callBack: (blockDetails: RealtimeBlockDetails) => Promise<void>,
+  blocksToMonitor: number = Infinity
 ) => {
   let latestBlockTime = 0;
+  let blockCount = 0;
   try {
     latestBlockTime = (
       await api.query.timestamp.now.at((await api.rpc.chain.getBlock()).block.header.parentHash)
@@ -398,6 +400,10 @@ export const listenBlocks = async (
       elapsedMilliSecs: blockDetails.blockTime - latestBlockTime,
     });
     latestBlockTime = blockDetails.blockTime;
+    blockCount++;
+    if (blockCount >= blocksToMonitor) {
+      unsubHeads();
+    }
   });
   return unsubHeads;
 };

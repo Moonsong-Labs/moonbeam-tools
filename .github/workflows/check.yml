@@ -19,3 +19,18 @@ jobs:
           node-version: 20.x
       - name: Check with Prettier
         run: npx prettier --check --ignore-path .prettierignore '**/*.(yml|js|ts)'
+
+  test:
+    name: "Run Tests"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Use Node.js 16.x
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20.x
+      - name: Install dependencies
+        run: npm install
+      - name: Run tests
+        run: npm test

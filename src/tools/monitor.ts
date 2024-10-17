@@ -26,6 +26,11 @@ const argv = yargs(process.argv.slice(2))
       default: false,
       description: "listen to finalized only",
     },
+    blocks: {
+      type: "number",
+      description: "Number of blocks to monitor",
+      default: Infinity,
+    },
   })
   .check(function (argv) {
     if (!argv.url && !argv.networks) {
@@ -36,7 +41,7 @@ const argv = yargs(process.argv.slice(2))
 
 const main = async () => {
   if (argv.networks) {
-    argv.networks.map((network) => getMonitoredApiFor({ network, finalized: argv.finalized }));
+    argv.networks.map((network) => getMonitoredApiFor({ network, finalized: argv.finalized, blocks: argv.blocks }));
   } else {
     getMonitoredApiFor(argv);
   }
