@@ -3,7 +3,6 @@
 
 Ex: ./node_modules/.bin/ts-node src/lazy-migrations/004-create-contract-metadata.ts \
    --url ws://localhost:9944 \
-   --limit 1000 \
    --at <block_hash> \
    --account-priv-key <key> \
 */
@@ -56,7 +55,6 @@ async function main() {
   const api = await getApiFor(argv);
   const keyring = new Keyring({ type: "ethereum" });
 
-  const entries_to_remove = argv["limit"];
   const request_delay = argv["request-delay"];
 
   try {
@@ -135,35 +133,38 @@ async function main() {
 
       // Save results
       fs.writeFileSync(TEMPORADY_DB_FILE, JSON.stringify(db, null, 4), { encoding: "utf-8" });
+
+      // await request_delay for avoiding getting banned for spamming
+      await new Promise((r) => setTimeout(r, request_delay));
     }
 
-    // Contract Metadata Tx
-    let batchInner = [];
-    let metaTx;
-    // For each contract without metadata, create the metadata
-    for (let contract of Object.keys(db.contracts_without_metadata)) {
-      metaTx = await api.tx["moonbeamLazyMigrations"].createContractMetadata(contract);
-      batchInner.push(metaTx);
-    }
-    let batchTx = await api.tx.utility.forceBatch(batchInner);
+    // // Contract Metadata Tx
+    // let batchInner = [];
+    // let metaTx;
+    // // For each contract without metadata, create the metadata
+    // for (let contract of Object.keys(db.contracts_without_metadata)) {
+    //   metaTx = await api.tx["moonbeamLazyMigrations"].createContractMetadata(contract);
+    //   batchInner.push(metaTx);
+    // }
+    // let batchTx = await api.tx.utility.forceBatch(batchInner);
 
-    console.log(`Call add contract metadata`);
-    console.log(batchTx.method.toHex());
+    // console.log(`Call add contract metadata`);
+    // console.log(batchTx.method.toHex());
 
-    await waitForAllMonitoredExtrinsics();
+    // await waitForAllMonitoredExtrinsics();
 
-    // Check if metadata has been created
-    for (let contract of Object.keys(db.contracts_without_metadata)) {
-      const has_metadata = await api.query.evm.accountCodesMetadata(contract);
-      if (!has_metadata.isEmpty) {
-        db.fixed_contracts[contract] = true;
-        // Remove fixed addresses from corrupted addresses map
-        delete db.contracts_without_metadata[contract];
-      }
-    }
+    // // Check if metadata has been created
+    // for (let contract of Object.keys(db.contracts_without_metadata)) {
+    //   const has_metadata = await api.query.evm.accountCodesMetadata(contract);
+    //   if (!has_metadata.isEmpty) {
+    //     db.fixed_contracts[contract] = true;
+    //     // Remove fixed addresses from corrupted addresses map
+    //     delete db.contracts_without_metadata[contract];
+    //   }
+    // }
 
-    // Save results
-    fs.writeFileSync(TEMPORADY_DB_FILE, JSON.stringify(db, null, 4), { encoding: "utf-8" });
+    // // Save results
+    // fs.writeFileSync(TEMPORADY_DB_FILE, JSON.stringify(db, null, 4), { encoding: "utf-8" });
   } finally {
     await api.disconnect();
   }
