@@ -11,6 +11,6 @@
     "sourceMap": true,
     "outDir": "build"
   },
-  "include": ["src/**/*.ts", "test/**/*.spec.ts"],
+  "include": ["src/**/*.ts", "test/**/*.spec.ts", "test/auction-info.test.ts"],
   "exclude": ["node_modules"]
 }

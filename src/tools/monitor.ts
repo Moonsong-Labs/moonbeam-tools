@@ -40,6 +40,7 @@ const main = async () => {
   } else {
     getMonitoredApiFor(argv);
   }
+  console.log("Listening to events...");
 };
 
 main();
