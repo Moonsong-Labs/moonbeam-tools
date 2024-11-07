@@ -2,35 +2,11 @@ import yargs from "yargs";
 import "@polkadot/api-augment";
 
 import { getApiFor } from "../utils/networks";
-import { getAccountIdentity } from "../utils/monitoring";
 import { BN } from "@polkadot/util";
 import {
-  isBigInt,
-  isBn,
-  isHex,
-  isNumber,
-  isU8a,
-  u8aConcat,
   u8aToBn,
-  u8aToHex,
-  u8aToU8a,
 } from "@polkadot/util";
 
-const argv = yargs(process.argv.slice(2))
-  .usage("Usage: $0")
-  .version("1.0.0")
-  .options({
-    url: {
-      type: "string",
-      description: "Relay Websocket url",
-      string: true,
-      demandOption: true,
-    },
-    para: {
-      type: "number",
-      description: "Para for which a lease exists",
-    },
-  }).argv;
 
 type AuctionInfo = {
   duration: Number;
@@ -44,7 +20,7 @@ function addSeconds(date, seconds) {
   return date;
 }
 
-async function calculateTimestamp(api, futureblock: number) {
+export async function calculateTimestamp(api, futureblock: number) {
   let currentBlock = (await api.rpc.chain.getHeader()).number.toNumber();
   let timestamp = (await api.query.timestamp.now()).toNumber();
 
@@ -56,12 +32,12 @@ async function calculateTimestamp(api, futureblock: number) {
   return [futureDate.getTime(), futureDate];
 }
 
-async function calculateCurrentLeasePeriod(api, leasePeriod, leaseOffset) {
+export async function calculateCurrentLeasePeriod(api, leasePeriod, leaseOffset) {
   let currentBlock = (await api.rpc.chain.getHeader()).number.toNumber();
   return (currentBlock - leaseOffset) / leasePeriod;
 }
 
-const main = async () => {
+const main = async (argv) => {
   const api = await getApiFor(argv);
 
   const scheduled = await api.query.scheduler.agenda.entries();
@@ -203,13 +179,30 @@ const main = async () => {
   await api.disconnect();
 };
 
-async function start() {
+if (require.main === module) {
+  const argv = yargs(process.argv.slice(2))
+  .usage("Usage: $0")
+  .version("1.0.0")
+  .options({
+    url: {
+      type: "string",
+      description: "Relay Websocket url",
+      string: true,
+      demandOption: true,
+    },
+    para: {
+      type: "number",
+      description: "Para for which a lease exists",
+    },
+  }).argv;
+
+  console.log("Starting auction info tool");
+  
   try {
-    await main();
+    main(argv);
   } catch (e) {
     console.error(e);
     process.exit(1);
   }
 }
 
-start();
