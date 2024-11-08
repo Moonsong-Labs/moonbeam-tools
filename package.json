@@ -21,7 +21,6 @@
     "@polkadot/apps-config": "^0.138.1",
     "@polkadot/util": "^13.1.1",
     "@polkadot/util-crypto": "^13.1.1",
-    "@types/web3": "^1.2.2",
     "chalk": "^4.1.2",
     "cli-progress": "^3.11.2",
     "debug": "^4.3.4",
