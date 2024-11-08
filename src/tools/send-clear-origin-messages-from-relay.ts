@@ -1,21 +1,10 @@
-import yargs from "yargs";
 import "@polkadot/api-augment";
-import { Keyring } from "@polkadot/api";
 
-import { getApiFor } from "../utils/networks";
-import { getAccountIdentity } from "../utils/monitoring";
+import { Keyring } from "@polkadot/api";
 import { BN } from "@polkadot/util";
-import {
-  isBigInt,
-  isBn,
-  isHex,
-  isNumber,
-  isU8a,
-  u8aConcat,
-  u8aToBn,
-  u8aToHex,
-  u8aToU8a,
-} from "@polkadot/util";
+import yargs from "yargs";
+
+import { getApiFor } from "../utils/networks.ts";
 
 const argv = yargs(process.argv.slice(2))
   .usage("Usage: $0")

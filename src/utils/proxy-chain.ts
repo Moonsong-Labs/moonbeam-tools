@@ -1,10 +1,11 @@
-import Debug from "debug";
 import { ApiPromise, Keyring } from "@polkadot/api";
 import { SubmittableExtrinsic } from "@polkadot/api/types";
-import { ISubmittableResult, Callback } from "@polkadot/types/types";
-import type { MoonbeamRuntimeProxyType } from "@polkadot/types/lookup";
 import { KeyringPair } from "@polkadot/keyring/types";
+import { Callback, ISubmittableResult } from "@polkadot/types/types";
+import Debug from "debug";
 import { Options } from "yargs";
+
+import type { MoonbeamRuntimeProxyType } from "@polkadot/types/lookup";
 const debug = Debug("proxy-chain");
 
 // Library providing easy support for multiple proxy signing for CLI

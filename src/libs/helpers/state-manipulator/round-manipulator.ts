@@ -1,6 +1,8 @@
-import Debug from "debug";
-import { Action, encodeStorageKey, StateManipulator } from "./genesis-parser";
 import { hexToBn, nToHex } from "@polkadot/util";
+import Debug from "debug";
+
+import { Action, encodeStorageKey, StateManipulator } from "./genesis-parser.ts";
+
 const debug = Debug("helper:round-manipulator");
 
 export class RoundManipulator implements StateManipulator {

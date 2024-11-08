@@ -1,7 +1,6 @@
 import yargs from "yargs";
-import fs from "fs";
 
-import { exploreBlockRange, getApiFor, NETWORK_YARGS_OPTIONS, reverseBlocks } from "..";
+import { getApiFor, NETWORK_YARGS_OPTIONS, reverseBlocks } from "../index.ts";
 
 const argv = yargs(process.argv.slice(2))
   .usage("Usage: $0")

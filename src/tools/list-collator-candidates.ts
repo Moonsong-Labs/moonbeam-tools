@@ -1,8 +1,9 @@
 // This script is expected to run against a parachain network (using launch.ts script)
 import "@moonbeam-network/api-augment";
+
 import chalk from "chalk";
-import yargs from "yargs";
 import { table } from "table";
+import yargs from "yargs";
 
 import {
   combineRequestsPerDelegators,
@@ -10,7 +11,7 @@ import {
   getApiFor,
   NETWORK_YARGS_OPTIONS,
   numberWithCommas,
-} from "..";
+} from "../index.ts";
 
 const argv = yargs(process.argv.slice(2))
   .usage("Usage: $0")

@@ -1,32 +1,34 @@
 //@ts-nocheck
-/*
-  This script is intended to run once as hotfix for specific networks.
-  Do not use it without reading the code !!
-
-  This script will find the entries in `AtStake` for rounds before `RewardsPaymentDelay` that
-  have already been paid. If no storage entry exists for these rounds in `Points` and `DelayedPayouts`
-  then all the (round, candidate) keys for the given round will be cleared in batches of 100 per block.
-
-Ex: ./node_modules/.bin/ts-node-transpile-only src/hotfixes/runtime-1900-fix-at-stake-old-rounds \
-   --network alphanet \
-   --send-preimage-hash \
-   --send-proposal-as council-external \
-   --collective-threshold 3 \
-   --account-priv-key <key> \
-*/
-import yargs from "yargs";
-import chalk from "chalk";
-import Debug from "debug";
-import "@polkadot/api-augment";
+//
+//   This script is intended to run once as hotfix for specific networks.
+//   Do not use it without reading the code !!
+//
+//   This script will find the entries in `AtStake` for rounds before `RewardsPaymentDelay` that
+//   have already been paid. If no storage entry exists for these rounds in `Points` and `DelayedPayouts`
+//   then all the (round, candidate) keys for the given round will be cleared in batches of 100 per block.
+//
+// Ex: bun src/hotfixes/runtime-1900-fix-at-stake-old-rounds \
+//    --network alphanet \
+//    --send-preimage-hash \
+//    --send-proposal-as council-external \
+//    --collective-threshold 3 \
+//    --account-priv-key <key>
 import "@moonbeam-network/api-augment";
+import "@polkadot/api-augment";
+
 import { Keyring } from "@polkadot/api";
-import { getApiFor, NETWORK_YARGS_OPTIONS } from "../utils/networks";
-import { BN } from "@polkadot/util";
-import { blake2AsHex } from "@polkadot/util-crypto";
-import { promiseConcurrent } from "../utils/functions";
-import { monitorSubmittedExtrinsic, waitForAllMonitoredExtrinsics } from "../utils/monitoring";
 import { SubmittableExtrinsic } from "@polkadot/api/types";
 import { ISubmittableResult } from "@polkadot/types/types";
+import { BN } from "@polkadot/util";
+import { blake2AsHex } from "@polkadot/util-crypto";
+import chalk from "chalk";
+import Debug from "debug";
+import yargs from "yargs";
+
+import { promiseConcurrent } from "../utils/functions.ts";
+import { monitorSubmittedExtrinsic, waitForAllMonitoredExtrinsics } from "../utils/monitoring.ts";
+import { getApiFor, NETWORK_YARGS_OPTIONS } from "../utils/networks.ts";
+
 const debug = Debug("hotfix:1900-at-stake");
 
 const argv = yargs(process.argv.slice(2))

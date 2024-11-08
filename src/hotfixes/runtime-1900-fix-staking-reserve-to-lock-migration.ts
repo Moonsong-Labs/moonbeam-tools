@@ -1,26 +1,26 @@
 //@ts-nocheck
-/*
-  This script is intended to run once as hotfix for specific networks.
-  Do not use it without reading the code !!
-
-  This script will find the storage keys for the now removed items `DelegatorReserveToLockMigrations`
-  and `CollatorReserveToLockMigrations` and remove them in incremental blocks in 100kB batches.
-
-Ex: ./node_modules/.bin/ts-node-transpile-only runtime-1900-fix-staking-reserve-to-lock-migration \
-   --network alphanet \
-   --send-preimage-hash \
-   --send-proposal-as council-external \
-   --collective-threshold 3 \
-   --account-priv-key <key> \
-*/
-import yargs from "yargs";
-import "@polkadot/api-augment";
+// This script is intended to run once as hotfix for specific networks.
+// Do not use it without reading the code !!
+//
+// This script will find the storage keys for the now removed items `DelegatorReserveToLockMigrations`
+// and `CollatorReserveToLockMigrations` and remove them in incremental blocks in 100kB batches.
+//
+// Ex: bun runtime-1900-fix-staking-reserve-to-lock-migration \
+//    --network alphanet \
+//    --send-preimage-hash \
+//    --send-proposal-as council-external \
+//    --collective-threshold 3 \
+//    --account-priv-key <key>
 import "@moonbeam-network/api-augment";
+import "@polkadot/api-augment";
+
 import { ApiPromise, Keyring } from "@polkadot/api";
 import { KeyringPair } from "@polkadot/keyring/types";
-import { getApiFor, NETWORK_YARGS_OPTIONS } from "../utils/networks";
 import { blake2AsHex, xxhashAsHex } from "@polkadot/util-crypto";
-import { monitorSubmittedExtrinsic, waitForAllMonitoredExtrinsics } from "../utils/monitoring";
+import yargs from "yargs";
+
+import { monitorSubmittedExtrinsic, waitForAllMonitoredExtrinsics } from "../utils/monitoring.ts";
+import { getApiFor, NETWORK_YARGS_OPTIONS } from "../utils/networks.ts";
 
 const argv = yargs(process.argv.slice(2))
   .usage("Usage: $0")

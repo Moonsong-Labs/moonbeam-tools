@@ -1,9 +1,7 @@
 // This script is expected to run against a parachain network (using launch.ts script)
-import chalk from "chalk";
 import yargs from "yargs";
-import { table } from "table";
 
-import { getApiFor, NETWORK_YARGS_OPTIONS } from "..";
+import { getApiFor, NETWORK_YARGS_OPTIONS } from "../index.ts";
 
 const argv = yargs(process.argv.slice(2))
   .usage("Usage: $0")

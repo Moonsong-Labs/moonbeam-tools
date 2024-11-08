@@ -1,23 +1,23 @@
+import "@moonbeam-network/api-augment";
+import "@polkadot/api-augment";
+
+import { ApiDecoration } from "@polkadot/api/types";
+import { Data, GenericEthereumAccountId, Option, u128 } from "@polkadot/types";
+import { Codec, ITuple } from "@polkadot/types-codec/types";
+import { PalletIdentityRegistration } from "@polkadot/types/lookup";
+import { ISubmittableResult } from "@polkadot/types/types";
+import { u8aToString } from "@polkadot/util";
+import { ethereumEncode } from "@polkadot/util-crypto";
+import chalk from "chalk";
+import Debug from "debug";
+
+import { promiseConcurrent } from "./functions.ts";
+import { mapExtrinsics, TxWithEventAndFee } from "./types.ts";
+
 import type { ApiPromise } from "@polkadot/api";
 import type { Extrinsic, BlockHash, EventRecord } from "@polkadot/types/interfaces";
 import type { Block } from "@polkadot/types/interfaces/runtime/types";
-import { Data, GenericEthereumAccountId, Option, u128, u8, bool } from "@polkadot/types";
-import { ISubmittableResult } from "@polkadot/types/types";
-import type { EthereumTransactionTransactionV2 } from "@polkadot/types/lookup";
 import type { LegacyTransaction } from "@polkadot/types/interfaces/eth";
-import { u8aToString } from "@polkadot/util";
-import { ethereumEncode } from "@polkadot/util-crypto";
-import { mapExtrinsics, TxWithEventAndFee } from "./types";
-
-import "@polkadot/api-augment";
-import "@moonbeam-network/api-augment";
-
-import chalk from "chalk";
-import Debug from "debug";
-import { PalletIdentityRegistration } from "@polkadot/types/lookup";
-import { Codec, ITuple } from "@polkadot/types-codec/types";
-import { promiseConcurrent } from "./functions";
-import { ApiDecoration } from "@polkadot/api/types";
 const debug = Debug("monitoring");
 
 export const printTokens = (api: ApiPromise, tokens: bigint, decimals = 2, pad = 9) => {
@@ -308,7 +308,7 @@ export const getBlockDetails = async (api: ApiPromise, blockHash: BlockHash) => 
   return {
     block,
     isAuthorOrbiter:
-      collatorId.unwrapOr(null)?.toString() !=
+      (collatorId as any).unwrapOr(null)?.toString() !=
       (await getAccountFromNimbusKey(apiAt, nmbsKey))?.toString(),
     authorName,
     blockTime: blockTime.toNumber(),
@@ -503,7 +503,7 @@ export function generateBlockDetailsLog(
     .filter(({ dispatchInfo }) => !dispatchInfo.class.isMandatory)
     .reduce((p, { dispatchInfo, extrinsic, events, fees }) => {
       if (extrinsic.method.section == "ethereum") {
-        const payload = extrinsic.method.args[0] as EthereumTransactionTransactionV2;
+        const payload = extrinsic.method.args[0] as any;
         let gasPrice = payload.isLegacy
           ? payload.asLegacy?.gasPrice.toBigInt()
           : payload.isEip2930
@@ -534,7 +534,7 @@ export function generateBlockDetailsLog(
   const transferred = blockDetails.txWithEvents
     .map((tx) => {
       if (tx.extrinsic.method.section == "ethereum" && tx.extrinsic.method.method == "transact") {
-        const payload = tx.extrinsic.method.args[0] as EthereumTransactionTransactionV2;
+        const payload = tx.extrinsic.method.args[0] as any;
         let gasPrice = payload.isLegacy
           ? payload.asLegacy?.gasPrice.toBigInt()
           : payload.isEip2930

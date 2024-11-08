@@ -1,9 +1,20 @@
 // This script is expected to run against a parachain network (using launch.ts script)
-import yargs from "yargs";
+import "@moonbeam-network/api-augment";
+
 import { Knex, knex } from "knex";
 import sqlite3 from "sqlite3";
+import yargs from "yargs";
 
-import "@moonbeam-network/api-augment";
+import {
+  BlockDetails,
+  extractAuthorNimbusKey,
+  getAccountFromNimbusKey,
+  getApiFor,
+  getBlockDetails,
+  NETWORK_YARGS_OPTIONS,
+  printTokens,
+  promiseWhile,
+} from "../index.ts";
 
 import type { u128 } from "@polkadot/types";
 import type {
@@ -16,17 +27,6 @@ import type {
   ParachainInherentData,
   AccountId20,
 } from "@polkadot/types/interfaces";
-
-import {
-  printTokens,
-  promiseWhile,
-  getBlockDetails,
-  getApiFor,
-  NETWORK_YARGS_OPTIONS,
-  BlockDetails,
-  extractAuthorNimbusKey,
-  getAccountFromNimbusKey,
-} from "..";
 
 const debug = require("debug")("indexer:fee");
 

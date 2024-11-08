@@ -1,7 +1,7 @@
 // This script is expected to run against a parachain network (using launch.ts script)
 import yargs from "yargs";
 
-import { getApiFor, NETWORK_YARGS_OPTIONS } from "..";
+import { getApiFor, NETWORK_YARGS_OPTIONS } from "../index.ts";
 
 const argv = yargs(process.argv.slice(2))
   .usage("Usage: $0")
@@ -31,7 +31,7 @@ const main = async () => {
     console.log(
       `#${blockNumber} - ${
         argv.address
-      } [free: ${account.data.free.toBigInt()}, reserved: ${account.data.reserved.toBigInt()}, miscFrozen: ${account.data["miscFrozen"].toBigInt()}, feeFrozen: ${account.data["feeFrozen"].toBigInt()}]`,
+      } [free: ${account.data.free.toBigInt()}, reserved: ${account.data.reserved.toBigInt()}, miscFrozen: ${(account.data["miscFrozen"] as any)?.toBigInt()}, feeFrozen: ${account.data["feeFrozen"].toBigInt()}]`,
     );
   } else {
     console.log(

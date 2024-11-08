@@ -1,8 +1,8 @@
-import yargs from "yargs";
-import fs from "fs";
-
-import { exploreBlockRange, getApiFor, NETWORK_YARGS_OPTIONS, reverseBlocks } from "..";
 import { ApiPromise } from "@polkadot/api";
+import yargs from "yargs";
+
+import { exploreBlockRange, getApiFor, NETWORK_YARGS_OPTIONS } from "../index.ts";
+
 const XEN_ADDRESS = "0xb564A5767A00Ee9075cAC561c427643286F8F4E1".toLowerCase();
 
 const argv = yargs(process.argv.slice(2))
