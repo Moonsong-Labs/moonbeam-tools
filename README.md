@@ -54,7 +54,7 @@ Options:
 <html>
   <head>
     <title>Monitoring</title>
-    <script src="https://unpkg.com/moonbeam-tools@0.1.0/dist/index.esm.js" charset="UTF-8" integrity="sha384-X8BhAzHFjiYdkiKncK7nKxHWpRTmp/FSQm0tm3ipI2f2wm6L32G1N/cKmu7xqkNm" crossorigin="anonymous"></script>
+    <link rel="modulepreload" href="https://unpkg.com/moonbeam-tools@0.1.1/dist/index.esm.js" charset="UTF-8" integrity="sha384-Rp+AJiqSkCwPajGgNf1TGdWRVDSgf5GtK1pgO7uPofbSxPVNaZ/wNdulNxKVaO6I" crossorigin="anonymous"></script>
     <style>
       body {
         padding: 2rem;
@@ -68,7 +68,8 @@ Options:
     <div id="main-alphanet"></div>
     <div id="main-moonriver"></div>
     <div id="main-moonbeam"></div>
-    <script>
+    <script type="module">
+      import * as mbTools from "https://unpkg.com/moonbeam-tools@0.1.1/dist/index.esm.js";
       const monitorNetwork = async (api, networkName) => {
         const pre = document.createElement("pre");
         const title = document.createElement("h2");
