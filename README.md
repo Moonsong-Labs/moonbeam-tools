@@ -1,39 +1,29 @@
 # moonbeam-tools
 
-Tools related to Moonbeam blockchains
+Tools related to Moonbeam blockchains.
 
-# Requirements
+## Requirements
 
 * bun v1+
 
-## Installation
+## Actions
+__Installation__: `npm install`  
+__Test__: `bun run test`  
+__Build__: `bun run build`  
+__Publish__: `bun publish`  
 
-```
-npm install
-```
-
-## Tests
-
-```
-bun run test
-```
+## Debug
 
 You can use `DEBUG=helper:*` for logs on the state manipation
 
 # Tools
 
-## Installation
-
-```
-sudo npm install -g moonbeam-tools@latest
-```
-
-## Running moonbeam-monitor
+## Monitoring chains
 
 Allows to monitor a Moonbeam network. To do so, run the following command:
 
 ```  
-moonbeam-monitor --networks moonriver
+bunx moonbeam-tools --networks moonbeam moonriver
 ```
 
 ```
@@ -119,7 +109,7 @@ The script `run-moonbeam-fork.ts` has been provided which allows you to fork the
 The simplest way to run a forked-network of `Moonbeam` is by calling:
 
 ```
-npm run fork
+bun run fork
 ```
 
 Which will grab the latest polkadot and moonbeam binaries, grab the latest snapshot of live state, modify some values (such as validator keys, and inject balances),
