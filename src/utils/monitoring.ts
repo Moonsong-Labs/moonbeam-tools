@@ -40,7 +40,6 @@ export interface BlockDetails {
   storageUsed: number;
 }
 
-
 // TODO: Improve with cache and eviction
 const authorMappingCache: {
   [author: string]: {
@@ -110,11 +109,11 @@ export const getAccountIdentities = async (
           const superIdentityOpts =
             validSuperOfs.length > 0
               ? await api.rpc.state.queryStorageAt<Option<PalletIdentityRegistration>[]>(
-                validSuperOfs.map(
-                  (superOf) => api.query.identity.identityOf.key(superOf[0].toString()),
-                  at,
-                ),
-              )
+                  validSuperOfs.map(
+                    (superOf) => api.query.identity.identityOf.key(superOf[0].toString()),
+                    at,
+                  ),
+                )
               : [];
           let index = 0;
           return superOfs.map((superOf) => {
@@ -149,8 +148,9 @@ export const getAccountIdentities = async (
     return account && identity
       ? u8aToString(identity.info.display.asRaw.toU8a(true))
       : superOf && superOf.identity
-        ? `${u8aToString(superOf.identity.info.display.asRaw.toU8a(true))} - Sub ${(superOf.data && u8aToString(superOf.data.asRaw.toU8a(true))) || ""
-        }`
+        ? `${u8aToString(superOf.identity.info.display.asRaw.toU8a(true))} - Sub ${
+            (superOf.data && u8aToString(superOf.data.asRaw.toU8a(true))) || ""
+          }`
         : account?.toString();
   });
 };
@@ -165,22 +165,22 @@ export const getAccountIdentity = async (
   if (!identityCache[account] || identityCache[account].lastUpdate < Date.now() - 3600 * 1000) {
     const [identity, superOfIdentity] = api.query.identity
       ? await Promise.all([
-        api.query.identity
-          .identityOf(account.toString())
-          .then((a) => (a.isSome ? a.unwrap() : null)),
-        api.query.identity.superOf(account.toString()).then(async (superOfOpt) => {
-          const superOf = (superOfOpt.isSome && superOfOpt.unwrap()) || null;
-          if (!superOf) {
-            return null;
-          }
-          const identityOpt = await api.query.identity.identityOf(superOf[0].toString());
-          const identity = (identityOpt.isSome && identityOpt.unwrap()) || null;
-          return {
-            identity,
-            data: superOf[1],
-          };
-        }),
-      ])
+          api.query.identity
+            .identityOf(account.toString())
+            .then((a) => (a.isSome ? a.unwrap() : null)),
+          api.query.identity.superOf(account.toString()).then(async (superOfOpt) => {
+            const superOf = (superOfOpt.isSome && superOfOpt.unwrap()) || null;
+            if (!superOf) {
+              return null;
+            }
+            const identityOpt = await api.query.identity.identityOf(superOf[0].toString());
+            const identity = (identityOpt.isSome && identityOpt.unwrap()) || null;
+            return {
+              identity,
+              data: superOf[1],
+            };
+          }),
+        ])
       : [null, null];
     identityCache[account] = {
       lastUpdate: Date.now(),
@@ -194,8 +194,9 @@ export const getAccountIdentity = async (
   return identity
     ? u8aToString(identity.info.display.asRaw.toU8a(true))
     : superOf
-      ? `${u8aToString(superOf.identity.info.display.asRaw.toU8a(true))} - Sub ${(superOf.data && u8aToString(superOf.data.asRaw.toU8a(true))) || ""
-      }`
+      ? `${u8aToString(superOf.identity.info.display.asRaw.toU8a(true))} - Sub ${
+          (superOf.data && u8aToString(superOf.data.asRaw.toU8a(true))) || ""
+        }`
       : account?.toString();
 };
 
@@ -296,25 +297,33 @@ export const getBlockDetails = async (api: ApiPromise, blockHash: BlockHash) => 
     feeMultiplier,
   );
 
-  const [blockWeight, ethWeight] = txWithEvents.reduce((stats, tx, index) => {
-    // TODO: support weight v1/2
-    if (!tx.dispatchInfo) {
-      return stats;
-    }
-    const refTime = (tx.dispatchInfo.weight as any).toBn
-      ? (tx.dispatchInfo.weight as any).toBigInt()
-      : tx.dispatchInfo.weight.refTime?.toBigInt();
-    return [stats[0] + refTime, stats[1] + (tx.extrinsic.method.section == "ethereum" ? refTime : 0n)]
-  }, [0n, 0n]);
+  const [blockWeight, ethWeight] = txWithEvents.reduce(
+    (stats, tx, index) => {
+      // TODO: support weight v1/2
+      if (!tx.dispatchInfo) {
+        return stats;
+      }
+      const refTime = (tx.dispatchInfo.weight as any).toBn
+        ? (tx.dispatchInfo.weight as any).toBigInt()
+        : tx.dispatchInfo.weight.refTime?.toBigInt();
+      return [
+        stats[0] + refTime,
+        stats[1] + (tx.extrinsic.method.section == "ethereum" ? refTime : 0n),
+      ];
+    },
+    [0n, 0n],
+  );
 
-  const gasUsed = (await api.rpc.eth.getBlockByNumber(block.header.number.toNumber(), false)).unwrap().gasUsed.toBigInt();
+  const gasUsed = (await api.rpc.eth.getBlockByNumber(block.header.number.toNumber(), false))
+    .unwrap()
+    .gasUsed.toBigInt();
 
   const WEIGHT_TO_GAS_RATIO = 25_000n; // TODO: Find a way to retrieve dynamically
-  const GAS_LIMIT_STORAGE_GROWTH_RATIO = 366n;// TODO: Find a way to retrieve dynamically
+  const GAS_LIMIT_STORAGE_GROWTH_RATIO = 366n; // TODO: Find a way to retrieve dynamically
   const gasByRefTime = ethWeight / WEIGHT_TO_GAS_RATIO;
   // console.log(`[${block.header.number.toNumber()} ${blockWeight}/${ethWeight}: ${gasByRefTime}/${gasUsed}`);
-  const storageUsed = gasByRefTime != gasUsed ?
-    Number(gasByRefTime / GAS_LIMIT_STORAGE_GROWTH_RATIO) : 0; // in bytes
+  const storageUsed =
+    gasByRefTime != gasUsed ? Number(gasByRefTime / GAS_LIMIT_STORAGE_GROWTH_RATIO) : 0; // in bytes
 
   return {
     block,
@@ -326,7 +335,7 @@ export const getBlockDetails = async (api: ApiPromise, blockHash: BlockHash) => 
     weightPercentage: Number((blockWeight * 10000n) / maxBlockWeight) / 100,
     txWithEvents,
     records,
-    storageUsed
+    storageUsed,
   } as BlockDetails;
 };
 
@@ -532,7 +541,7 @@ export function generateBlockDetailsLog(
             ? payload.asEip2930?.gasPrice.toBigInt()
             : payload.isEip1559
               ? // If gasPrice is not indicated, we should use the base fee defined in that block
-              payload.asEip1559?.maxFeePerGas.toBigInt() || 0n
+                payload.asEip1559?.maxFeePerGas.toBigInt() || 0n
               : (payload as any as LegacyTransaction).gasPrice?.toBigInt();
 
         const refTime = (dispatchInfo.weight as any).toBn
@@ -563,7 +572,7 @@ export function generateBlockDetailsLog(
             ? payload.asEip2930?.gasPrice.toBigInt()
             : payload.isEip1559
               ? // If gasPrice is not indicated, we should use the base fee defined in that block
-              payload.asEip1559?.maxFeePerGas.toBigInt() || 0n
+                payload.asEip1559?.maxFeePerGas.toBigInt() || 0n
               : (payload as any as LegacyTransaction).gasPrice?.toBigInt();
       }
       return tx.events.reduce((total, event) => {
@@ -588,8 +597,8 @@ export function generateBlockDetailsLog(
   const authorId =
     blockDetails.authorName.length > 24
       ? `${blockDetails.authorName.substring(0, 9)}..${blockDetails.authorName.substring(
-        blockDetails.authorName.length - 6,
-      )}`
+          blockDetails.authorName.length - 6,
+        )}`
       : blockDetails.authorName;
   const authorName = blockDetails.isAuthorOrbiter ? chalk.yellow(authorId) : authorId;
 
@@ -605,10 +614,11 @@ export function generateBlockDetailsLog(
     .padEnd(
       7,
       " ",
-    )} [${weightText}%, ${storageText}B, ${feesText} fees, ${extText} Txs (${evmText} Eth)(<->${coloredTransferred})]${txPoolText ? `[Pool:${txPoolText}${poolIncText ? `(+${poolIncText})` : ""}]` : ``
-    }${secondText ? `[${secondText}s]` : ""}(hash: ${hash.substring(0, 7)}..${hash.substring(
-      hash.length - 4,
-    )})${options?.suffix ? ` ${options.suffix}` : ""} by ${authorName}`;
+    )} [${weightText}%, ${storageText}B, ${feesText} fees, ${extText} Txs (${evmText} Eth)(<->${coloredTransferred})]${
+    txPoolText ? `[Pool:${txPoolText}${poolIncText ? `(+${poolIncText})` : ""}]` : ``
+  }${secondText ? `[${secondText}s]` : ""}(hash: ${hash.substring(0, 7)}..${hash.substring(
+    hash.length - 4,
+  )})${options?.suffix ? ` ${options.suffix}` : ""} by ${authorName}`;
 }
 
 export function printBlockDetails(

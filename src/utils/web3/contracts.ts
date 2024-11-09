@@ -27,7 +27,7 @@ export const deployContract = async (
 
   const code = await customWeb3Request(web3, "eth_getCode", [contractAddress]);
   if (code && code.result && code.result != "0x") {
-    console.log(`Contract already deployed: ${code.result?.['length']} bytes`);
+    console.log(`Contract already deployed: ${code.result?.["length"]} bytes`);
     return;
   }
 
