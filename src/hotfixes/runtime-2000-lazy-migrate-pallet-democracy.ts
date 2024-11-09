@@ -1,19 +1,17 @@
-/*
-  This script is intended to run once for specific networks.
-  Do not use it without reading the code !!
-
-  This script will find the storage keys for the now removed items `Preimages` in pallet-democracy
-  and call migrateDemocracyPreimage from pallet-migrations
-
-Ex: ./node_modules/.bin/ts-node runtime-2000-lazy-migrate-pallet-democracy.ts \
-   --url ws://127.0.0.1:34102 \
-   --account-priv-key <key> \
-*/
+//   This script is intended to run once for specific networks.
+//   Do not use it without reading the code !!
+//
+//   This script will find the storage keys for the now removed items `Preimages` in pallet-democracy
+//   and call migrateDemocracyPreimage from pallet-migrations
+//
+// Ex: bun runtime-2000-lazy-migrate-pallet-democracy.ts \
+//    --url ws://127.0.0.1:34102 \
+//    --account-priv-key <key>
 import yargs from "yargs";
 import { Keyring, ApiPromise } from "@polkadot/api";
 import "@moonbeam-network/api-augment";
 import { xxhashAsHex } from "@polkadot/util-crypto";
-import { getApiFor, NETWORK_YARGS_OPTIONS } from "..";
+import { getApiFor, NETWORK_YARGS_OPTIONS } from "../index.ts";
 
 const argv = yargs(process.argv.slice(2))
   .usage("Usage: $0")

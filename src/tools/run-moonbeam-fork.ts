@@ -1,23 +1,23 @@
 // This script is expected to run against a parachain network (using launch.ts script)
-
-import moment from "moment";
-import prettyBytes from "pretty-bytes";
+import chalk from "chalk";
 import { SingleBar } from "cli-progress";
-import { runTask, spawnTask } from "../utils/runner";
+import fs from "fs/promises";
+import inquirer from "inquirer";
+import moment from "moment";
+import fetch from "node-fetch";
 import { ChildProcessWithoutNullStreams } from "node:child_process";
+import path from "path";
+import prettyBytes from "pretty-bytes";
 import semver from "semver";
 import yargs from "yargs";
-import chalk from "chalk";
-import fs from "fs/promises";
-import fetch from "node-fetch";
-import path from "path";
+
 import {
   downloadExportedState,
   NetworkName,
   neutralizeExportedState,
-} from "../libs/helpers/state-manipulator";
-import { ALITH_PRIVATE_KEY } from "../utils/constants";
-import inquirer from "inquirer";
+} from "../libs/helpers/state-manipulator/index.ts";
+import { ALITH_PRIVATE_KEY } from "../utils/constants.ts";
+import { runTask, spawnTask } from "../utils/runner.ts";
 
 const argv = yargs(process.argv.slice(2))
   .usage("Usage: $0")

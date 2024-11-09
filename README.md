@@ -4,7 +4,21 @@ Tools related to Moonbeam blockchains
 
 # Requirements
 
-* NodeJS v14+
+* bun v1+
+
+## Installation
+
+```
+npm install
+```
+
+## Tests
+
+```
+bun run test
+```
+
+You can use `DEBUG=helper:*` for logs on the state manipation
 
 # Tools
 
@@ -40,7 +54,7 @@ Options:
 <html>
   <head>
     <title>Monitoring</title>
-    <script src="https://unpkg.com/moonbeam-tools@0.0.50/dist/index.umd.js" charset="UTF-8" integrity="sha384-YEu5UHBQ2fazqqXdsvej6Xr0mhCfqIEbmdkWeu8nszY7ZI1jQys6yQwxGrfThIew" crossorigin="anonymous"></script>
+    <script src="https://unpkg.com/moonbeam-tools@0.1.0/dist/index.esm.js" charset="UTF-8" integrity="sha384-X8BhAzHFjiYdkiKncK7nKxHWpRTmp/FSQm0tm3ipI2f2wm6L32G1N/cKmu7xqkNm" crossorigin="anonymous"></script>
     <style>
       body {
         padding: 2rem;
@@ -116,14 +130,14 @@ If however, you are more interested in intereacting with the contracts in the Mo
 the forked network in development mode. This allows for manual sealing of blocks which dramatically reduces execution times of tests (reduction of 12s blocktime into milliseconds).
 
 ```
-npx ts-node npx ts-node ./src/tools/run-moonbeam-fork.ts -n moonbeam --dev
+bun ./src/tools/run-moonbeam-fork.ts -n moonbeam --dev
 ```
 
 ### Further Examples
 
-Calling the script directly can be done via: `npx ts-node ./src/tools/run-moonbeam-fork.ts`
+Calling the script directly can be done via: `bun ./src/tools/run-moonbeam-fork.ts`
 
-The minimal command is: `npx ts-node ./src/tools/run-moonbeam-fork.ts -n moonbeam`
+The minimal command is: `bun ./src/tools/run-moonbeam-fork.ts -n moonbeam`
 
 By default the polkadot and moonbeam binaries will be downloaded from github if none found in the `binaries` folder, but if for whatever reason you need to provide your own (e.g. you are on an Apple Silicon chip)
 use the `--polkadot-binary` option to provide the path to the binary to use (or copy them into the folder). If doing this option, make sure the correct binary version is supplied via `--moonbeam-version` and 
@@ -186,7 +200,7 @@ Each precompile on-chain should contain some dummy code to allow Smart Contracts
 Verify currently existing precompiles
 
 ```bash
-ts-node src/tools/list-precompiles.ts --network moonbeam
+bun src/tools/list-precompiles.ts --network moonbeam
 ```
 
 would output something like:
@@ -195,7 +209,7 @@ would output something like:
 To update the dummy code, you can use the [PrecompileRegistry](https://github.com/PureStake/moonbeam/blob/master/precompiles/precompile-registry/PrecompileRegistry.sol) with a funded account:
 
 ```bash
-ts-node src/tools/list-precompiles.ts --network moonbeam --update-dummy-code --private-key $PRIVATE_KEY
+bun src/tools/list-precompiles.ts --network moonbeam --update-dummy-code --private-key $PRIVATE_KEY
 ```
 
 This will update each missing precompile (or you can use `--address 9` to upgrade only contract at address 9)

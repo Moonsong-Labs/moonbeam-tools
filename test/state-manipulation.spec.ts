@@ -1,25 +1,26 @@
-import path from "node:path";
+import { hexToBigInt, nToHex } from "@polkadot/util";
 import fs from "node:fs/promises";
-import { processState } from "../src/libs/helpers/state-manipulator/genesis-parser";
-import { RoundManipulator } from "../src/libs/helpers/state-manipulator/round-manipulator";
-import { SudoManipulator } from "../src/libs/helpers/state-manipulator/sudo-manipulator";
-import { AuthorFilteringManipulator } from "../src/libs/helpers/state-manipulator/author-filtering-manipulator";
-import { BalancesManipulator } from "../src/libs/helpers/state-manipulator/balances-manipulator";
-import { CollatorManipulator } from "../src/libs/helpers/state-manipulator/collator-manipulator";
-import { HRMPManipulator } from "../src/libs/helpers/state-manipulator/hrmp-manipulator";
-import { SpecManipulator } from "../src/libs/helpers/state-manipulator/spec-manipulator";
-import { XCMPManipulator } from "../src/libs/helpers/state-manipulator/xcmp-manipulator";
-import { CollectiveManipulator } from "../src/libs/helpers/state-manipulator/collective-manipulator";
-import { ValidationManipulator } from "../src/libs/helpers/state-manipulator/validation-manipulator";
+import path from "node:path";
+
+import { AuthorFilteringManipulator } from "../src/libs/helpers/state-manipulator/author-filtering-manipulator.ts";
+import { AuthorizeUpgradeManipulator } from "../src/libs/helpers/state-manipulator/authorize-upgrade-manipulator.ts";
+import { BalancesManipulator } from "../src/libs/helpers/state-manipulator/balances-manipulator.ts";
+import { CollatorManipulator } from "../src/libs/helpers/state-manipulator/collator-manipulator.ts";
+import { CollectiveManipulator } from "../src/libs/helpers/state-manipulator/collective-manipulator.ts";
+import { processState } from "../src/libs/helpers/state-manipulator/genesis-parser.ts";
+import { HRMPManipulator } from "../src/libs/helpers/state-manipulator/hrmp-manipulator.ts";
+import { RoundManipulator } from "../src/libs/helpers/state-manipulator/round-manipulator.ts";
+import { SpecManipulator } from "../src/libs/helpers/state-manipulator/spec-manipulator.ts";
+import { SudoManipulator } from "../src/libs/helpers/state-manipulator/sudo-manipulator.ts";
+import { ValidationManipulator } from "../src/libs/helpers/state-manipulator/validation-manipulator.ts";
+import { XCMPManipulator } from "../src/libs/helpers/state-manipulator/xcmp-manipulator.ts";
 import {
+  BALTATHAR_ADDRESS,
   CHARLETH_ADDRESS,
   CHARLETH_SESSION_ADDRESS,
   HEATH_ADDRESS,
   JUDITH_ADDRESS,
-  BALTATHAR_ADDRESS,
-} from "../src/utils/constants";
-import { hexToBigInt, nToHex } from "@polkadot/util";
-import { AuthorizeUpgradeManipulator } from "../src/libs/helpers/state-manipulator/authorize-upgrade-manipulator";
+} from "../src/utils/constants.ts";
 
 describe("State Manipulation", () => {
   const inFile = path.join(__dirname, "sample-state.json");
@@ -122,7 +123,8 @@ describe("State Manipulation", () => {
     ).toBeUndefined();
   });
 
-  it("Should replace the council members with JUDITH_ADDRESS", async () => {
+  // Council has been removed
+  it.skip("Should replace the council members with JUDITH_ADDRESS", async () => {
     expect(
       finalState["0xd59b9be6f0a7187ca6630c1d0a9bb045ba7fb8745735dc3be2a2c61a72c39e78"],
     ).toEqual(`0x04${JUDITH_ADDRESS.slice(2)}`);
@@ -130,7 +132,7 @@ describe("State Manipulation", () => {
 
   it("Should replace the technical committee members with Charleth and Heath", async () => {
     expect(
-      finalState["0xa06bfb73a86f8f98d5c5dc14e20e8a03ba7fb8745735dc3be2a2c61a72c39e78"],
+      finalState["0x51bbb05ff9b574192142ecc49ac965d7ba7fb8745735dc3be2a2c61a72c39e78"],
     ).toEqual(`0x08${CHARLETH_ADDRESS.slice(2)}${HEATH_ADDRESS.slice(2)}`);
   });
 
@@ -148,8 +150,8 @@ describe("State Manipulation", () => {
 
   it("Should contain authorized upgrade hash", async () => {
     expect(
-      finalState["0x45323df7cc47150b3930e2666b0aa3132fa9f1bf25567808771bff091dc89ecd"],
-    ).toEqual("0xfb9f16ba6b3433ba2a273974207260c7ace6aa629992d492bad0ba873b39762d");
+      finalState["0x26aa394eea5630e07c48ae0c9558cef72fa9f1bf25567808771bff091dc89ecd"],
+    ).toEqual("0xfb9f16ba6b3433ba2a273974207260c7ace6aa629992d492bad0ba873b39762d01");
   });
 
   it("Should set Charleth, Heath and Judith to 1000 tokens", async () => {

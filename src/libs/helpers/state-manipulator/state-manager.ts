@@ -1,16 +1,8 @@
 import Debug from "debug";
 import fs from "node:fs/promises";
-import { Client } from "undici";
 import path from "node:path";
-import { processState, StateManipulator } from "./genesis-parser";
-import { RoundManipulator } from "./round-manipulator";
-import { AuthorFilteringManipulator } from "./author-filtering-manipulator";
-import { CollatorManipulator } from "./collator-manipulator";
-import { HRMPManipulator } from "./hrmp-manipulator";
-import { CollectiveManipulator } from "./collective-manipulator";
-import { ValidationManipulator } from "./validation-manipulator";
-import { XCMPManipulator } from "./xcmp-manipulator";
-import { BalancesManipulator } from "./balances-manipulator";
+import { Client } from "undici";
+
 import {
   ALITH_ADDRESS,
   ALITH_SESSION_ADDRESS,
@@ -18,11 +10,21 @@ import {
   CHARLETH_ADDRESS,
   RELAY_ASSET_ID,
   USDT_ASSET_ID,
-} from "../../../utils/constants";
-import { SpecManipulator } from "./spec-manipulator";
-import { SudoManipulator } from "./sudo-manipulator";
-import { AssetManipulator } from "./asset-manipulator";
-import { AuthorizeUpgradeManipulator } from "./authorize-upgrade-manipulator";
+} from "../../../utils/constants.ts";
+import { AssetManipulator } from "./asset-manipulator.ts";
+import { AuthorFilteringManipulator } from "./author-filtering-manipulator.ts";
+import { AuthorizeUpgradeManipulator } from "./authorize-upgrade-manipulator.ts";
+import { BalancesManipulator } from "./balances-manipulator.ts";
+import { CollatorManipulator } from "./collator-manipulator.ts";
+import { CollectiveManipulator } from "./collective-manipulator.ts";
+import { processState, StateManipulator } from "./genesis-parser.ts";
+import { HRMPManipulator } from "./hrmp-manipulator.ts";
+import { RoundManipulator } from "./round-manipulator.ts";
+import { SpecManipulator } from "./spec-manipulator.ts";
+import { SudoManipulator } from "./sudo-manipulator.ts";
+import { ValidationManipulator } from "./validation-manipulator.ts";
+import { XCMPManipulator } from "./xcmp-manipulator.ts";
+
 const debug = Debug("helper:state-manager");
 
 export type NetworkName = "moonbeam" | "moonriver" | "alphanet" | "stagenet";
@@ -114,12 +116,12 @@ export async function downloadExportedState(
     }
   }
   const client = new Client(`http://states.kaki.dev`);
-  const downloadedStateInfo: StateInfo = await (
+  const downloadedStateInfo: StateInfo = (await (
     await client.request({
       path: `/${network}-state${stateDate ? `-${stateDate}` : ""}.info.json`,
       method: "GET",
     })
-  ).body.json();
+  ).body.json()) as StateInfo;
 
   // Already latest version
   if (stateInfo && stateInfo.blockHash == downloadedStateInfo.blockHash) {

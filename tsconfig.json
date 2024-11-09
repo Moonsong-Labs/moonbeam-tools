@@ -1,10 +1,15 @@
 {
   "compilerOptions": {
     "target": "esnext",
-    "module": "CommonJS",
-    "moduleResolution": "node",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "allowSyntheticDefaultImports": true,
+    "allowImportingTsExtensions": true,
+    "emitDeclarationOnly": true,
     "declaration": true,
     "esModuleInterop": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
     "skipLibCheck": true,
     "baseUrl": ".",
     "composite": true,
@@ -12,5 +17,8 @@
     "outDir": "build"
   },
   "include": ["src/**/*.ts", "test/**/*.spec.ts"],
-  "exclude": ["node_modules"]
+  "exclude": ["node_modules"],
+  "ts-node": {
+    "esm": true
+  }
 }

@@ -1,11 +1,13 @@
 import Debug from "debug";
+
 import {
   Action,
   encodeStorageBlake128MapKey,
   encodeStorageKey,
-  StateManipulator,
   StateLine,
-} from "./genesis-parser";
+  StateManipulator,
+} from "./genesis-parser.ts";
+
 const debug = Debug("helper:collator-manipulator");
 
 export class CollatorManipulator implements StateManipulator {

@@ -1,12 +1,11 @@
 // This script is expected to run against a parachain network (using launch.ts script)
-
-import fs from "node:fs/promises";
 import yargs from "yargs";
+
 import {
   downloadExportedState,
   NetworkName,
   neutralizeExportedState,
-} from "../libs/helpers/state-manipulator";
+} from "../libs/helpers/state-manipulator/index.ts";
 
 const argv = yargs(process.argv.slice(2))
   .usage("Usage: $0")

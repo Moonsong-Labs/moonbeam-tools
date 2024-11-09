@@ -1,5 +1,7 @@
 import Debug from "debug";
-import { Action, encodeStorageKey, StateManipulator } from "./genesis-parser";
+
+import { Action, encodeStorageKey, StateManipulator } from "./genesis-parser.ts";
+
 const debug = Debug("helper:hrmp-manipulator");
 
 export class HRMPManipulator implements StateManipulator {

@@ -1,6 +1,6 @@
 import { ApiPromise, WsProvider } from "@polkadot/api";
-import yargs from "yargs";
 import fs from "fs";
+import yargs from "yargs";
 
 export const NETWORK_WS_URLS: { [name: string]: string } = {
   rococo: "wss://rococo-rpc.polkadot.io",

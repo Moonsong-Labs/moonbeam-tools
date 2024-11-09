@@ -1,7 +1,8 @@
 // This script is expected to run against a parachain network (using launch.ts script)
 import { ApiPromise, WsProvider } from "@polkadot/api";
 import yargs from "yargs";
-import { promiseConcurrent } from "..";
+
+import { promiseConcurrent } from "../index.ts";
 
 const argv = yargs(process.argv.slice(2))
   .usage("Usage: $0")

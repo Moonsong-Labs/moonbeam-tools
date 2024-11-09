@@ -1,13 +1,13 @@
 // This script is expected to run against a parachain network (using launch.ts script)
-import yargs from "yargs";
 import { table } from "table";
+import yargs from "yargs";
 
 import {
+  combineRequestsPerDelegators,
   getAccountIdentity,
   getApiFor,
   NETWORK_YARGS_OPTIONS,
-  combineRequestsPerDelegators,
-} from "..";
+} from "../index.ts";
 
 const argv = yargs(process.argv.slice(2))
   .usage("Usage: $0")

@@ -1,11 +1,10 @@
-import { xxhashAsU8a, blake2AsU8a, blake2AsHex } from "@polkadot/util-crypto";
-import { u8aConcat } from "@polkadot/util";
-import yargs from "yargs";
-import { PalletDemocracyReferendumInfo } from "@polkadot/types/lookup";
-import { getApiFor, NETWORK_YARGS_OPTIONS } from "../utils/networks";
-import chalk from "chalk";
 import { Keyring } from "@polkadot/api";
-import { ALITH_PRIVATE_KEY } from "../utils/constants";
+import { PalletDemocracyReferendumInfo } from "@polkadot/types/lookup";
+import { blake2AsHex } from "@polkadot/util-crypto";
+import yargs from "yargs";
+
+import { ALITH_PRIVATE_KEY } from "../utils/constants.ts";
+import { getApiFor, NETWORK_YARGS_OPTIONS } from "../utils/networks.ts";
 
 const debug = require("debug")("main");
 

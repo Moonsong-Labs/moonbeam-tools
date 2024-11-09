@@ -1,12 +1,12 @@
 // This script is expected to run against a parachain network (using launch.ts script)
-
-import { Keyring } from "@polkadot/api";
 import "@moonbeam-networks/api-augment";
 
-import yargs from "yargs";
-import { getMonitoredApiFor, NETWORK_YARGS_OPTIONS } from "../utils/networks";
+import { Keyring } from "@polkadot/api";
 import { SubmittableExtrinsic } from "@polkadot/api/promise/types";
-import { sendAllStreamAndWaitLast } from "../utils/transactions";
+import yargs from "yargs";
+
+import { getMonitoredApiFor, NETWORK_YARGS_OPTIONS } from "../utils/networks.ts";
+import { sendAllStreamAndWaitLast } from "../utils/transactions.ts";
 
 const argv = yargs(process.argv.slice(2))
   .usage("Usage: $0")

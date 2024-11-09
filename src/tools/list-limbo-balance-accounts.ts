@@ -1,11 +1,11 @@
 // This script is expected to run against a parachain network (using launch.ts script)
-import yargs from "yargs";
-import { table } from "table";
-
-import { getAccountIdentity } from "../utils/monitoring";
-import { getApiFor, NETWORK_YARGS_OPTIONS } from "..";
 import { bnMax } from "@polkadot/util";
+import { table } from "table";
 import Web3 from "web3";
+import yargs from "yargs";
+
+import { getApiFor, NETWORK_YARGS_OPTIONS } from "../index.ts";
+import { getAccountIdentity } from "../utils/monitoring.ts";
 
 const argv = yargs(process.argv.slice(2))
   .usage("Usage: $0")
@@ -41,10 +41,10 @@ const main = async () => {
       affectedAccounts.push([
         addressesToCheck[idx],
         identities[idx],
-        Web3.utils.fromWei(free.toString()),
-        Web3.utils.fromWei(reserved.toString()),
-        Web3.utils.fromWei(frozen.toString()),
-        Web3.utils.fromWei(frozen.sub(free).toString()),
+        Web3.utils.fromWei(free.toString(), "ether"),
+        Web3.utils.fromWei(reserved.toString(), "ether"),
+        Web3.utils.fromWei(frozen.toString(), "ether"),
+        Web3.utils.fromWei(frozen.sub(free).toString(), "ether"),
       ]);
     }
   });

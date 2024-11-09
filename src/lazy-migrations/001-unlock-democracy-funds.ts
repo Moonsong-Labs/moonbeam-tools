@@ -1,19 +1,19 @@
-/*
-  This script is intended to run once for specific networks.
-  Do not use it without reading the code !!
-
-  This script will continuously call and wait for completion of unlockDemocracyFunds
-  extrinsic from pallet moonbeam-lazy-migrations until the migration is completed.
-
-Ex: ./node_modules/.bin/ts-node src/lazy-migrations/001-unlock-democracy-funds.ts \
-   --url ws://127.0.0.1:34102 \
-   --account-priv-key <key> \
-*/
-import yargs from "yargs";
-import { Keyring } from "@polkadot/api";
+//   This script is intended to run once for specific networks.
+//   Do not use it without reading the code !!
+//
+//   This script will continuously call and wait for completion of unlockDemocracyFunds
+//   extrinsic from pallet moonbeam-lazy-migrations until the migration is completed.
+//
+// Ex: bun src/lazy-migrations/001-unlock-democracy-funds.ts \
+//    --url ws://127.0.0.1:34102 \
+//    --account-priv-key <key>
 import "@moonbeam-network/api-augment";
-import { getApiFor, NETWORK_YARGS_OPTIONS } from "..";
-import { monitorSubmittedExtrinsic, waitForAllMonitoredExtrinsics } from "../utils/monitoring";
+
+import { Keyring } from "@polkadot/api";
+import yargs from "yargs";
+
+import { getApiFor, NETWORK_YARGS_OPTIONS } from "../index.ts";
+import { monitorSubmittedExtrinsic, waitForAllMonitoredExtrinsics } from "../utils/monitoring.ts";
 
 const argv = yargs(process.argv.slice(2))
   .usage("Usage: $0")

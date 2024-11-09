@@ -1,11 +1,13 @@
 import { hexToBigInt, nToHex } from "@polkadot/util";
 import Debug from "debug";
+
 import {
   Action,
   encodeStorageBlake128MapKey,
   encodeStorageKey,
   StateManipulator,
-} from "./genesis-parser";
+} from "./genesis-parser.ts";
+
 const debug = Debug("helper:balances-manipulator");
 
 export class BalancesManipulator implements StateManipulator {

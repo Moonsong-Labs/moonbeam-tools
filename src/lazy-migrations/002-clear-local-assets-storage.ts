@@ -1,20 +1,20 @@
-/*
-  Clears the unused storage of pallet LocalAssets removed in runtime 2800
-
-Ex: ./node_modules/.bin/ts-node src/lazy-migrations/002-clear-local-assets-storage.ts \
-   --url ws://localhost:9944 \
-   --max-assets 10 \
-   --limit 1000 \
-   --account-priv-key <key> \
-*/
-import yargs from "yargs";
-import "@polkadot/api-augment";
+//   Clears the unused storage of pallet LocalAssets removed in runtime 2800
+//
+// Ex: bun src/lazy-migrations/002-clear-local-assets-storage.ts \
+//    --url ws://localhost:9944 \
+//    --max-assets 10 \
+//    --limit 1000 \
+//    --account-priv-key <key>
 import "@moonbeam-network/api-augment";
+import "@polkadot/api-augment";
+
 import { Keyring } from "@polkadot/api";
 import { KeyringPair } from "@polkadot/keyring/types";
-import { getApiFor, NETWORK_YARGS_OPTIONS } from "../utils/networks";
-import { monitorSubmittedExtrinsic, waitForAllMonitoredExtrinsics } from "../utils/monitoring";
-import { ALITH_PRIVATE_KEY } from "../utils/constants";
+import yargs from "yargs";
+
+import { ALITH_PRIVATE_KEY } from "../utils/constants.ts";
+import { monitorSubmittedExtrinsic, waitForAllMonitoredExtrinsics } from "../utils/monitoring.ts";
+import { getApiFor, NETWORK_YARGS_OPTIONS } from "../utils/networks.ts";
 
 const argv = yargs(process.argv.slice(2))
   .usage("Usage: $0")
