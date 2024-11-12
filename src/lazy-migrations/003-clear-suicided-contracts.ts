@@ -72,6 +72,7 @@ async function main() {
 
   try {
     const chain = (await api.rpc.system.chain()).toString().toLowerCase().replaceAll(/\s/g, "-");
+    console.log(chain);
     const TEMPORADY_DB_FILE = path.resolve(
       __dirname,
       `003-clear-suicided-contracts-${chain}-db.json`,
@@ -88,6 +89,7 @@ async function main() {
       db = { ...db, ...JSON.parse(fs.readFileSync(TEMPORADY_DB_FILE, { encoding: "utf-8" })) };
     }
     db.at_block ||= (await api.query.system.parentHash()).toHex();
+    console.log(`starting at block ${db.at_block}`);
 
     let account: KeyringPair;
     let nonce;
@@ -108,7 +110,7 @@ async function main() {
       xxhashAsHex("EVM", 128) + xxhashAsHex("AccountStorages", 128).slice(2);
 
     const ITEMS_PER_PAGE = 1000;
-    while (db.cursor != undefined) {
+    while(db.cursor != undefined) {
       const keys = await api.rpc.state.getKeysPaged(
         systemAccountPrefix,
         ITEMS_PER_PAGE,
@@ -116,10 +118,15 @@ async function main() {
         db.at_block,
       );
       db.cursor = keys.length > 0 ? keys[keys.length - 1].toHex() : undefined;
+      if(!db.cursor) {
+        console.log("cursor is undefined: no more keys to fetch; executing next step");
+        continue;
+      }
       console.log(db.cursor, keys.length);
 
       let contract_suicided_keys = {};
       for (let key of keys) {
+	//console.log("key", key);
         const SKIP_BYTES =
           16 /* pallet prefix */ + 16 /* storage prefix */ + 16; /* address prefix */
         const address = key
@@ -133,6 +140,7 @@ async function main() {
       }
 
       let keys_vec = Object.keys(contract_suicided_keys);
+      //console.log(keys_vec, db.at_block);
       const is_suicided_result = (await api.rpc.state.queryStorageAt(
         keys_vec,
         db.at_block,
@@ -196,8 +204,9 @@ async function main() {
 
     while (Object.keys(db.corrupted_addresses).length) {
       const prevRemovedSuicidedContracts = removedSuicidedContracts;
-      const corrupted_contracts = Object.keys(db.corrupted_addresses).slice(0, 100);
-      const extrinsicCall = api.tx["moonbeamLazyMigrations"].clearSuicidedContracts(
+      const corrupted_contracts = Object.keys(db.corrupted_addresses).slice(0, 100).map(v => `0x${v}`);
+      //console.log(corrupted_contracts);
+      const extrinsicCall = api.tx["moonbeamLazyMigrations"].clearSuicidedStorage(
         corrupted_contracts,
         entries_to_remove,
       );
@@ -210,15 +219,14 @@ async function main() {
 
       // Check if the storage of corrupted contracts has been removed
       removedSuicidedContracts = await suicidedContractsRemoved(api);
-      if (prevRemovedSuicidedContracts === removedSuicidedContracts) {
-        corrupted_contracts.forEach((addr) => {
-          db.fixed_contracts[addr] = true;
-          // Remove fixed addresses from corrupted addresses map
-          delete db.corrupted_addresses[addr];
-        });
-        // Save results
-        fs.writeFileSync(TEMPORADY_DB_FILE, JSON.stringify(db, null, 4), { encoding: "utf-8" });
-      }
+      const diff = removedSuicidedContracts - prevRemovedSuicidedContracts;
+      corrupted_contracts.slice(0, diff).forEach((addr) => {
+        db.fixed_contracts[addr] = true;
+        // Remove fixed addresses from corrupted addresses map
+        delete db.corrupted_addresses[addr.slice(2)];
+      });
+      // Save results
+      fs.writeFileSync(TEMPORADY_DB_FILE, JSON.stringify(db, null, 4), { encoding: "utf-8" });
     }
   } finally {
     await api.disconnect();
