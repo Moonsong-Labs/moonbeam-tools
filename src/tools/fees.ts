@@ -141,7 +141,7 @@ const TESTER_INTERFACE = new ethers.utils.Interface(TESTER_JSON.contract.abi);
 
 async function runTest(
   api: ApiPromise,
-  options: { callType: "compute" | "length-small" | "length-big"; multiplier: BN | null }
+  options: { callType: "compute" | "length-small" | "length-big"; multiplier: BN | null },
 ) {
   const result = [];
   console.log(`options: ${JSON.stringify(options)}`);
@@ -191,7 +191,7 @@ async function runTest(
         2_000_000_000n,
         null,
         null,
-        []
+        [],
       )
       .signAsync(dorothy),
   ]);
@@ -211,7 +211,7 @@ async function runTest(
                 u8aToHex(api.createType("u128", nextFeeMultiplierOverride).toU8a()),
               ],
             ])
-            .signAsync(alith)
+            .signAsync(alith),
         )
         .signAsync(alith),
     ]);
@@ -225,7 +225,7 @@ async function runTest(
   const repsPerLoad = 30;
   for await (const [loadFactorIndex, loadFactor] of loadFactors.entries()) {
     console.log(
-      `load: ${loadFactor} (${repsPerLoad} reps)  ${loadFactorIndex + 1}/${loadFactors.length}`
+      `load: ${loadFactor} (${repsPerLoad} reps)  ${loadFactorIndex + 1}/${loadFactors.length}`,
     );
     for await (const rep of new Array(repsPerLoad).keys()) {
       // uncomment the following code to reduce feeMultiplier by 10 each 100 blocks
@@ -277,7 +277,7 @@ async function runTest(
               2_000_000_000_000_000n,
               null,
               null,
-              []
+              [],
             )
             .signAsync(charleth, { tip: 1n * 10n ** 15n }),
         ];
@@ -321,7 +321,8 @@ async function runTest(
             api.events.system.ExtrinsicSuccess.is(event) ||
             api.events.system.ExtrinsicFailed.is(event)
           ) {
-            weights[phase.asApplyExtrinsic.toNumber()] = event.data.dispatchInfo.weight.refTime.toBn();
+            weights[phase.asApplyExtrinsic.toNumber()] =
+              event.data.dispatchInfo.weight.refTime.toBn();
           }
         }
       }
@@ -410,7 +411,7 @@ function generateLoad(middle: number, inc: number = 1): number[] {
 
 async function txObserveFeeDiff(
   api: ApiPromise,
-  txFunc: () => Promise<SubmittableExtrinsicPromise[]>
+  txFunc: () => Promise<SubmittableExtrinsicPromise[]>,
 ) {
   const txs = await txFunc();
   const balanceBeforeBaltathar = await api.query.system.account(BALTATHAR_ADDRESS);
@@ -430,7 +431,7 @@ async function txObserveFeeDiff(
 async function expectEVMSuccess(api: ApiPromise) {
   const events = await api.query.system.events();
   const ethereumResult = events.find(
-    ({ event: { section, method } }) => section == "ethereum" && method == "Executed"
+    ({ event: { section, method } }) => section == "ethereum" && method == "Executed",
   ).event.data[3] as EvmCoreErrorExitReason;
   assert.equal(ethereumResult.isSucceed, true, "EVM operation failed");
 }
@@ -443,7 +444,7 @@ function extractError(events: EventRecord[] = []): DispatchError | undefined {
         event: {
           data: [dispatchError],
         },
-      }) => dispatchError as DispatchError
+      }) => dispatchError as DispatchError,
     )[0];
 }
 
@@ -464,11 +465,11 @@ async function customWeb3Request(web3: Web3, method: string, params: any[]) {
                 const str = p.toString();
                 return str.length > 128 ? `${str.slice(0, 96)}...${str.slice(-28)}` : str;
               })
-              .join(",")})): ${error.message || error.toString()}`
+              .join(",")})): ${error.message || error.toString()}`,
           );
         }
         resolve(result);
-      }
+      },
     );
   });
 }
@@ -481,11 +482,11 @@ type ExtrinsicCreation = boolean;
 async function createBlock<
   ApiType extends ApiTypes,
   Call extends
-  | SubmittableExtrinsic<ApiType>
-  | Promise<SubmittableExtrinsic<ApiType>>
-  | string
-  | Promise<string>,
-  Calls extends Call | Call[]
+    | SubmittableExtrinsic<ApiType>
+    | Promise<SubmittableExtrinsic<ApiType>>
+    | string
+    | Promise<string>,
+  Calls extends Call | Call[],
 >(api: ApiPromise, transactions?: Calls, options: BlockCreation = {}) {
   const results: ({ type: "eth"; hash: string } | { type: "sub"; hash: string })[] = [];
   const txs =
@@ -533,18 +534,18 @@ async function createBlock<
     const extrinsicIndex =
       result.type == "eth"
         ? allRecords
-          .find(
-            ({ phase, event: { section, method, data } }) =>
-              phase.isApplyExtrinsic &&
-              section == "ethereum" &&
-              method == "Executed" &&
-              data[2].toString() == result.hash
-          )
-          ?.phase?.asApplyExtrinsic?.toNumber()
+            .find(
+              ({ phase, event: { section, method, data } }) =>
+                phase.isApplyExtrinsic &&
+                section == "ethereum" &&
+                method == "Executed" &&
+                data[2].toString() == result.hash,
+            )
+            ?.phase?.asApplyExtrinsic?.toNumber()
         : blockData.block.extrinsics.findIndex((ext) => ext.hash.toHex() == result.hash);
     // We retrieve the events associated with the extrinsic
     const events = allRecords.filter(
-      ({ phase }) => phase.isApplyExtrinsic && phase.asApplyExtrinsic.toNumber() === extrinsicIndex
+      ({ phase }) => phase.isApplyExtrinsic && phase.asApplyExtrinsic.toNumber() === extrinsicIndex,
     );
     const failure = extractError(events);
     const successful = extrinsicIndex !== undefined && !failure;
@@ -582,7 +583,7 @@ interface TransactionOptions {
 }
 async function createTransaction(
   options: TransactionOptions,
-  ethTransactionType = "Legacy"
+  ethTransactionType = "Legacy",
 ): Promise<string> {
   const isLegacy = ethTransactionType === "Legacy";
   const isEip2930 = ethTransactionType === "EIP2930";
@@ -662,10 +663,10 @@ async function createTransaction(
 async function createContract(
   contractCompiled: Compiled,
   options: TransactionOptions = ALITH_TRANSACTION_TEMPLATE,
-  contractArguments: any[] = []
+  contractArguments: any[] = [],
 ): Promise<{ rawTx: string; contract: Contract<any>; contractAddress: string }> {
   const from = options.from !== undefined ? options.from : alith.address;
-  const nonce = options.nonce || Number((await web3.eth.getTransactionCount(from)));
+  const nonce = options.nonce || Number(await web3.eth.getTransactionCount(from));
 
   const contractAddress =
     "0x" +
@@ -721,8 +722,8 @@ function compileSolidity(fileContents: string): Compiled {
         import: (_: string) => {
           return { error: "imports not supported" };
         },
-      }
-    )
+      },
+    ),
   );
   if (!result.contracts) {
     throw result;
@@ -1043,7 +1044,7 @@ async function view(input: string, output: string, open: boolean) {
         }
       </script>
     <body>
-  </html>`
+  </html>`,
   );
   // editorconfig-checker-enable
 

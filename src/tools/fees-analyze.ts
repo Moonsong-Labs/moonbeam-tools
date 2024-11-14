@@ -25,7 +25,7 @@ const data = [
       substrateDetails: {
         baseFee: BigInt(d["result"][0]["substrateFeeDetails"]["baseFee"]).toLocaleString(),
         adjustedWeightFee: BigInt(
-          d["result"][0]["substrateFeeDetails"]["adjustedWeightFee"]
+          d["result"][0]["substrateFeeDetails"]["adjustedWeightFee"],
         ).toLocaleString(),
       },
     },
@@ -41,7 +41,7 @@ ${"".padStart(10)} ${d.fees.evm.padStart(25)} | evm
 ${"".padStart(10)} ${d.fees.diff.toLocaleString().padStart(25)} | diff
 ${"".padStart(10)} ${d.fees.diffPercent.toLocaleString().concat("%").padStart(25)} | diff%
 ${"".padStart(10)} ${d.fees.substrateDetails.adjustedWeightFee.padStart(
-    25
+    25,
   )} | substrate-weight-fee-part
 ${"".padStart(10)} ${d.fees.substrateDetails.baseFee.padStart(25)} | substrate-base-fee-part
 ${"-".repeat(36)} ${"| "}`);
@@ -164,7 +164,7 @@ fs.writeFileSync(
       }
     </script>
   <body>
-</html>`
+</html>`,
 );
 // editorconfig-checker-enable
 
