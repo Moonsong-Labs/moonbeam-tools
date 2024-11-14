@@ -13,7 +13,7 @@ export interface DelegatorRequest {
 export const combineRequestsPerDelegators = (
   specVersion: number,
   delegationScheduledRequests: any,
-  delegatorState: any
+  delegatorState: any,
 ): { [delegatorId: string]: DelegatorRequest[] } => {
   return specVersion >= 1500
     ? delegationScheduledRequests.reduce((p, collatorRequests) => {

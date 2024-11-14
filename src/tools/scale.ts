@@ -1,5 +1,4 @@
 #!/usr/bin/env ts-node
-
 /**
  * Usage:
  *
@@ -24,13 +23,12 @@
  *        ...
  *      }'
  */
-
 import { ApiPromise, WsProvider } from "@polkadot/api";
-import { u8aToHex, hexToU8a, hexToNumber, u8aToNumber, isArray } from "@polkadot/util";
-import { xxhashAsU8a, blake2AsU8a } from "@polkadot/util-crypto";
-import yargs from "yargs";
-import mergeWith from "lodash.mergewith";
+import { hexToU8a, isArray, u8aToHex } from "@polkadot/util";
+import { blake2AsU8a, xxhashAsU8a } from "@polkadot/util-crypto";
 import isObject from "lodash.isobject";
+import mergeWith from "lodash.mergewith";
+import yargs from "yargs";
 
 const args = yargs
   .showHelpOnFail(true)
@@ -56,7 +54,7 @@ const args = yargs
         describe: "The key for the storage",
       },
     },
-    cmdKey
+    cmdKey,
   )
   .command(
     "encode",
@@ -71,7 +69,7 @@ const args = yargs
       value: { type: "string", demandOption: true, describe: "The JSON or Raw value for the type" },
       explain: { type: "boolean", describe: "Explain the output" },
     },
-    cmdEncode
+    cmdEncode,
   )
   .command(
     "decode",
@@ -86,7 +84,7 @@ const args = yargs
       value: { type: "string", demandOption: true, describe: "The JSON or Raw value for the type" },
       explain: { type: "boolean", describe: "Explain the output" },
     },
-    cmdDecode
+    cmdDecode,
   )
   .help()
   .demandCommand().argv;

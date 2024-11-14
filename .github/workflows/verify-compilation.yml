@@ -1,0 +1,28 @@
+name: Verify Compilation
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: "20"
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Setup bun
+        uses: oven-sh/setup-bun@v2
+
+      - name: Verify TypeScript compilation
+        run: bun run build
+
+      - name: Run tests
+        run: bun run test

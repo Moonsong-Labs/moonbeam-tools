@@ -1,10 +1,9 @@
 #!/usr/bin/env node
-
-// This script is expected to run against a moonbeam blockchain
 import yargs from "yargs";
 
-import { getMonitoredApiFor, NETWORK_NAMES } from "..";
+import { getMonitoredApiFor, NETWORK_NAMES } from "../index.ts";
 
+// This script is expected to run against a moonbeam blockchain
 const argv = yargs(process.argv.slice(2))
   .usage("Usage: $0")
   .version("1.0.0")

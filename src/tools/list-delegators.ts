@@ -1,13 +1,13 @@
 // This script is expected to run against a parachain network (using launch.ts script)
-import yargs from "yargs";
 import { table } from "table";
+import yargs from "yargs";
 
 import {
+  combineRequestsPerDelegators,
   getAccountIdentity,
   getApiFor,
   NETWORK_YARGS_OPTIONS,
-  combineRequestsPerDelegators,
-} from "..";
+} from "../index.ts";
 
 const argv = yargs(process.argv.slice(2))
   .usage("Usage: $0")
@@ -49,7 +49,7 @@ const main = async () => {
     api.query.parachainStaking.candidateInfo.entries(),
   ]);
   const candidateNames = await Promise.all(
-    allCandidateInfo.map((c: any) => getAccountIdentity(api, `0x${c[0].toHex().slice(-40)}`))
+    allCandidateInfo.map((c: any) => getAccountIdentity(api, `0x${c[0].toHex().slice(-40)}`)),
   );
 
   // Wait for data to be retrieved
@@ -68,7 +68,7 @@ const main = async () => {
   const delegatorRequests = combineRequestsPerDelegators(
     specVersion,
     delegationRequests,
-    delegatorState
+    delegatorState,
   );
 
   const delegators = delegatorState
@@ -111,7 +111,7 @@ const main = async () => {
         { alignment: "right" },
         { alignment: "right" },
       ],
-    })
+    }),
   );
   await api.disconnect();
 };

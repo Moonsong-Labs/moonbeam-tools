@@ -1,1 +1,13 @@
-./scripts/
+/scripts
+/test
+/bins
+/build
+/docker
+/binaries
+/_private
+
+.vscode
+.github
+
+*.log
+*.bak

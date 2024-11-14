@@ -1,12 +1,12 @@
 // This script is expected to run against a parachain network (using launch.ts script)
-
-import { Keyring } from "@polkadot/api";
 import "@moonbeam-networks/api-augment";
 
-import yargs from "yargs";
-import { getMonitoredApiFor, NETWORK_YARGS_OPTIONS } from "../utils/networks";
+import { Keyring } from "@polkadot/api";
 import { SubmittableExtrinsic } from "@polkadot/api/promise/types";
-import { sendAllStreamAndWaitLast } from "../utils/transactions";
+import yargs from "yargs";
+
+import { getMonitoredApiFor, NETWORK_YARGS_OPTIONS } from "../utils/networks.ts";
+import { sendAllStreamAndWaitLast } from "../utils/transactions.ts";
 
 const argv = yargs(process.argv.slice(2))
   .usage("Usage: $0")
@@ -66,7 +66,7 @@ const main = async () => {
   const delegators = await Promise.all(
     new Array(argv.delegations * collators.length).fill(0).map((_, i) => {
       return keyring.addFromUri(`0x${(i + 20000000).toString().padStart(64, "0")}`);
-    })
+    }),
   );
 
   if (argv["transfer-initial-funds"]) {
@@ -85,7 +85,7 @@ const main = async () => {
 
     if (amountRequired > amountAvailable) {
       console.log(
-        `Amount required ${amountRequired} > amount available ${amountAvailable} (from ${fromAccount.address})`
+        `Amount required ${amountRequired} > amount available ${amountAvailable} (from ${fromAccount.address})`,
       );
       return;
     }
@@ -94,7 +94,7 @@ const main = async () => {
     console.log(
       `Transferring ${(amountToTransfer + amountToTip) / 10n ** 18n} tokens to ${
         delegators.length
-      } to delegators... (Total: ${amountRequired / (10n * 18n)} Tokens)`
+      } to delegators... (Total: ${amountRequired / (10n * 18n)} Tokens)`,
     );
 
     const batchSize = 200;
@@ -105,8 +105,8 @@ const main = async () => {
       console.log(
         `Preparing to transfer to delegator ${i}...${Math.min(
           i + batchSize - 1,
-          delegators.length - 1
-        )}`
+          delegators.length - 1,
+        )}`,
       );
       const transferTxs = (
         await Promise.all(
@@ -118,17 +118,17 @@ const main = async () => {
               return null;
             }
             return api.tx.balances.transfer(delegator.address, amountToTransfer);
-          })
+          }),
         )
       ).filter((t) => !!t);
       if (transferTxs.length > 0) {
         console.log(
-          `Transferring to delegator ${i}...${Math.min(i + batchSize - 1, delegators.length - 1)}`
+          `Transferring to delegator ${i}...${Math.min(i + batchSize - 1, delegators.length - 1)}`,
         );
         batches.push(
           await api.tx.utility
             .batchAll(transferTxs)
-            .signAsync(fromAccount, { nonce: fromNonce++, tip: amountToTip })
+            .signAsync(fromAccount, { nonce: fromNonce++, tip: amountToTip }),
         );
       }
     }
@@ -166,9 +166,9 @@ const main = async () => {
             return; // Delegator doesn't have previous delegation tx
           }
           transactions.push(
-            await api.tx.parachainStaking.scheduleLeaveDelegators().signAsync(delegator, { nonce })
+            await api.tx.parachainStaking.scheduleLeaveDelegators().signAsync(delegator, { nonce }),
           );
-        })
+        }),
       );
     }
   } else if (argv["execute-leave"]) {
@@ -182,9 +182,9 @@ const main = async () => {
           transactions.push(
             await api.tx.parachainStaking
               .executeLeaveDelegators(delegator.address, 100)
-              .signAsync(delegator, { nonce })
+              .signAsync(delegator, { nonce }),
           );
-        })
+        }),
       );
     }
   } else {
@@ -198,7 +198,7 @@ const main = async () => {
 
         const delegatorChunk = delegators.slice(
           collatorIndex * argv.delegations,
-          (collatorIndex + 1) * argv.delegations
+          (collatorIndex + 1) * argv.delegations,
         );
 
         const existingDelegators = collator.delegators.reduce((p, v) => {
@@ -221,23 +221,23 @@ const main = async () => {
             transactions.push(
               await api.tx.parachainStaking
                 .scheduleRevokeDelegation(collators[collatorIndex].owner)
-                .signAsync(delegator, { nonce, tip: 1000000000000000000n })
+                .signAsync(delegator, { nonce, tip: 1000000000000000000n }),
             );
           } else if (argv["execute-revoke"]) {
             transactions.push(
               await api.tx.parachainStaking
                 .executeDelegationRequest(delegator.address, collators[collatorIndex].owner)
-                .signAsync(delegator, { nonce })
+                .signAsync(delegator, { nonce }),
             );
           } else {
             transactions.push(
               await api.tx.parachainStaking
                 .delegate(collators[collatorIndex].owner, minDelegatorStk, delegationCount++, 1)
-                .signAsync(delegator, { nonce })
+                .signAsync(delegator, { nonce }),
             );
           }
         }
-      })
+      }),
     );
   }
 

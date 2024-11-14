@@ -1,5 +1,5 @@
-import { xxhashAsU8a } from "@polkadot/util-crypto";
 import { u8aConcat, u8aToHex } from "@polkadot/util";
+import { xxhashAsU8a } from "@polkadot/util-crypto";
 import yargs from "yargs";
 
 const debug = require("debug")("main");
@@ -20,8 +20,8 @@ const argv = yargs(process.argv.slice(2))
 const main = async () => {
   console.log(
     `${argv.module}::${argv.name}: ${u8aToHex(
-      u8aConcat(xxhashAsU8a(argv.module, 128), xxhashAsU8a(argv.name, 128))
-    )}`
+      u8aConcat(xxhashAsU8a(argv.module, 128), xxhashAsU8a(argv.name, 128)),
+    )}`,
   );
 };
 

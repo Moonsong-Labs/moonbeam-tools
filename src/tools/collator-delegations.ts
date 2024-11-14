@@ -1,9 +1,9 @@
 // This script is expected to run against a parachain network (using launch.ts script)
 import chalk from "chalk";
-import yargs from "yargs";
 import { table } from "table";
+import yargs from "yargs";
 
-import { getApiFor, combineRequestsPerDelegators, NETWORK_YARGS_OPTIONS } from "..";
+import { combineRequestsPerDelegators, getApiFor, NETWORK_YARGS_OPTIONS } from "../index.ts";
 
 const argv = yargs(process.argv.slice(2))
   .usage("Usage: $0")
@@ -62,7 +62,7 @@ const main = async () => {
   const delegatorRequests = combineRequestsPerDelegators(
     specVersion,
     delegationRequests,
-    delegatorState
+    delegatorState,
   );
 
   for (const state of delegatorState) {
@@ -80,14 +80,14 @@ const main = async () => {
     if (delegatorRequests[formattedCollator]) {
       delegationData.revoking += delegatorRequests[formattedCollator].reduce(
         (p, v) => (p += v.amount),
-        0n
+        0n,
       );
     }
     delegations.push(delegationData);
   }
   const totalDelegations = delegations.reduce(
     (p, delegation) => p + delegation.amount.toBigInt(),
-    0n
+    0n,
   );
   const totalRevoking = delegations.reduce((p, delegation) => p + delegation.revoking, 0n);
 
@@ -100,16 +100,16 @@ const main = async () => {
           delegation.amount.toBigInt() > totalDelegations / 10n
             ? chalk.red(BigInt(delegation.amount.toBigInt()) / 10n ** 18n)
             : delegation.amount.toBigInt() > totalDelegations / 20n
-            ? chalk.yellow(delegation.amount.toBigInt() / 10n ** 18n)
-            : BigInt(delegation.amount.toBigInt()) / 10n ** 18n,
+              ? chalk.yellow(delegation.amount.toBigInt() / 10n ** 18n)
+              : BigInt(delegation.amount.toBigInt()) / 10n ** 18n,
           delegation.revoking > totalRevoking / 10n
             ? chalk.red(delegation.revoking / 10n ** 18n)
             : delegation.revoking > totalRevoking / 20n
-            ? chalk.yellow(delegation.revoking / 10n ** 18n)
-            : delegation.revoking / 10n ** 18n,
+              ? chalk.yellow(delegation.revoking / 10n ** 18n)
+              : delegation.revoking / 10n ** 18n,
         ];
       }),
-    [["Total", totalDelegations / 10n ** 18n, totalRevoking / 10n ** 18n]]
+    [["Total", totalDelegations / 10n ** 18n, totalRevoking / 10n ** 18n]],
   );
 
   console.log(
@@ -120,7 +120,7 @@ const main = async () => {
         lineIndex == tableData.length ||
         lineIndex == tableData.length - 1,
       columns: [{ alignment: "left" }, { alignment: "right" }, { alignment: "right" }],
-    })
+    }),
   );
 
   await api.disconnect();

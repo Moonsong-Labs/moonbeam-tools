@@ -1,12 +1,11 @@
 // This script is specific to the moonbeam foundation
 // It allows to verify proxy announcement against transfers from a csv file
-
 import chalk from "chalk";
-import yargs from "yargs";
 import fs from "fs";
 import { table } from "table";
+import yargs from "yargs";
 
-import { getApiFor, NETWORK_YARGS_OPTIONS, numberWithCommas } from "..";
+import { getApiFor, NETWORK_YARGS_OPTIONS, numberWithCommas } from "../index.ts";
 
 const argv = yargs(process.argv.slice(2))
   .usage("Usage: $0")
@@ -106,7 +105,7 @@ const main = async () => {
       .flat(),
     ...Object.keys(sumByAddress).map((from) => [
       ["Total", from, "", numberWithCommas(sumByAddress[from]), ""],
-    ])
+    ]),
   );
 
   console.log(
@@ -123,7 +122,7 @@ const main = async () => {
         { alignment: "right" },
         { alignment: "left" },
       ],
-    })
+    }),
   );
 
   await api.disconnect();

@@ -1,9 +1,20 @@
 // This script is expected to run against a parachain network (using launch.ts script)
-import yargs from "yargs";
+import "@moonbeam-network/api-augment";
+
 import { Knex, knex } from "knex";
 import sqlite3 from "sqlite3";
+import yargs from "yargs";
 
-import "@moonbeam-network/api-augment";
+import {
+  BlockDetails,
+  extractAuthorNimbusKey,
+  getAccountFromNimbusKey,
+  getApiFor,
+  getBlockDetails,
+  NETWORK_YARGS_OPTIONS,
+  printTokens,
+  promiseWhile,
+} from "../index.ts";
 
 import type { u128 } from "@polkadot/types";
 import type {
@@ -16,17 +27,6 @@ import type {
   ParachainInherentData,
   AccountId20,
 } from "@polkadot/types/interfaces";
-
-import {
-  printTokens,
-  promiseWhile,
-  getBlockDetails,
-  getApiFor,
-  NETWORK_YARGS_OPTIONS,
-  BlockDetails,
-  extractAuthorNimbusKey,
-  getAccountFromNimbusKey,
-} from "..";
 
 const debug = require("debug")("indexer:fee");
 
@@ -198,7 +198,7 @@ const main = async () => {
       let blockWeight = 0n;
       let blockTreasure = 0n;
       debug(
-        `Processing ${blockDetails.block.header.number.toString()}: ${blockDetails.block.header.hash.toString()}`
+        `Processing ${blockDetails.block.header.number.toString()}: ${blockDetails.block.header.hash.toString()}`,
       );
 
       const apiAt = await api.at(blockDetails.block.header.hash);
@@ -206,8 +206,7 @@ const main = async () => {
 
       const upgradeInfo = (await apiAt.query.system.lastRuntimeUpgrade()).unwrap();
       const runtimeVersion = upgradeInfo.specVersion.toNumber();
-      const baseFeePerGas =
-        runtimeVersion >= 1200 ? (await apiAt.query.baseFee.baseFeePerGas()).toBigInt() : 0n;
+      const baseFeePerGas = runtimeVersion >= 1200 ? (await api.rpc.eth.gasPrice()).toBigInt() : 0n;
 
       // Might not work on first moonbase runtimes
       const nmbsKey = extractAuthorNimbusKey(blockDetails.block);
@@ -233,7 +232,7 @@ const main = async () => {
         const extrinsicResult = events.find(
           (event) =>
             event.section == "system" &&
-            (event.method == "ExtrinsicSuccess" || event.method == "ExtrinsicFailed")
+            (event.method == "ExtrinsicSuccess" || event.method == "ExtrinsicFailed"),
         );
         const isSuccess = extrinsicResult.method == "ExtrinsicSuccess";
 
@@ -271,25 +270,27 @@ const main = async () => {
           if (extrinsic.method.section == "ethereum") {
             const payload = extrinsic.method.args[0] as EthereumTransactionTransactionV2;
             // For Ethereum tx we caluculate fee by first converting weight to gas
-            let gasUsed = dispatchInfo.weight.toBigInt() / WEIGHT_PER_GAS;
+            let gasUsed =
+              (dispatchInfo.weight.refTime || (dispatchInfo.weight as any)).toBigInt() /
+              WEIGHT_PER_GAS;
 
             let gasPriceParam = payload.isLegacy
               ? payload.asLegacy?.gasPrice.toBigInt()
               : payload.isEip2930
-              ? payload.asEip2930?.gasPrice.toBigInt()
-              : payload.isEip1559
-              ? // If gasPrice is not indicated, we should use the base fee defined in that block
-                payload.asEip1559?.maxFeePerGas.toBigInt() || baseFeePerGas
-              : (payload as any as LegacyTransaction).gasPrice.toBigInt();
+                ? payload.asEip2930?.gasPrice.toBigInt()
+                : payload.isEip1559
+                  ? // If gasPrice is not indicated, we should use the base fee defined in that block
+                    payload.asEip1559?.maxFeePerGas.toBigInt() || baseFeePerGas
+                  : (payload as any as LegacyTransaction).gasPrice.toBigInt();
 
             let gasLimitParam =
               (payload.isLegacy
                 ? payload.asLegacy?.gasLimit.toBigInt()
                 : payload.isEip2930
-                ? payload.asEip2930?.gasLimit.toBigInt()
-                : payload.isEip1559
-                ? payload.asEip1559?.gasLimit.toBigInt()
-                : (payload as any as LegacyTransaction)?.gasLimit.toBigInt()) || 15000000n;
+                  ? payload.asEip2930?.gasLimit.toBigInt()
+                  : payload.isEip1559
+                    ? payload.asEip1559?.gasLimit.toBigInt()
+                    : (payload as any as LegacyTransaction)?.gasLimit.toBigInt()) || 15000000n;
 
             let gasBaseFee = payload.isEip1559 ? baseFeePerGas : gasPriceParam;
             let gasTips = payload.isEip1559
@@ -302,7 +303,7 @@ const main = async () => {
             if (isSuccess && runtimeVersion >= 800 && runtimeVersion < 1000) {
               // Bug where an account with balance == gasLimit * fee loses all its balance into fees
               const treasuryDepositEvent = events.find(
-                (event, index) => event.section == "treasury" && event.method == "Deposit"
+                (event, index) => event.section == "treasury" && event.method == "Deposit",
               );
               const treasuryDeposit = (treasuryDepositEvent.data[0] as any).toBigInt();
 
@@ -326,7 +327,7 @@ const main = async () => {
               (event) =>
                 event.section == "balances" &&
                 event.method == "Deposit" &&
-                authorId == event.data[0].toString()
+                authorId == event.data[0].toString(),
             );
 
             if (collatorDepositEvent && runtimeVersion < 1600) {
@@ -339,7 +340,7 @@ const main = async () => {
                   `[Bug] Collator Mint Discrepancy: [${blockDetails.block.header.number.toString()}-${index}:` +
                     ` ${extrinsic.method.section.toString()}.${extrinsic.method.method.toString()} (${
                       payload.type
-                    })- ${runtimeVersion}]`
+                    })- ${runtimeVersion}]`,
                 );
                 console.log(`collator deposit : ${collatorDeposit.toString().padStart(30, " ")}`);
                 console.log(`         gasCost : ${gasBaseFee.toString().padStart(30, " ")}`);
@@ -353,22 +354,22 @@ const main = async () => {
                           .toString()
                           .padStart(30, " ")
                       : ""
-                  }`
+                  }`,
                 );
                 console.log(
                   `         max fee : ${
                     payload.isEip1559
                       ? payload.asEip1559.maxFeePerGas.toBigInt().toString().padStart(30, " ")
                       : ""
-                  }`
+                  }`,
                 );
                 console.log(`         gasUsed : ${gasUsed.toString().padStart(30, " ")}`);
                 console.log(
-                  `            fees : ${(gasUsed * gasBaseFee).toString().padStart(30, " ")}`
+                  `            fees : ${(gasUsed * gasBaseFee).toString().padStart(30, " ")}`,
                 );
                 console.log(`       extraFees : ${extraFees.toString().padStart(30, " ")}`);
                 console.log(
-                  `   expected mint : ${(extraFees * gasUsed).toString().padStart(30, " ")}`
+                  `   expected mint : ${(extraFees * gasUsed).toString().padStart(30, " ")}`,
                 );
                 console.log(extrinsic.toHex());
               }
@@ -399,7 +400,7 @@ const main = async () => {
             } else if (
               // Vote for collective doesn't pay fee if it is the first vote for an account for the given proposal
               ["councilCollective", "techCommitteeCollective", "techComitteeCollective"].includes(
-                extrinsic.method.section
+                extrinsic.method.section,
               ) &&
               isSuccess
             ) {
@@ -442,24 +443,24 @@ const main = async () => {
           }
           debug(`    Validated`);
         }
-        blockWeight += dispatchInfo.weight.toBigInt();
+        blockWeight += (dispatchInfo.weight.refTime || (dispatchInfo.weight as any)).toBigInt();
         blockFees += txFees;
         blockBurnt += txBurnt;
         // Then search for Deposit event from treasury
         // This is for bug detection when the fees are not matching the expected value
         const treasureDepositEvents = events.filter(
-          (event) => event.section == "treasury" && event.method == "Deposit"
+          (event) => event.section == "treasury" && event.method == "Deposit",
         );
         const treasureDeposit = treasureDepositEvents.reduce(
           (p, e) => p + (e.data[0] as any).toBigInt(),
-          0n
+          0n,
         );
         blockTreasure += treasureDeposit;
 
         if (txFees - txBurnt !== treasureDeposit && runtimeVersion >= 1400) {
           console.log(
             `Desposit Amount Discrepancy: [${blockDetails.block.header.number.toString()}-${index}:` +
-              ` ${extrinsic.method.section.toString()}.${extrinsic.method.method.toString()} - ${runtimeVersion}]`
+              ` ${extrinsic.method.section.toString()}.${extrinsic.method.method.toString()} - ${runtimeVersion}]`,
           );
           console.log(`     base fees : ${fees.baseFee.toString().padStart(30, " ")}`);
           console.log(` +    len fees : ${fees.lenFee.toString().padStart(30, " ")}`);
@@ -479,7 +480,9 @@ const main = async () => {
           method: extrinsic.method.method,
           success: isSuccess,
           pay_fee: dispatchInfo.paysFee.isYes,
-          weight: dispatchInfo.weight.toBigInt().toString(),
+          weight: (dispatchInfo.weight.refTime || (dispatchInfo.weight as any))
+            .toBigInt()
+            .toString(),
           partial_fee: fees.totalFees.toString(),
           treasury_deposit: treasureDeposit.toString(),
           fee: txFees.toString(),
@@ -493,7 +496,7 @@ const main = async () => {
       sumBlockFees += blockFees;
       sumBlockBurnt += blockBurnt;
       console.log(
-        `    - ${blockDetails.block.header.number} (${runtimeVersion}) Fees : ${blockFees} - ${sumBlockFees} - ${blockBurnt} - ${sumBlockBurnt}`
+        `    - ${blockDetails.block.header.number} (${runtimeVersion}) Fees : ${blockFees} - ${sumBlockFees} - ${blockBurnt} - ${sumBlockBurnt}`,
       );
 
       const [previousTreasure, treasure, issuance] = await Promise.all([
@@ -504,12 +507,12 @@ const main = async () => {
 
       if (previousTreasure + blockTreasure !== treasure) {
         console.log(
-          `Treasury Amount Discrepancy: [${blockDetails.block.header.number.toString()} [${runtimeVersion}]`
+          `Treasury Amount Discrepancy: [${blockDetails.block.header.number.toString()} [${runtimeVersion}]`,
         );
         console.log(`previous treasury: ${previousTreasure.toString().padStart(30, " ")}`);
         console.log(`         treasury: ${treasure.toString().padStart(30, " ")}`);
         console.log(
-          `expected treasury: ${(blockTreasure + previousTreasure).toString().padStart(30, " ")}`
+          `expected treasury: ${(blockTreasure + previousTreasure).toString().padStart(30, " ")}`,
         );
         console.log(`    block deposit: ${blockTreasure.toString().padStart(30, " ")}`);
       }
@@ -517,8 +520,8 @@ const main = async () => {
       const timestamp = apiAt.registry.createType(
         "Compact<u64>",
         blockDetails.block.extrinsics.find(
-          (e) => e.method.section == "timestamp" && e.method.method == "set"
-        ).data
+          (e) => e.method.section == "timestamp" && e.method.method == "set",
+        ).data,
       );
 
       await db("blocks").insert({
@@ -570,15 +573,15 @@ const main = async () => {
     `Total blocks : ${blockCount}, ${printTokens(
       api,
       blockCount ? sumBlockFees / BigInt(blockCount) : 0n,
-      4
-    )}/block, ${printTokens(api, sumBlockFees, 4)} Total`
+      4,
+    )}/block, ${printTokens(api, sumBlockFees, 4)} Total`,
   );
 
   // Log difference in supply, we should be equal to the burnt fees
   console.log(
     `  supply diff: ${(fromPreSupply.toBigInt() - toSupply.toBigInt())
       .toString()
-      .padStart(30, " ")}`
+      .padStart(30, " ")}`,
   );
   console.log(`  burnt fees : ${sumBlockBurnt.toString().padStart(30, " ")}`);
   console.log(`  total fees : ${sumBlockFees.toString().padStart(30, " ")}`);

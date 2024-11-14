@@ -1,24 +1,22 @@
-/*
-  This script is intended to run once as hotfix for specific networks.
-  Do not use it without reading the code !!
-
-  This script will find orphan requests (already executed but not removed
-    from the delegator state)
-
-Ex: ./node_modules/.bin/ts-node-transpile-only src/hotfixes/runtime-1300-fix-orphan-requests.ts \
-   --network alphanet \
-   --send-preimage-hash \
-   --send-proposal-as council-external \
-   --collective-threshold 3 \
-   --account-priv-key <key> \
-*/
-
-import yargs from "yargs";
-
-import { getApiFor, NETWORK_YARGS_OPTIONS } from "..";
+//@ts-nocheck
+//   This script is intended to run once as hotfix for specific networks.
+//   Do not use it without reading the code !!
+//
+//   This script will find orphan requests (already executed but not removed
+//     from the delegator state)
+//
+// Ex: bun src/hotfixes/runtime-1300-fix-orphan-requests.ts \
+//    --network alphanet \
+//    --send-preimage-hash \
+//    --send-proposal-as council-external \
+//    --collective-threshold 3 \
+//    --account-priv-key <key> \
 import { Keyring } from "@polkadot/api";
 import { blake2AsHex } from "@polkadot/util-crypto";
-import { printTokens } from "../utils/monitoring";
+import yargs from "yargs";
+
+import { getApiFor, NETWORK_YARGS_OPTIONS } from "../index.ts";
+import { printTokens } from "../utils/monitoring.ts";
 
 const argv = yargs(process.argv.slice(2))
   .usage("Usage: $0")
@@ -62,19 +60,19 @@ const main = async () => {
   const runtimeVersion = upgradeInfo.specVersion.toNumber();
 
   console.log(
-    `Using data from block #${atBlockNumber} (${api.runtimeVersion.specName.toString()}-${runtimeVersion})`
+    `Using data from block #${atBlockNumber} (${api.runtimeVersion.specName.toString()}-${runtimeVersion})`,
   );
 
   const delegatorsToFix = [];
   let totalRequests = 0;
   for (const state of delegatorState) {
-    const stateData = state[1].unwrap(); 
+    const stateData = state[1].unwrap();
     // @ts-ignore ParachainStakingDelegator removed requests in runtime 1700
     const requestData = stateData.requests.requests;
     requestData.forEach((request, collator) => {
       totalRequests++;
       const delegation = stateData.delegations.find(
-        ({ owner }) => owner.toString() == collator.toString()
+        ({ owner }) => owner.toString() == collator.toString(),
       );
       if (
         !delegation ||
@@ -83,8 +81,8 @@ const main = async () => {
         console.log(
           `${stateData.id}: ${request.whenExecutable} - ${printTokens(
             api,
-            delegation.amount.toBigInt()
-          )} vs requested ${printTokens(api, request.amount.toBigInt())}`
+            delegation.amount.toBigInt(),
+          )} vs requested ${printTokens(api, request.amount.toBigInt())}`,
         );
         delegatorsToFix.push(stateData.id);
       }
@@ -99,7 +97,7 @@ const main = async () => {
     const collectiveThreshold = argv["collective-threshold"] || 1;
     const account = await keyring.addFromUri(argv["account-priv-key"], null, "ethereum");
     const { nonce: rawNonce, data: balance } = (await api.query.system.account(
-      account.address
+      account.address,
     )) as any;
     let nonce = BigInt(rawNonce.toString());
 

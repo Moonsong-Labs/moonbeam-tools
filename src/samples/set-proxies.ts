@@ -1,26 +1,23 @@
-/*
-This script is a sample. Do not use it without reading the code !!
-
-Goal: 
- - This script set proxies by changing directly the storage values.
-   It is useful when setting proxies without deposits in test environments.
-
- - It demonstrate how to use createType with runtime specific modules (L92)
-
-Ex: ./node_modules/.bin/ts-node-transpile-only src/tools/list-methods.ts \
-   --network alphanet \
-   --send-preimage-hash \
-   --send-proposal-as council-external \
-   --collective-threshold 3 \
-   --account-priv-key <key> \
-*/
-
+// This script is a sample. Do not use it without reading the code !!
+//
+// Goal:
+//  - This script set proxies by changing directly the storage values.
+//    It is useful when setting proxies without deposits in test environments.
+//
+//  - It demonstrate how to use createType with runtime specific modules (L92)
+//
+// Ex: bun src/tools/list-methods.ts \
+//    --network alphanet \
+//    --send-preimage-hash \
+//    --send-proposal-as council-external \
+//    --collective-threshold 3 \
+//    --account-priv-key <key> \
 import { Keyring } from "@polkadot/api";
 import { u8aToHex } from "@polkadot/util";
 import { blake2AsHex } from "@polkadot/util-crypto";
 import yargs from "yargs";
 
-import { getApiFor, NETWORK_YARGS_OPTIONS } from "../utils/networks";
+import { getApiFor, NETWORK_YARGS_OPTIONS } from "../utils/networks.ts";
 
 const PROPOSAL_AMOUNT = 10_000_000_000_000_000_000n;
 
@@ -110,8 +107,8 @@ const main = async () => {
       .map(
         (proxy) =>
           `${proxy.slice(2)}${u8aToHex(proxyType.toU8a()).slice(2)}${u8aToHex(
-            proxyDelay.toU8a()
-          ).slice(2)}`
+            proxyDelay.toU8a(),
+          ).slice(2)}`,
       )
       .join("")}${u8aToHex(proxyDeposit.toU8a()).slice(2)}`;
   }
@@ -121,12 +118,12 @@ const main = async () => {
     const collectiveThreshold = argv["collective-threshold"] || 1;
     const account = await keyring.addFromUri(argv["account-priv-key"], null, "ethereum");
     const { nonce: rawNonce, data: balance } = (await api.query.system.account(
-      account.address
+      account.address,
     )) as any;
     let nonce = BigInt(rawNonce.toString());
 
     const setStorageTx = api.tx.system.setStorage(
-      Object.keys(storage).map((key) => [key, storage[key]] as [string, string])
+      Object.keys(storage).map((key) => [key, storage[key]] as [string, string]),
     );
 
     let encodedProposal = setStorageTx?.method.toHex() || "";

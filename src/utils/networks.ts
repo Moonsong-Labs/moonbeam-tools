@@ -1,14 +1,26 @@
-import { WsProvider } from "@polkadot/api";
+import { ApiPromise, HttpProvider, WsProvider } from "@polkadot/api";
 import chalk from "chalk";
-import { ApiPromise } from "@polkadot/api";
 import { typesBundlePre900 } from "moonbeam-types-bundle";
-import { listenBlocks, printBlockDetails, RealtimeBlockDetails } from "./monitoring";
+import {
+  Chain,
+  createPublicClient,
+  createWalletClient,
+  PrivateKeyAccount,
+  PublicClient,
+  Transport,
+  WalletClient,
+  webSocket,
+} from "viem";
 import { Options } from "yargs";
+
+import { listenBlocks, printBlockDetails, RealtimeBlockDetails } from "./monitoring.ts";
 
 export type MOONBEAM_NETWORK_NAME =
   | "stagenet"
   | "alphanet"
+  | "betanet"
   | "moonsama"
+  | "moonlama"
   | "moonsilver"
   | "moonriver"
   | "moonbeam";
@@ -17,19 +29,23 @@ export type POLKADOT_NETWORK_NAME = "kusama" | "polkadot";
 export type NETWORK_NAME = MOONBEAM_NETWORK_NAME | POLKADOT_NETWORK_NAME;
 
 export const NETWORK_WS_URLS: { [name in NETWORK_NAME]: string } = {
-  stagenet: "wss://wss.api.stagenet.gcp.purestake.run",
+  stagenet: "wss://wss.api.moondev.network",
   alphanet: "wss://wss.api.moonbase.moonbeam.network",
-  moonsama: "wss://wss.moonsama.gcp.purestake.run",
+  betanet: "wss://deo-moon-rpc-1-moonbase-beta-rpc-1.moonbase.ol-infra.network",
+  moonsama: "wss://fro-moon-moondev-1-moonsama-rpc-1.rv.moondev.network",
+  moonlama: "wss://deo-moon-moondev-1-moonlama-rpc-1.rv.moondev.network",
   moonsilver: "wss://wss.moonsilver.moonbeam.network",
-  moonriver: "wss://moonriver.api.onfinality.io/public-ws",
-  moonbeam: "wss://moonbeam.api.onfinality.io/public-ws",
+  moonriver: "wss://wss.api.moonriver.moonbeam.network",
+  moonbeam: "wss://wss.api.moonbeam.network",
   kusama: "wss://kusama-rpc.polkadot.io",
   polkadot: "wss://rpc.polkadot.io",
 };
 export const NETWORK_HTTP_URLS: { [name in NETWORK_NAME]: string } = {
-  stagenet: "https://rpc.stagenet.moonbeam.gcp.purestake.run",
+  stagenet: "https://rpc.api.moondev.network",
   alphanet: "https://rpc.api.moonbase.moonbeam.network",
-  moonsama: "https://rpc.moonsama.gcp.purestake.run",
+  betanet: "https://deo-moon-rpc-1-moonbase-beta-rpc-1.moonbase.ol-infra.network",
+  moonsama: "https://fro-moon-moondev-1-moonsama-rpc-1.rv.moondev.network",
+  moonlama: "https://deo-moon-moondev-1-moonlama-rpc-1.rv.moondev.network",
   moonsilver: "https://rpc.moonsilver.moonbeam.network",
   moonriver: "https://rpc.api.moonriver.moonbeam.network",
   moonbeam: "https://rpc.api.moonbeam.network",
@@ -41,18 +57,22 @@ export const NETWORK_NAMES = Object.keys(NETWORK_WS_URLS) as NETWORK_NAME[];
 export const NETWORK_CHAIN_MAPPING: { [name: string]: NETWORK_NAME } = {
   "Moonbase Stage": "stagenet",
   "Moonbase Alpha": "alphanet",
+  "Moonbase Beta": "betanet",
   Moonsama: "moonsama",
   Moonsilver: "moonsilver",
   Moonriver: "moonriver",
   Moonbeam: "moonbeam",
   Kusama: "kusama",
   Polkadot: "polkadot",
+  Moonlama: "moonlama",
 };
 
 export const NETWORK_COLORS: { [name in NETWORK_NAME]: chalk.ChalkFunction } = {
   stagenet: chalk.blueBright,
   alphanet: chalk.greenBright,
+  betanet: chalk.greenBright,
   moonsama: chalk.magentaBright,
+  moonlama: chalk.magentaBright,
   moonsilver: chalk.yellowBright,
   moonriver: chalk.redBright,
   moonbeam: chalk.magentaBright,
@@ -108,12 +128,49 @@ export const getWsProviderFor = (argv: Argv) => {
   return new WsProvider(argv.url);
 };
 
+export const getHttpProviderForNetwork = (name: NETWORK_NAME) => {
+  return new HttpProvider(NETWORK_HTTP_URLS[name]);
+};
+
+// Supports providing an URL or a known network
+export const getHttpProviderFor = (argv: Argv) => {
+  if (isKnownNetwork(argv.network)) {
+    return getHttpProviderForNetwork(argv.network);
+  }
+  return new HttpProvider(argv.url);
+};
+
 export const getApiFor = async (argv: Argv) => {
   const wsProvider = getWsProviderFor(argv);
   return await ApiPromise.create({
     noInitWarn: true,
     provider: wsProvider,
     typesBundle: typesBundlePre900 as any,
+  });
+};
+
+export const getViemFor = (argv: Argv): PublicClient<Transport, Chain, true> => {
+  const url = isKnownNetwork(argv.network) ? NETWORK_WS_URLS[argv.network] : argv.url;
+  return createPublicClient({
+    transport: webSocket(url),
+  });
+};
+
+/**
+ *
+ * @param argv Network options
+ * @param key Private key
+ * @returns
+ */
+export const getViemAccountFor = (
+  argv: Argv,
+  account: PrivateKeyAccount,
+): WalletClient<Transport, Chain, PrivateKeyAccount, true> => {
+  const url = isKnownNetwork(argv.network) ? NETWORK_WS_URLS[argv.network] : argv.url;
+  return createWalletClient({
+    transport: webSocket(url),
+    account,
+    chain: null,
   });
 };
 
@@ -137,7 +194,7 @@ export const getMonitoredApiFor = async (argv: Argv) => {
           ? NETWORK_COLORS[networkName](networkName.padStart(10, " "))
           : undefined,
       },
-      previousBlockDetails
+      previousBlockDetails,
     );
     previousBlockDetails = blockDetails;
   });

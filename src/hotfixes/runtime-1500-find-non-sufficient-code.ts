@@ -1,11 +1,14 @@
+//@ts-nocheck
 // This script is expected to run against a parachain network (using launch.ts script)
-import yargs from "yargs";
-import fs from "fs";
-import type { FrameSystemAccountInfo } from "@polkadot/types/lookup";
-import { Keyring } from "@polkadot/api";
 import "@moonbeam-network/api-augment";
 
-import { getApiFor, NETWORK_YARGS_OPTIONS } from "..";
+import { Keyring } from "@polkadot/api";
+import fs from "fs";
+import yargs from "yargs";
+
+import { getApiFor, NETWORK_YARGS_OPTIONS } from "../index.ts";
+
+import type { FrameSystemAccountInfo } from "@polkadot/types/lookup";
 
 const argv = yargs(process.argv.slice(2))
   .usage("Usage: $0")
@@ -30,7 +33,7 @@ const main = async () => {
   const runtimeVersion = upgradeInfo.specVersion.toNumber();
 
   console.log(
-    `Using data from block #${atBlockNumber} (${api.runtimeVersion.specName.toString()}-${runtimeVersion})`
+    `Using data from block #${atBlockNumber} (${api.runtimeVersion.specName.toString()}-${runtimeVersion})`,
   );
 
   const [accountCodeKeys] = await Promise.all([apiAt.query.evm.accountCodes.keys()]);
@@ -41,7 +44,7 @@ const main = async () => {
   for (let i = 0; i < accountCodeKeys.length; i += BATCH_SIZE) {
     const chunkKeys = accountCodeKeys.slice(i, i + BATCH_SIZE);
     const multiAccount = await apiAt.query.system.account.multi(
-      chunkKeys.map((k) => `0x${k.toHex().slice(-40)}`)
+      chunkKeys.map((k) => `0x${k.toHex().slice(-40)}`),
     );
     for (const index in chunkKeys) {
       accounts[chunkKeys[index].toHex()] = multiAccount[index];
@@ -67,14 +70,14 @@ const main = async () => {
   console.log(
     `Found ${sortedAccountsToFix.length} / ${
       accountCodeKeys.length
-    } on ${upgradeInfo.specName.toString()}[${upgradeInfo.specVersion.toNumber()}]`
+    } on ${upgradeInfo.specName.toString()}[${upgradeInfo.specVersion.toNumber()}]`,
   );
 
   if (argv["account-priv-key"]) {
     const keyring = new Keyring({ type: "ethereum" });
     const account = await keyring.addFromUri(argv["account-priv-key"], null, "ethereum");
     const { nonce: rawNonce, data: balance } = (await api.query.system.account(
-      account.address
+      account.address,
     )) as any;
     let nonce = BigInt(rawNonce.toString());
 
@@ -89,7 +92,7 @@ const main = async () => {
   }
   fs.writeFileSync(
     `${upgradeInfo.specName.toString()}-accounts-to-fix.json`,
-    JSON.stringify(sortedAccountsToFix, null, 2)
+    JSON.stringify(sortedAccountsToFix, null, 2),
   );
 
   await api.disconnect();

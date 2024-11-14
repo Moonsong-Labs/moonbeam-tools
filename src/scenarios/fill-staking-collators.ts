@@ -1,12 +1,11 @@
 // This script is expected to run against a parachain network (using launch.ts script)
-
 import { Keyring } from "@polkadot/api";
-
 import yargs from "yargs";
-import { getMonitoredApiFor, NETWORK_YARGS_OPTIONS } from "../utils/networks";
 import { SubmittableExtrinsic } from "@polkadot/api/promise/types";
-import { sendAllStreamAndWaitLast } from "../utils/transactions";
-import { ALITH_PRIVATE_KEY, BALTATHAR_PRIVATE_KEY } from "..";
+
+import { ALITH_PRIVATE_KEY, BALTATHAR_PRIVATE_KEY } from "../index.ts";
+import { getMonitoredApiFor, NETWORK_YARGS_OPTIONS } from "../utils/networks.ts";
+import { sendAllStreamAndWaitLast } from "../utils/transactions.ts";
 
 const argv = yargs(process.argv.slice(2))
   .usage("Usage: $0")
@@ -79,14 +78,14 @@ const main = async () => {
     console.log(
       `Transferring ${minCandidateStk / 10n ** 18n + 1n} tokens to ${
         argv.collators - 2
-      } to collators...`
+      } to collators...`,
     );
     const transferTxs = await Promise.all(
       collators.map((collator) =>
         api.tx.balances
           .transfer(collator.address, minCandidateStk + 1n * 10n ** 18n)
-          .signAsync(alith, { nonce: aliceNonce++ })
-      )
+          .signAsync(alith, { nonce: aliceNonce++ }),
+      ),
     );
 
     // Send the transfer transactions and wait for the last one to finish
@@ -110,7 +109,7 @@ const main = async () => {
         transactions.push(
           await api.tx.parachainStaking
             .candidateBondMore(minCandidateStk)
-            .signAsync(collators[collatorIndex], { nonce })
+            .signAsync(collators[collatorIndex], { nonce }),
         );
       }
 
@@ -122,10 +121,10 @@ const main = async () => {
         transactions.push(
           await api.tx.parachainStaking
             .joinCandidates(minCandidateStk, argv.collators)
-            .signAsync(collators[collatorIndex], { nonce })
+            .signAsync(collators[collatorIndex], { nonce }),
         );
       }
-    })
+    }),
   );
   if (transactions.length !== 0) {
     await sendAllStreamAndWaitLast(api, transactions, { threshold: 5000, batch: 200 }).catch(
@@ -134,7 +133,7 @@ const main = async () => {
         console.log(e.msg || e.message || e.error);
         console.log(e.toString());
         console.log(JSON.stringify(e));
-      }
+      },
     );
   }
 

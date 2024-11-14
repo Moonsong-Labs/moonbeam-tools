@@ -1,22 +1,23 @@
+import "@moonbeam-network/api-augment";
+import "@polkadot/api-augment";
+
+import { ApiDecoration } from "@polkadot/api/types";
+import { Data, GenericEthereumAccountId, Option, u128 } from "@polkadot/types";
+import { Codec, ITuple } from "@polkadot/types-codec/types";
+import { PalletIdentityRegistration } from "@polkadot/types/lookup";
+import { ISubmittableResult } from "@polkadot/types/types";
+import { u8aToString } from "@polkadot/util";
+import { ethereumEncode } from "@polkadot/util-crypto";
+import chalk from "chalk";
+import Debug from "debug";
+
+import { promiseConcurrent } from "./functions.ts";
+import { mapExtrinsics, TxWithEventAndFee } from "./types.ts";
+
 import type { ApiPromise } from "@polkadot/api";
 import type { Extrinsic, BlockHash, EventRecord } from "@polkadot/types/interfaces";
 import type { Block } from "@polkadot/types/interfaces/runtime/types";
-import { Data, GenericEthereumAccountId, Option, u128, u8, bool } from "@polkadot/types";
-import type { EthereumTransactionTransactionV2 } from "@polkadot/types/lookup";
 import type { LegacyTransaction } from "@polkadot/types/interfaces/eth";
-import { u8aToString } from "@polkadot/util";
-import { ethereumEncode } from "@polkadot/util-crypto";
-import { mapExtrinsics, TxWithEventAndFee } from "./types";
-
-import "@polkadot/api-augment";
-import "@moonbeam-network/api-augment";
-
-import chalk from "chalk";
-import Debug from "debug";
-import { PalletIdentityRegistration } from "@polkadot/types/lookup";
-import { Codec, ITuple } from "@polkadot/types-codec/types";
-import { promiseConcurrent } from "./functions";
-import { ApiDecoration } from "@polkadot/api/types";
 const debug = Debug("monitoring");
 
 export const printTokens = (api: ApiPromise, tokens: bigint, decimals = 2, pad = 9) => {
@@ -36,6 +37,7 @@ export interface BlockDetails {
   records: EventRecord[];
   txWithEvents: TxWithEventAndFee[];
   weightPercentage: number;
+  storageUsed: number;
 }
 
 // TODO: Improve with cache and eviction
@@ -60,7 +62,7 @@ const identityCache: {
 export const getAccountIdentities = async (
   api: ApiPromise,
   accounts: string[],
-  at?: BlockHash | string
+  at?: BlockHash | string,
 ): Promise<string[]> => {
   if (!accounts || accounts.length == 0) {
     return [];
@@ -68,12 +70,12 @@ export const getAccountIdentities = async (
   const missingAccounts = accounts.filter(
     (account) =>
       account &&
-      (!identityCache[account] || identityCache[account].lastUpdate < Date.now() - 3600 * 1000)
+      (!identityCache[account] || identityCache[account].lastUpdate < Date.now() - 3600 * 1000),
   );
 
   if (missingAccounts.length > 0) {
     const identityKeys = missingAccounts.map((a) =>
-      api.query.identity.identityOf.key(a.toString())
+      api.query.identity.identityOf.key(a.toString()),
     );
     const superOfKeys = missingAccounts.map((a) => api.query.identity.superOf.key(a.toString()));
     const [identities, superOfIdentities] = await Promise.all([
@@ -85,9 +87,9 @@ export const getAccountIdentities = async (
               i.isSome &&
               api.registry.createType<PalletIdentityRegistration>(
                 "PalletIdentityRegistration",
-                i.toString()
-              )
-          )
+                i.toString(),
+              ),
+          ),
         ),
       api.rpc.state
         .queryStorageAt<Option<Codec>[]>(superOfKeys, at)
@@ -97,9 +99,9 @@ export const getAccountIdentities = async (
               (superOfOpt.isSome &&
                 api.registry.createType<ITuple<[GenericEthereumAccountId, Data]>>(
                   "(GenericEthereumAccountId, Data)",
-                  superOfOpt.toString()
+                  superOfOpt.toString(),
                 )) ||
-              null
+              null,
           );
         })
         .then(async (superOfs) => {
@@ -109,8 +111,8 @@ export const getAccountIdentities = async (
               ? await api.rpc.state.queryStorageAt<Option<PalletIdentityRegistration>[]>(
                   validSuperOfs.map(
                     (superOf) => api.query.identity.identityOf.key(superOf[0].toString()),
-                    at
-                  )
+                    at,
+                  ),
                 )
               : [];
           let index = 0;
@@ -122,7 +124,7 @@ export const getAccountIdentities = async (
                   superIdentityOpt.isSome &&
                   api.registry.createType<PalletIdentityRegistration>(
                     "PalletIdentityRegistration",
-                    superIdentityOpt.toString()
+                    superIdentityOpt.toString(),
                   ),
                 data: superOf[1],
               };
@@ -146,16 +148,16 @@ export const getAccountIdentities = async (
     return account && identity
       ? u8aToString(identity.info.display.asRaw.toU8a(true))
       : superOf && superOf.identity
-      ? `${u8aToString(superOf.identity.info.display.asRaw.toU8a(true))} - Sub ${
-          (superOf.data && u8aToString(superOf.data.asRaw.toU8a(true))) || ""
-        }`
-      : account?.toString();
+        ? `${u8aToString(superOf.identity.info.display.asRaw.toU8a(true))} - Sub ${
+            (superOf.data && u8aToString(superOf.data.asRaw.toU8a(true))) || ""
+          }`
+        : account?.toString();
   });
 };
 
 export const getAccountIdentity = async (
   api: ApiPromise | ApiDecoration<"promise">,
-  account: string
+  account: string,
 ): Promise<string> => {
   if (!account) {
     return "";
@@ -182,8 +184,9 @@ export const getAccountIdentity = async (
       : [null, null];
     identityCache[account] = {
       lastUpdate: Date.now(),
-      identity,
-      superOf: superOfIdentity,
+      identity: identity?.[0],
+      superOf:
+        superOfIdentity && ("info" in superOfIdentity ? superOfIdentity : superOfIdentity[0]),
     };
   }
 
@@ -191,15 +194,15 @@ export const getAccountIdentity = async (
   return identity
     ? u8aToString(identity.info.display.asRaw.toU8a(true))
     : superOf
-    ? `${u8aToString(superOf.identity.info.display.asRaw.toU8a(true))} - Sub ${
-        (superOf.data && u8aToString(superOf.data.asRaw.toU8a(true))) || ""
-      }`
-    : account?.toString();
+      ? `${u8aToString(superOf.identity.info.display.asRaw.toU8a(true))} - Sub ${
+          (superOf.data && u8aToString(superOf.data.asRaw.toU8a(true))) || ""
+        }`
+      : account?.toString();
 };
 
 export const getAccountFromNimbusKey = async (
   api: ApiPromise | ApiDecoration<"promise">,
-  nmbsKey: string
+  nmbsKey: string,
 ): Promise<string> => {
   if (
     !authorMappingCache[nmbsKey] ||
@@ -222,7 +225,8 @@ export const extractAuthorNimbusKey = (block: Block): string => {
       ?.args[0]?.toString() ||
     block.header.digest.logs
       .find(
-        (l) => l.isPreRuntime && l.asPreRuntime.length > 0 && l.asPreRuntime[0].toString() == "nmbs"
+        (l) =>
+          l.isPreRuntime && l.asPreRuntime.length > 0 && l.asPreRuntime[0].toString() == "nmbs",
       )
       ?.asPreRuntime[1]?.toString();
 
@@ -231,7 +235,7 @@ export const extractAuthorNimbusKey = (block: Block): string => {
 
 export const getAuthorIdentity = async (
   api: ApiPromise | ApiDecoration<"promise">,
-  nmbsKey: string
+  nmbsKey: string,
 ): Promise<string> => {
   const account = await getAccountFromNimbusKey(api, nmbsKey);
   return getAccountIdentity(api, account);
@@ -252,7 +256,9 @@ export const getFeeMultiplier = async (api: ApiPromise, blockHash: string): Prom
 
 export const getBlockDetails = async (api: ApiPromise, blockHash: BlockHash) => {
   debug(`Querying ${blockHash}`);
-  const maxBlockWeight = api.consts.system.blockWeights.maxBlock.toBigInt();
+  const maxBlockWeight = (api.consts.system.blockWeights.maxBlock as any).toBigInt
+    ? (api.consts.system.blockWeights.maxBlock as any).toBigInt()
+    : api.consts.system.blockWeights.maxBlock.refTime?.toBigInt();
   const apiAt = await api.at(blockHash);
   const [{ block }, records, blockTime, collatorId] = await Promise.all([
     api.rpc.chain.getBlock(blockHash),
@@ -275,7 +281,7 @@ export const getBlockDetails = async (api: ApiPromise, blockHash: BlockHash) => 
           process.exit(1);
         }
       },
-      block.extrinsics
+      block.extrinsics,
     ),
     nmbsKey
       ? getAuthorIdentity(apiAt, nmbsKey)
@@ -283,37 +289,53 @@ export const getBlockDetails = async (api: ApiPromise, blockHash: BlockHash) => 
   ]);
 
   const feeMultiplier = await getFeeMultiplier(api, block.header.parentHash.toString());
-  const txWithEvents = mapExtrinsics(
+  const txWithEvents = await mapExtrinsics(
+    api,
     block.extrinsics,
     records,
     fees.map((fee) => fee.inclusionFee.unwrapOrDefault()),
     feeMultiplier,
-    apiAt.consts.transactionPayment?.weightToFee ||
-      ([
-        {
-          coeffInteger: new u128(
-            api.registry,
-            api.runtimeVersion.specName.toString() == "moonbeam" ? 1_000_000 : 10_000
-          ).muln(apiAt.consts.transactionPayment.operationalFeeMultiplier.toNumber() || 5),
-          coeffFrac: api.registry.createType("Perbill", 0),
-          negative: new bool(api.registry, false),
-          degree: new u8(api.registry, 1),
-        },
-      ] as any)
   );
-  const blockWeight = txWithEvents.reduce((totalWeight, tx, index) => {
-    return totalWeight + (tx.dispatchInfo && tx.dispatchInfo.weight.toBigInt());
-  }, 0n);
+
+  const [blockWeight, ethWeight] = txWithEvents.reduce(
+    (stats, tx, index) => {
+      // TODO: support weight v1/2
+      if (!tx.dispatchInfo) {
+        return stats;
+      }
+      const refTime = (tx.dispatchInfo.weight as any).toBn
+        ? (tx.dispatchInfo.weight as any).toBigInt()
+        : tx.dispatchInfo.weight.refTime?.toBigInt();
+      return [
+        stats[0] + refTime,
+        stats[1] + (tx.extrinsic.method.section == "ethereum" ? refTime : 0n),
+      ];
+    },
+    [0n, 0n],
+  );
+
+  const gasUsed = (await api.rpc.eth.getBlockByNumber(block.header.number.toNumber(), false))
+    .unwrap()
+    .gasUsed.toBigInt();
+
+  const WEIGHT_TO_GAS_RATIO = 25_000n; // TODO: Find a way to retrieve dynamically
+  const GAS_LIMIT_STORAGE_GROWTH_RATIO = 366n; // TODO: Find a way to retrieve dynamically
+  const gasByRefTime = ethWeight / WEIGHT_TO_GAS_RATIO;
+  // console.log(`[${block.header.number.toNumber()} ${blockWeight}/${ethWeight}: ${gasByRefTime}/${gasUsed}`);
+  const storageUsed =
+    gasByRefTime != gasUsed ? Number(gasByRefTime / GAS_LIMIT_STORAGE_GROWTH_RATIO) : 0; // in bytes
+
   return {
     block,
     isAuthorOrbiter:
-      collatorId.unwrapOr(null)?.toString() !=
+      (collatorId as any).unwrapOr(null)?.toString() !=
       (await getAccountFromNimbusKey(apiAt, nmbsKey))?.toString(),
     authorName,
     blockTime: blockTime.toNumber(),
     weightPercentage: Number((blockWeight * 10000n) / maxBlockWeight) / 100,
     txWithEvents,
     records,
+    storageUsed,
   } as BlockDetails;
 };
 
@@ -328,7 +350,7 @@ export interface BlockRangeOption {
 export const exploreBlockRange = async (
   api: ApiPromise,
   { from, to, concurrency = 1 }: BlockRangeOption,
-  callBack: (blockDetails: BlockDetails) => Promise<void>
+  callBack: (blockDetails: BlockDetails) => Promise<void>,
 ) => {
   await promiseConcurrent(
     concurrency,
@@ -339,8 +361,31 @@ export const exploreBlockRange = async (
         .then((hash) => getBlockDetails(api, hash));
       await callBack(blockDetails);
     },
-    new Array(to - from + 1).fill(0)
+    new Array(to - from + 1).fill(0),
   );
+};
+
+// Explore blocks in reverse order
+export const reverseBlocks = async (
+  api: ApiPromise,
+  { from, concurrency = 1 }: Omit<BlockRangeOption, "to">,
+  callBack: (blockDetails: BlockDetails) => Promise<void>,
+) => {
+  let blockNumber = from;
+  while (blockNumber > 0) {
+    await promiseConcurrent(
+      concurrency,
+      async (_, i) => {
+        const current = blockNumber - i;
+        const blockDetails = await api.rpc.chain
+          .getBlockHash(current)
+          .then((hash) => getBlockDetails(api, hash));
+        await callBack(blockDetails);
+      },
+      new Array(blockNumber - Math.min(concurrency, blockNumber)).fill(0),
+    );
+    blockNumber -= concurrency;
+  }
 };
 
 export interface RealtimeBlockDetails extends BlockDetails {
@@ -351,7 +396,7 @@ export interface RealtimeBlockDetails extends BlockDetails {
 export const listenBlocks = async (
   api: ApiPromise,
   finalized: boolean,
-  callBack: (blockDetails: RealtimeBlockDetails) => Promise<void>
+  callBack: (blockDetails: RealtimeBlockDetails) => Promise<void>,
 ) => {
   let latestBlockTime = 0;
   try {
@@ -378,24 +423,35 @@ export const listenBlocks = async (
   return unsubHeads;
 };
 
+export const waitBlocks = async (api: ApiPromise, count: number): Promise<void> => {
+  const startingBlockNumber = (await api.rpc.chain.getBlock()).block.header.number.toNumber();
+  const unsubListener = await listenBestBlocks(api, async (blockDetails) => {
+    if (blockDetails.block.header.number.toNumber() - count >= startingBlockNumber) {
+      unsubListener();
+      return;
+    }
+  });
+  await api.query.timestamp.now.at((await api.rpc.chain.getBlock()).block.header.parentHash);
+};
+
 export const listenBestBlocks = async (
   api: ApiPromise,
-  callBack: (blockDetails: RealtimeBlockDetails) => Promise<void>
+  callBack: (blockDetails: RealtimeBlockDetails) => Promise<void>,
 ) => {
-  listenBlocks(api, false, callBack);
+  return listenBlocks(api, false, callBack);
 };
 
 export const listenFinalizedBlocks = async (
   api: ApiPromise,
-  callBack: (blockDetails: RealtimeBlockDetails) => Promise<void>
+  callBack: (blockDetails: RealtimeBlockDetails) => Promise<void>,
 ) => {
-  listenBlocks(api, true, callBack);
+  return listenBlocks(api, true, callBack);
 };
 
 export function generateBlockDetailsLog(
   blockDetails: BlockDetails | RealtimeBlockDetails,
   options?: { prefix?: string; suffix?: string },
-  previousBlockDetails?: BlockDetails | RealtimeBlockDetails
+  previousBlockDetails?: BlockDetails | RealtimeBlockDetails,
 ) {
   let secondText = null;
   if (previousBlockDetails) {
@@ -405,8 +461,8 @@ export function generateBlockDetailsLog(
       elapsedMilliSecs > 30000
         ? chalk.red(seconds)
         : elapsedMilliSecs > 14000
-        ? chalk.yellow(seconds)
-        : seconds;
+          ? chalk.yellow(seconds)
+          : seconds;
   }
 
   const weight = blockDetails.weightPercentage.toFixed(2).padStart(5, " ");
@@ -414,10 +470,20 @@ export function generateBlockDetailsLog(
     blockDetails.weightPercentage > 60
       ? chalk.red(weight)
       : blockDetails.weightPercentage > 30
-      ? chalk.yellow(weight)
-      : blockDetails.weightPercentage > 10
-      ? chalk.green(weight)
-      : weight;
+        ? chalk.yellow(weight)
+        : blockDetails.weightPercentage > 10
+          ? chalk.green(weight)
+          : weight;
+
+  const storage = blockDetails.storageUsed.toFixed(0).padStart(5, " ");
+  const storageText =
+    blockDetails.storageUsed > 100000
+      ? chalk.red(storage)
+      : blockDetails.storageUsed > 10000
+        ? chalk.yellow(storage)
+        : blockDetails.storageUsed > 1000
+          ? chalk.green(storage)
+          : storage;
 
   let txPoolText = null;
   let poolIncText = null;
@@ -427,8 +493,8 @@ export function generateBlockDetailsLog(
       blockDetails.pendingTxs.length > 1000
         ? chalk.red(txPool)
         : blockDetails.pendingTxs.length > 100
-        ? chalk.yellow(txPool)
-        : txPool;
+          ? chalk.yellow(txPool)
+          : txPool;
 
     if (previousBlockDetails && "pendingTxs" in previousBlockDetails) {
       const newPendingHashes = previousBlockDetails.pendingTxs.map((tx) => tx.hash.toString());
@@ -446,41 +512,44 @@ export function generateBlockDetailsLog(
     blockDetails.block.extrinsics.length >= 100
       ? chalk.red(ext)
       : blockDetails.block.extrinsics.length >= 50
-      ? chalk.yellow(ext)
-      : blockDetails.block.extrinsics.length > 15
-      ? chalk.green(ext)
-      : ext;
+        ? chalk.yellow(ext)
+        : blockDetails.block.extrinsics.length > 15
+          ? chalk.green(ext)
+          : ext;
 
   const ethTxs = blockDetails.block.extrinsics.filter(
-    (tx) => tx.method.section == "ethereum" && tx.method.method == "transact"
+    (tx) => tx.method.section == "ethereum" && tx.method.method == "transact",
   ).length;
   const eths = ethTxs.toString().padStart(3, " ");
   const evmText =
     ethTxs >= 97
       ? chalk.red(eths)
       : ethTxs >= 47
-      ? chalk.yellow(eths)
-      : ethTxs > 12
-      ? chalk.green(eths)
-      : eths;
+        ? chalk.yellow(eths)
+        : ethTxs > 12
+          ? chalk.green(eths)
+          : eths;
 
   const fees = blockDetails.txWithEvents
-    .filter(({ dispatchInfo }) => dispatchInfo.paysFee.isYes && !dispatchInfo.class.isMandatory)
+    .filter(({ dispatchInfo }) => !dispatchInfo.class.isMandatory)
     .reduce((p, { dispatchInfo, extrinsic, events, fees }) => {
       if (extrinsic.method.section == "ethereum") {
-        const payload = extrinsic.method.args[0] as EthereumTransactionTransactionV2;
+        const payload = extrinsic.method.args[0] as any;
         let gasPrice = payload.isLegacy
           ? payload.asLegacy?.gasPrice.toBigInt()
           : payload.isEip2930
-          ? payload.asEip2930?.gasPrice.toBigInt()
-          : payload.isEip1559
-          ? // If gasPrice is not indicated, we should use the base fee defined in that block
-            payload.asEip1559?.maxFeePerGas.toBigInt() || 0n
-          : (payload as any as LegacyTransaction).gasPrice?.toBigInt();
+            ? payload.asEip2930?.gasPrice.toBigInt()
+            : payload.isEip1559
+              ? // If gasPrice is not indicated, we should use the base fee defined in that block
+                payload.asEip1559?.maxFeePerGas.toBigInt() || 0n
+              : (payload as any as LegacyTransaction).gasPrice?.toBigInt();
 
-        return p + (BigInt(gasPrice) * dispatchInfo.weight.toBigInt()) / 25000n;
+        const refTime = (dispatchInfo.weight as any).toBn
+          ? (dispatchInfo.weight as any).toBigInt()
+          : dispatchInfo.weight.refTime?.toBigInt();
+        return p + (BigInt(gasPrice) * refTime) / 25000n;
       }
-      return p + fees.totalFees;
+      return p + (dispatchInfo.paysFee.isYes ? fees.totalFees : 0n);
     }, 0n);
   const feesTokens = Number(fees / 10n ** 15n) / 1000;
   const feesTokenTxt = feesTokens.toFixed(3).padStart(5, " ");
@@ -488,23 +557,23 @@ export function generateBlockDetailsLog(
     feesTokens >= 0.1
       ? chalk.red(feesTokenTxt)
       : feesTokens >= 0.01
-      ? chalk.yellow(feesTokenTxt)
-      : feesTokens >= 0.001
-      ? chalk.green(feesTokenTxt)
-      : feesTokenTxt;
+        ? chalk.yellow(feesTokenTxt)
+        : feesTokens >= 0.001
+          ? chalk.green(feesTokenTxt)
+          : feesTokenTxt;
 
   const transferred = blockDetails.txWithEvents
     .map((tx) => {
       if (tx.extrinsic.method.section == "ethereum" && tx.extrinsic.method.method == "transact") {
-        const payload = tx.extrinsic.method.args[0] as EthereumTransactionTransactionV2;
+        const payload = tx.extrinsic.method.args[0] as any;
         let gasPrice = payload.isLegacy
           ? payload.asLegacy?.gasPrice.toBigInt()
           : payload.isEip2930
-          ? payload.asEip2930?.gasPrice.toBigInt()
-          : payload.isEip1559
-          ? // If gasPrice is not indicated, we should use the base fee defined in that block
-            payload.asEip1559?.maxFeePerGas.toBigInt() || 0n
-          : (payload as any as LegacyTransaction).gasPrice?.toBigInt();
+            ? payload.asEip2930?.gasPrice.toBigInt()
+            : payload.isEip1559
+              ? // If gasPrice is not indicated, we should use the base fee defined in that block
+                payload.asEip1559?.maxFeePerGas.toBigInt() || 0n
+              : (payload as any as LegacyTransaction).gasPrice?.toBigInt();
       }
       return tx.events.reduce((total, event) => {
         if (event.section == "balances" && event.method == "Transfer") {
@@ -520,15 +589,15 @@ export function generateBlockDetailsLog(
     transferredTokens >= 100
       ? chalk.red(transferredText)
       : transferredTokens >= 50
-      ? chalk.yellow(transferredText)
-      : transferredTokens > 15
-      ? chalk.green(transferredText)
-      : transferredText;
+        ? chalk.yellow(transferredText)
+        : transferredTokens > 15
+          ? chalk.green(transferredText)
+          : transferredText;
 
   const authorId =
     blockDetails.authorName.length > 24
       ? `${blockDetails.authorName.substring(0, 9)}..${blockDetails.authorName.substring(
-          blockDetails.authorName.length - 6
+          blockDetails.authorName.length - 6,
         )}`
       : blockDetails.authorName;
   const authorName = blockDetails.isAuthorOrbiter ? chalk.yellow(authorId) : authorId;
@@ -544,18 +613,66 @@ export function generateBlockDetailsLog(
     .toString()
     .padEnd(
       7,
-      " "
-    )} [${weightText}%, ${feesText} fees, ${extText} Txs (${evmText} Eth)(<->${coloredTransferred})]${
+      " ",
+    )} [${weightText}%, ${storageText}B, ${feesText} fees, ${extText} Txs (${evmText} Eth)(<->${coloredTransferred})]${
     txPoolText ? `[Pool:${txPoolText}${poolIncText ? `(+${poolIncText})` : ""}]` : ``
   }${secondText ? `[${secondText}s]` : ""}(hash: ${hash.substring(0, 7)}..${hash.substring(
-    hash.length - 4
+    hash.length - 4,
   )})${options?.suffix ? ` ${options.suffix}` : ""} by ${authorName}`;
 }
 
 export function printBlockDetails(
   blockDetails: BlockDetails | RealtimeBlockDetails,
   options?: { prefix?: string; suffix?: string },
-  previousBlockDetails?: BlockDetails | RealtimeBlockDetails
+  previousBlockDetails?: BlockDetails | RealtimeBlockDetails,
 ) {
   console.log(generateBlockDetailsLog(blockDetails, options, previousBlockDetails));
+}
+
+// Probably move those monitoring function to a class or own module
+const monitoringPromises: Promise<void>[] = [];
+export function monitorSubmittedExtrinsic(
+  api: ApiPromise,
+  { id, verbose }: { id?: string; verbose?: boolean } = { id: "", verbose: false },
+) {
+  const formattedId = id.toString().padEnd(10, " ");
+  let resolve: (value: void | PromiseLike<void>) => void;
+  monitoringPromises.push(new Promise<void>((r) => (resolve = r)));
+  return (data: ISubmittableResult) => {
+    const { events = [], status } = data;
+    if (verbose) {
+      console.log(`${formattedId} Transaction status: ${status.type}", `);
+    }
+
+    if (status.isInBlock) {
+      if (verbose) {
+        console.log(`${formattedId} Included at block hash ${status.asInBlock.toHex()}`);
+        console.log(`${formattedId} Events: `);
+      }
+      events.forEach(({ event: { data, method, section } }) => {
+        const [error] = data as any[];
+        if (error?.isModule) {
+          const { docs, name, section } = api.registry.findMetaError(error.asModule);
+          console.log(`${formattedId} \t`, `${chalk.red(`${section}.${name}`)}`, `${docs}`);
+        } else if (section == "system" && method == "ExtrinsicSuccess") {
+          console.log(`${formattedId} \t`, chalk.green(`${section}.${method}`), data.toString());
+        } else {
+          if (verbose) {
+            console.log(`${formattedId} \t`, `${section}.${method}`, data.toString());
+          }
+        }
+      });
+      resolve();
+    } else if (status.isDropped || status.isInvalid || status.isRetracted) {
+      console.log(
+        `${formattedId} There was a problem with the extrinsic, status : `,
+        status.isDropped ? "Dropped" : status.isInvalid ? "isInvalid" : "isRetracted",
+      );
+      resolve();
+    }
+  };
+}
+
+export async function waitForAllMonitoredExtrinsics() {
+  await Promise.all(monitoringPromises);
 }

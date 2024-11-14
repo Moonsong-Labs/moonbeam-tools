@@ -1,12 +1,12 @@
 // This script is expected to run against a parachain network (using launch.ts script)
-import yargs from "yargs";
-import { Knex, knex } from "knex";
-import sqlite3 from "sqlite3";
-import axios from "axios";
-
 import "@moonbeam-network/api-augment";
 
-import { getApiFor, NETWORK_YARGS_OPTIONS } from "..";
+import axios from "axios";
+import { Knex, knex } from "knex";
+import sqlite3 from "sqlite3";
+import yargs from "yargs";
+
+import { getApiFor, NETWORK_YARGS_OPTIONS } from "../index.ts";
 
 const debug = require("debug")("indexer:smart-contract");
 
@@ -129,7 +129,7 @@ const main = async () => {
 
       const sourceData = await axios
         .get(
-          `https://api-${runtimeName}.moonscan.io/api?module=contract&action=getsourcecode&address=${address}`
+          `https://api-${runtimeName}.moonscan.io/api?module=contract&action=getsourcecode&address=${address}`,
         )
         .then((res) => {
           const jsonResp = res.data;

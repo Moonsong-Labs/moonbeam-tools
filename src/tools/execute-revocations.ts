@@ -1,11 +1,12 @@
 // This script is expected to run against a parachain network (using launch.ts script)
+import "@moonbeam-network/api-augment";
+
 import chalk from "chalk";
 import yargs from "yargs";
-import Web3 from "web3";
 
-import { getApiFor, NETWORK_YARGS_OPTIONS } from "..";
-import { promiseConcurrent } from "../utils/functions";
-import "@moonbeam-network/api-augment";
+import { Web3 } from "web3";
+import { getApiFor, NETWORK_YARGS_OPTIONS } from "../index.ts";
+import { promiseConcurrent } from "../utils/functions.ts";
 
 const argv = yargs(process.argv.slice(2))
   .usage("Usage: $0")
@@ -53,10 +54,10 @@ const main = async () => {
   const web3 = new Web3(argv["eth-url"]);
   const revoker = web3.eth.accounts.privateKeyToAccount(argv["private-key"]);
 
-  const gasPrice = ((await api.query.baseFee.baseFeePerGas()).toBigInt() + 49n).toString();
+  const gasPrice = await web3.eth.getGasPrice();
 
   const formattedCollators = argv.collators.map(
-    (collator) => api.registry.createType("EthereumAccountId", collator).toHex() as string
+    (collator) => api.registry.createType("EthereumAccountId", collator).toHex() as string,
   );
 
   const chainId = (await api.query.ethereumChainId.chainId()).toNumber();
@@ -87,7 +88,7 @@ const main = async () => {
       return p;
     }, 0n);
     const hasDelegationsToCollators = stateData.delegations.find((delegation) =>
-      formattedCollators.includes(delegation.owner.toHex())
+      formattedCollators.includes(delegation.owner.toHex()),
     );
     if (!hasDelegationsToCollators) {
       continue;
@@ -137,8 +138,8 @@ const main = async () => {
         tokens > 20000n
           ? chalk.red(tokens.toString().padStart(6))
           : tokens > 2000n
-          ? chalk.yellow(tokens.toString().padStart(6))
-          : tokens.toString().padStart(6);
+            ? chalk.yellow(tokens.toString().padStart(6))
+            : tokens.toString().padStart(6);
 
       console.log(`${req.collatorId}: ${tokenString} by ${req.delegatorId}`);
 
@@ -163,8 +164,8 @@ const main = async () => {
         tokens > 20000n
           ? chalk.red(tokens.toString().padStart(6))
           : tokens > 2000n
-          ? chalk.yellow(tokens.toString().padStart(6))
-          : tokens.toString().padStart(6);
+            ? chalk.yellow(tokens.toString().padStart(6))
+            : tokens.toString().padStart(6);
 
       console.log(`Leave: ${tokenString} by ${delegatorId}`);
 
@@ -187,9 +188,9 @@ const main = async () => {
 
   const revokes = await promiseConcurrent(
     10,
-    (tx) =>
+    (tx: any) =>
       web3.eth.sendSignedTransaction(tx.rawTransaction).catch((e) => console.log(`Error: ${e}`)),
-    txs
+    txs,
   );
 
   console.log(`Sent ${revokes.length} revokes`);

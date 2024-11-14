@@ -1,0 +1,10 @@
+/test
+/bins
+/build
+/dist
+
+.vscode
+.github
+
+*.log
+*.bak
