@@ -1,35 +1,33 @@
-import assert from "node:assert/strict";
 import { exec as execProcess } from "child_process";
-import util from "node:util";
 import fs from "fs";
+import assert from "node:assert/strict";
+import util from "node:util";
 import { setTimeout } from "timers/promises";
 
-import { EvmCoreErrorExitReason } from "@polkadot/types/lookup";
-import solc from "solc";
-import "@polkadot/api-augment";
 import "@moonbeam-network/api-augment";
-import { ApiTypes, SubmittableExtrinsic } from "@polkadot/api/types";
-import { SubmittableExtrinsic as SubmittableExtrinsicPromise } from "@polkadot/api/promise/types";
-import { DispatchError, EventRecord } from "@polkadot/types/interfaces";
-import Keyring from "@polkadot/keyring";
 import { ApiPromise, WsProvider } from "@polkadot/api";
-import { u8aToHex, BN } from "@polkadot/util";
-import { JsonRpcResponse } from "web3-core-helpers";
+import "@polkadot/api-augment";
+import { SubmittableExtrinsic as SubmittableExtrinsicPromise } from "@polkadot/api/promise/types";
+import { ApiTypes, SubmittableExtrinsic } from "@polkadot/api/types";
+import Keyring from "@polkadot/keyring";
+import { DispatchError, EventRecord } from "@polkadot/types/interfaces";
+import { EvmCoreErrorExitReason } from "@polkadot/types/lookup";
+import { BN, u8aToHex } from "@polkadot/util";
 import { ethers } from "ethers";
-import { Contract } from "web3-eth-contract";
-import Web3 from "web3";
+import { AccessListish } from "ethers/lib/utils.js";
 import * as RLP from "rlp";
+import solc from "solc";
+import { JsonRpcResponseWithResult, Web3 } from "web3";
+import { Contract } from "web3-eth-contract";
 import yargs from "yargs";
-import { AccessListish } from "ethers/lib/utils";
 import {
-  ALITH_ADDRESS,
   ALITH_PRIVATE_KEY,
   BALTATHAR_ADDRESS,
   BALTATHAR_PRIVATE_KEY,
   CHARLETH_ADDRESS,
   CHARLETH_PRIVATE_KEY,
   DOROTHY_PRIVATE_KEY,
-} from "../utils/constants";
+} from "../utils/constants.ts";
 
 const httpUrl = "http://127.0.0.1:9933";
 const wssUrl = "ws://127.0.0.1:9944";
@@ -150,7 +148,7 @@ async function runTest(
   let contractAddr = "0xc01Ee7f10EA4aF4673cFff62710E1D7792aBa8f3";
 
   // deploy contract
-  const maxBlockWeight = api.consts.system.blockWeights.maxBlock.toBn();
+  const maxBlockWeight = api.consts.system.blockWeights.maxBlock.refTime.toBn();
   const blockNumber = (await api.rpc.chain.getBlock()).block.header.number.toNumber();
   const nextFeeMultiplierOriginal = await api.query.transactionPayment.nextFeeMultiplier();
   if (blockNumber === 0) {
@@ -323,7 +321,7 @@ async function runTest(
             api.events.system.ExtrinsicSuccess.is(event) ||
             api.events.system.ExtrinsicFailed.is(event)
           ) {
-            weights[phase.asApplyExtrinsic.toNumber()] = event.data.dispatchInfo.weight.toBn();
+            weights[phase.asApplyExtrinsic.toNumber()] = event.data.dispatchInfo.weight.refTime.toBn();
           }
         }
       }
@@ -450,7 +448,7 @@ function extractError(events: EventRecord[] = []): DispatchError | undefined {
 }
 
 async function customWeb3Request(web3: Web3, method: string, params: any[]) {
-  return new Promise<JsonRpcResponse>((resolve, reject) => {
+  return new Promise<JsonRpcResponseWithResult>((resolve, reject) => {
     (web3.currentProvider as any).send(
       {
         jsonrpc: "2.0",
@@ -458,7 +456,7 @@ async function customWeb3Request(web3: Web3, method: string, params: any[]) {
         method,
         params,
       },
-      (error: Error | null, result?: JsonRpcResponse) => {
+      (error: Error | null, result?: JsonRpcResponseWithResult) => {
         if (error) {
           reject(
             `Failed to send custom request (${method} (${params
@@ -483,10 +481,10 @@ type ExtrinsicCreation = boolean;
 async function createBlock<
   ApiType extends ApiTypes,
   Call extends
-    | SubmittableExtrinsic<ApiType>
-    | Promise<SubmittableExtrinsic<ApiType>>
-    | string
-    | Promise<string>,
+  | SubmittableExtrinsic<ApiType>
+  | Promise<SubmittableExtrinsic<ApiType>>
+  | string
+  | Promise<string>,
   Calls extends Call | Call[]
 >(api: ApiPromise, transactions?: Calls, options: BlockCreation = {}) {
   const results: ({ type: "eth"; hash: string } | { type: "sub"; hash: string })[] = [];
@@ -497,7 +495,7 @@ async function createBlock<
       // Ethereum
       results.push({
         type: "eth",
-        hash: (await customWeb3Request(web3, "eth_sendRawTransaction", [call])).result,
+        hash: (await customWeb3Request(web3, "eth_sendRawTransaction", [call])).result.toString(),
       });
     } else if (call.isSigned) {
       results.push({
@@ -535,14 +533,14 @@ async function createBlock<
     const extrinsicIndex =
       result.type == "eth"
         ? allRecords
-            .find(
-              ({ phase, event: { section, method, data } }) =>
-                phase.isApplyExtrinsic &&
-                section == "ethereum" &&
-                method == "Executed" &&
-                data[2].toString() == result.hash
-            )
-            ?.phase?.asApplyExtrinsic?.toNumber()
+          .find(
+            ({ phase, event: { section, method, data } }) =>
+              phase.isApplyExtrinsic &&
+              section == "ethereum" &&
+              method == "Executed" &&
+              data[2].toString() == result.hash
+          )
+          ?.phase?.asApplyExtrinsic?.toNumber()
         : blockData.block.extrinsics.findIndex((ext) => ext.hash.toHex() == result.hash);
     // We retrieve the events associated with the extrinsic
     const events = allRecords.filter(
@@ -665,9 +663,9 @@ async function createContract(
   contractCompiled: Compiled,
   options: TransactionOptions = ALITH_TRANSACTION_TEMPLATE,
   contractArguments: any[] = []
-): Promise<{ rawTx: string; contract: Contract; contractAddress: string }> {
+): Promise<{ rawTx: string; contract: Contract<any>; contractAddress: string }> {
   const from = options.from !== undefined ? options.from : alith.address;
-  const nonce = options.nonce || (await web3.eth.getTransactionCount(from));
+  const nonce = options.nonce || Number((await web3.eth.getTransactionCount(from)));
 
   const contractAddress =
     "0x" +
