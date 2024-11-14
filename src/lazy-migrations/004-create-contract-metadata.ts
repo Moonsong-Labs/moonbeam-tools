@@ -1,23 +1,24 @@
 /*
-    Create metadata for old contracts that don't have it
+  Create contract metadata for a given contract address
 
 Ex: ./node_modules/.bin/ts-node src/lazy-migrations/004-create-contract-metadata.ts \
    --url ws://localhost:9944 \
-   --at <block_hash> \
    --account-priv-key <key> \
+   --limit 1000
 */
 import yargs from "yargs";
-import fs from "fs";
-import path from "path";
 import "@polkadot/api-augment";
 import "@moonbeam-network/api-augment";
-import { ApiPromise, Keyring } from "@polkadot/api";
+import { Keyring } from "@polkadot/api";
 import { KeyringPair } from "@polkadot/keyring/types";
-import { blake2AsHex, xxhashAsHex } from "@polkadot/util-crypto";
-import { Raw } from "@polkadot/types-codec";
 import { getApiFor, NETWORK_YARGS_OPTIONS } from "../utils/networks";
-import { monitorSubmittedExtrinsic, waitForAllMonitoredExtrinsics } from "../utils/monitoring";
+import {
+  monitorSubmittedExtrinsic,
+  waitForAllMonitoredExtrinsics,
+} from "../utils/monitoring";
 import { ALITH_PRIVATE_KEY } from "../utils/constants";
+import fs from "fs";
+import path from "path";
 
 const argv = yargs(process.argv.slice(2))
   .usage("Usage: $0")
@@ -29,14 +30,11 @@ const argv = yargs(process.argv.slice(2))
       demandOption: false,
       alias: "account",
     },
-    "request-delay": {
+    limit: {
       type: "number",
       default: 100,
-      describe: "The delay between each account verification to avoid getting banned for spamming",
-    },
-    at: {
-      type: "string",
-      describe: "The block hash at which the state should be queried",
+      describe:
+        "The maximum number of storage entries to be removed by this call",
     },
     alith: {
       type: "boolean",
@@ -51,123 +49,153 @@ const argv = yargs(process.argv.slice(2))
     return true;
   }).argv;
 
+interface MigrationDB {
+  pending_contracts: string[];
+  migrated_contracts: string[];
+  failed_contracts: Record<string, string>;
+}
+
 async function main() {
   const api = await getApiFor(argv);
   const keyring = new Keyring({ type: "ethereum" });
 
-  const request_delay = argv["request-delay"];
+  const chain = (await api.rpc.system.chain())
+    .toString()
+    .toLowerCase()
+    .replace(/\s/g, "-");
+  const INPUT_FILE = path.resolve(
+    __dirname,
+    `contracts-without-metadata-addresses-${chain}-db.json`,
+  );
+  const PROGRESS_FILE = path.resolve(
+    __dirname,
+    `contract-without-metadata-migration-progress--${chain}.json`,
+  );
+
+  // Initialize or load progress DB
+  let db: MigrationDB = {
+    pending_contracts: [],
+    migrated_contracts: [],
+    failed_contracts: {},
+  };
 
   try {
-    const chain = (await api.rpc.system.chain()).toString().toLowerCase().replaceAll(/\s/g, "-");
-    const TEMPORADY_DB_FILE = path.resolve(
-      __dirname,
-      `004-create-contract-metadata-${chain}-db.json`,
-    );
-
-    let db = {
-      contract_processed: 0,
-      contracts_without_metadata: {},
-      fixed_contracts: {},
-      at_block: argv["at"],
-      cursor: "",
-    };
-    if (fs.existsSync(TEMPORADY_DB_FILE)) {
-      db = { ...db, ...JSON.parse(fs.readFileSync(TEMPORADY_DB_FILE, { encoding: "utf-8" })) };
+    // Load addresses to migrate
+    if (!fs.existsSync(INPUT_FILE)) {
+      throw new Error(`Input file ${INPUT_FILE} not found`);
     }
-    db.at_block ||= (await api.query.system.parentHash()).toHex();
+    const addresses = JSON.parse(fs.readFileSync(INPUT_FILE, "utf8"));
 
+    // Load existing progress
+    if (fs.existsSync(PROGRESS_FILE)) {
+      db = JSON.parse(fs.readFileSync(PROGRESS_FILE, "utf8"));
+    } else {
+      db.pending_contracts = addresses;
+    }
+
+    const limit = argv["limit"];
     let account: KeyringPair;
     let nonce;
-    const privKey = argv["alith"] ? ALITH_PRIVATE_KEY : argv["account-priv-key"];
+
+    // Setup account
+    const privKey = argv["alith"]
+      ? ALITH_PRIVATE_KEY
+      : argv["account-priv-key"];
     if (privKey) {
       account = keyring.addFromUri(privKey, null, "ethereum");
-      const { nonce: rawNonce } = await api.query.system.account(account.address);
+      const { nonce: rawNonce } = await api.query.system.account(
+        account.address,
+      );
       nonce = BigInt(rawNonce.toString());
     }
 
-    const evmAccountCodePrefix = xxhashAsHex("EVM", 128) + xxhashAsHex("AccountCodes", 128).slice(2);
-    const evmAccountCodeMetadataPrefix =
-      xxhashAsHex("EVM", 128) + xxhashAsHex("AccountCodesMetadata", 128).slice(2);
+    // Get contracts to process in this run
+    const contractsToProcess = db.pending_contracts.slice(0, limit);
+    console.log(
+      `Submitting transactions for ${contractsToProcess.length} contracts...`,
+    );
 
-    const ITEMS_PER_PAGE = 1000;
-    while (db.cursor != undefined) {
-      const keys = await api.rpc.state.getKeysPaged(
-        evmAccountCodePrefix,
-        ITEMS_PER_PAGE,
-        db.cursor,
-        db.at_block,
-      );
-      db.cursor = keys.length > 0 ? keys[keys.length - 1].toHex() : undefined;
-      console.log(db.cursor, keys.length);
-
-      let contract_metadata_keys = {};
-      for (let key of keys) {
-        const SKIP_BYTES =
-          16 /* pallet prefix */ + 16 /* storage prefix */ + 16; /* address prefix */
-        const address = key
-          .toHex()
-          .slice(2)
-          .slice(SKIP_BYTES * 2);
-
-        const address_blake2_hash = blake2AsHex("0x" + address, 128).slice(2);
-
-        const contract_metadata_key =
-          evmAccountCodeMetadataPrefix + address_blake2_hash + address;
-        contract_metadata_keys[contract_metadata_key] = address;
+    // Submit all transactions first
+    for (const contract of contractsToProcess) {
+      // Check if already have metadata
+      const has_metadata = await api.query.evm.accountCodesMetadata(contract);
+      if (!has_metadata.isEmpty) {
+        db.migrated_contracts.push(contract);
+        db.pending_contracts = db.pending_contracts.filter(
+          (addr) => addr !== contract,
+        );
+        continue;
       }
 
-      let keys_vec = Object.keys(contract_metadata_keys);
-      const has_metadata_result = (await api.rpc.state.queryStorageAt(
-        keys_vec,
-        db.at_block,
-      )) as unknown as Raw[];
-
-      has_metadata_result.forEach((v, idx) => {
-        if (v.isEmpty) {
-          db.contracts_without_metadata[contract_metadata_keys[keys_vec[idx]]] = true;
-        }
-      });
-
-      db.contract_processed += keys.length;
-      console.log(`Processed a total of ${db.contract_processed} addresses...`);
-
-      // Save results
-      fs.writeFileSync(TEMPORADY_DB_FILE, JSON.stringify(db, null, 4), { encoding: "utf-8" });
-
-      // await request_delay for avoiding getting banned for spamming
-      await new Promise((r) => setTimeout(r, request_delay));
+      try {
+        const tx =
+          api.tx["moonbeamLazyMigrations"].createContractMetadata(contract);
+        await tx.signAndSend(
+          account,
+          { nonce: nonce++ },
+          monitorSubmittedExtrinsic(api, { id: `migration-${contract}` }),
+        );
+        console.log(`Submitted transaction for ${contract}`);
+      } catch (error) {
+        console.error(`Failed to submit transaction for ${contract}:`, error);
+        db.failed_contracts[contract] =
+          error.message || "Transaction submission failed";
+        db.pending_contracts = db.pending_contracts.filter(
+          (addr) => addr !== contract,
+        );
+      }
     }
 
-    // // Contract Metadata Tx
-    // let batchInner = [];
-    // let metaTx;
-    // // For each contract without metadata, create the metadata
-    // for (let contract of Object.keys(db.contracts_without_metadata)) {
-    //   metaTx = await api.tx["moonbeamLazyMigrations"].createContractMetadata(contract);
-    //   batchInner.push(metaTx);
-    // }
-    // let batchTx = await api.tx.utility.forceBatch(batchInner);
+    // Wait for all transactions to complete
+    console.log("\nWaiting for all transactions to complete...");
+    await waitForAllMonitoredExtrinsics();
+    console.log("All transactions completed. Starting verification...");
 
-    // console.log(`Call add contract metadata`);
-    // console.log(batchTx.method.toHex());
+    // Verify metadata creation for all contracts
+    for (const contract of contractsToProcess) {
+      // Skip contracts that failed during submission
+      if (db.failed_contracts[contract]) {
+        continue;
+      }
 
-    // await waitForAllMonitoredExtrinsics();
+      const has_metadata = await api.query.evm.accountCodesMetadata(contract);
+      if (!has_metadata.isEmpty) {
+        db.migrated_contracts.push(contract);
+        db.pending_contracts = db.pending_contracts.filter(
+          (addr) => addr !== contract,
+        );
+        console.log(`✅ Verified metadata for ${contract}`);
+      } else {
+        console.log(`❌ Metadata verification failed for ${contract}`);
+        db.failed_contracts[contract] = "Metadata verification failed";
+        db.pending_contracts = db.pending_contracts.filter(
+          (addr) => addr !== contract,
+        );
+      }
+    }
 
-    // // Check if metadata has been created
-    // for (let contract of Object.keys(db.contracts_without_metadata)) {
-    //   const has_metadata = await api.query.evm.accountCodesMetadata(contract);
-    //   if (!has_metadata.isEmpty) {
-    //     db.fixed_contracts[contract] = true;
-    //     // Remove fixed addresses from corrupted addresses map
-    //     delete db.contracts_without_metadata[contract];
-    //   }
-    // }
+    // Save final progress
+    fs.writeFileSync(PROGRESS_FILE, JSON.stringify(db, null, 2));
 
-    // // Save results
-    // fs.writeFileSync(TEMPORADY_DB_FILE, JSON.stringify(db, null, 4), { encoding: "utf-8" });
+    // Print summary
+    console.log("\nMigration Summary:");
+    console.log(
+      `✅ Successfully processed: ${db.migrated_contracts.length} contracts`,
+    );
+    console.log(
+      `❌ Failed: ${Object.keys(db.failed_contracts).length} contracts`,
+    );
+    console.log(`⏳ Remaining: ${db.pending_contracts.length} contracts`);
+  } catch (error) {
+    console.error("Migration error:", error);
+    throw error;
   } finally {
+    await waitForAllMonitoredExtrinsics();
     await api.disconnect();
   }
 }
 
-main().catch((err) => console.error("ERR!", err));
+main().catch((err) => {
+  console.error("ERR!", err);
+  process.exit(1);
+});
