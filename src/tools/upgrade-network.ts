@@ -50,6 +50,11 @@ const argv = yargs(process.argv.slice(2))
       demandOption: false,
       conflicts: ["send-proposal-as", "collective-threshold"],
     },
+    enact: {
+      type: "boolean",
+      demandOption: false,
+      conflicts: ["sudo", "send-proposal-as", "collective-threshold"],
+    },
     alith: {
       type: "boolean",
       demandOption: false,
@@ -89,7 +94,7 @@ async function main() {
     const collectiveThreshold =
       argv["collective-threshold"] ||
       Math.ceil(((await api.query.openTechCommitteeCollective.members()).length * 3) / 5);
-    const proposalAmount = api.consts.democracy.minimumDeposit;
+    const proposalAmount = api.consts?.democracy?.minimumDeposit || 0n;
 
     let account: KeyringPair;
     let nonce;
@@ -109,13 +114,19 @@ async function main() {
       console.log(`Unexpected runtime ${codeHash} size: ${code.length}`);
       process.exit(1);
     }
-    console.log(`Using runtime wasm with size: ${code.length}`);
+    console.log(`Using runtime wasm with size: ${code.length} [hash: ${codeHash}]`);
 
     const tryProxy = (call) => {
       return maybeProxyCall(api, call, argv["proxy"], argv["proxy-type"]);
     };
 
-    if (argv["sudo"]) {
+    if (argv["enact"]) {
+      await tryProxy(api.tx.system.applyAuthorizedUpgrade(codeHex)).signAndSend(
+        account,
+        { nonce: nonce++ },
+        monitorSubmittedExtrinsic(api, { id: "sudo" }),
+      );
+    } else if (argv["sudo"]) {
       const proposal = api.tx.system.setCode(codeHex);
       await tryProxy(api.tx.sudo.sudo(proposal)).signAndSend(
         account,
