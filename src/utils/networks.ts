@@ -125,7 +125,7 @@ export const getWsProviderFor = (argv: Argv) => {
   if (isKnownNetwork(argv.network)) {
     return getWsProviderForNetwork(argv.network);
   }
-  return new WsProvider(argv.url);
+  return new WsProvider(argv.url || process.env.MOONBEAM_TOOLS_WS_URL);
 };
 
 export const getHttpProviderForNetwork = (name: NETWORK_NAME) => {

@@ -24,6 +24,7 @@ import { SpecManipulator } from "./spec-manipulator.ts";
 import { SudoManipulator } from "./sudo-manipulator.ts";
 import { ValidationManipulator } from "./validation-manipulator.ts";
 import { XCMPManipulator } from "./xcmp-manipulator.ts";
+import { CumulusManipulator } from "./cumulus-manipulator.ts";
 
 const debug = Debug("helper:state-manager");
 
@@ -115,7 +116,7 @@ export async function downloadExportedState(
       return { stateFile, stateInfo };
     }
   }
-  const client = new Client(`http://states.kaki.dev`);
+  const client = new Client(`https://export.kaki.dev`);
   const downloadedStateInfo: StateInfo = (await (
     await client.request({
       path: `/${network}-state${stateDate ? `-${stateDate}` : ""}.info.json`,
@@ -215,6 +216,7 @@ export async function neutralizeExportedState(
       return { current, first: 0, length: 100 };
     }),
     new AuthorFilteringManipulator(100),
+    new CumulusManipulator(0n),
     new SudoManipulator(ALITH_ADDRESS),
     new CollatorManipulator(ALITH_ADDRESS, ALITH_SESSION_ADDRESS),
     new HRMPManipulator(),

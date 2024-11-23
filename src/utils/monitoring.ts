@@ -109,11 +109,11 @@ export const getAccountIdentities = async (
           const superIdentityOpts =
             validSuperOfs.length > 0
               ? await api.rpc.state.queryStorageAt<Option<PalletIdentityRegistration>[]>(
-                  validSuperOfs.map(
-                    (superOf) => api.query.identity.identityOf.key(superOf[0].toString()),
-                    at,
-                  ),
-                )
+                validSuperOfs.map(
+                  (superOf) => api.query.identity.identityOf.key(superOf[0].toString()),
+                  at,
+                ),
+              )
               : [];
           let index = 0;
           return superOfs.map((superOf) => {
@@ -148,9 +148,8 @@ export const getAccountIdentities = async (
     return account && identity
       ? u8aToString(identity.info.display.asRaw.toU8a(true))
       : superOf && superOf.identity
-        ? `${u8aToString(superOf.identity.info.display.asRaw.toU8a(true))} - Sub ${
-            (superOf.data && u8aToString(superOf.data.asRaw.toU8a(true))) || ""
-          }`
+        ? `${u8aToString(superOf.identity.info.display.asRaw.toU8a(true))} - Sub ${(superOf.data && u8aToString(superOf.data.asRaw.toU8a(true))) || ""
+        }`
         : account?.toString();
   });
 };
@@ -165,22 +164,22 @@ export const getAccountIdentity = async (
   if (!identityCache[account] || identityCache[account].lastUpdate < Date.now() - 3600 * 1000) {
     const [identity, superOfIdentity] = api.query.identity
       ? await Promise.all([
-          api.query.identity
-            .identityOf(account.toString())
-            .then((a) => (a.isSome ? a.unwrap() : null)),
-          api.query.identity.superOf(account.toString()).then(async (superOfOpt) => {
-            const superOf = (superOfOpt.isSome && superOfOpt.unwrap()) || null;
-            if (!superOf) {
-              return null;
-            }
-            const identityOpt = await api.query.identity.identityOf(superOf[0].toString());
-            const identity = (identityOpt.isSome && identityOpt.unwrap()) || null;
-            return {
-              identity,
-              data: superOf[1],
-            };
-          }),
-        ])
+        api.query.identity
+          .identityOf(account.toString())
+          .then((a) => (a.isSome ? a.unwrap() : null)),
+        api.query.identity.superOf(account.toString()).then(async (superOfOpt) => {
+          const superOf = (superOfOpt.isSome && superOfOpt.unwrap()) || null;
+          if (!superOf) {
+            return null;
+          }
+          const identityOpt = await api.query.identity.identityOf(superOf[0].toString());
+          const identity = (identityOpt.isSome && identityOpt.unwrap()) || null;
+          return {
+            identity,
+            data: superOf[1],
+          };
+        }),
+      ])
       : [null, null];
     identityCache[account] = {
       lastUpdate: Date.now(),
@@ -194,9 +193,8 @@ export const getAccountIdentity = async (
   return identity
     ? u8aToString(identity.info.display.asRaw.toU8a(true))
     : superOf
-      ? `${u8aToString(superOf.identity.info.display.asRaw.toU8a(true))} - Sub ${
-          (superOf.data && u8aToString(superOf.data.asRaw.toU8a(true))) || ""
-        }`
+      ? `${u8aToString(superOf.identity.info.display.asRaw.toU8a(true))} - Sub ${(superOf.data && u8aToString(superOf.data.asRaw.toU8a(true))) || ""
+      }`
       : account?.toString();
 };
 
@@ -204,6 +202,9 @@ export const getAccountFromNimbusKey = async (
   api: ApiPromise | ApiDecoration<"promise">,
   nmbsKey: string,
 ): Promise<string> => {
+  if (!nmbsKey) {
+    return null
+  }
   if (
     !authorMappingCache[nmbsKey] ||
     authorMappingCache[nmbsKey].lastUpdate < Date.now() - 3600 * 1000
@@ -541,7 +542,7 @@ export function generateBlockDetailsLog(
             ? payload.asEip2930?.gasPrice.toBigInt()
             : payload.isEip1559
               ? // If gasPrice is not indicated, we should use the base fee defined in that block
-                payload.asEip1559?.maxFeePerGas.toBigInt() || 0n
+              payload.asEip1559?.maxFeePerGas.toBigInt() || 0n
               : (payload as any as LegacyTransaction).gasPrice?.toBigInt();
 
         const refTime = (dispatchInfo.weight as any).toBn
@@ -572,7 +573,7 @@ export function generateBlockDetailsLog(
             ? payload.asEip2930?.gasPrice.toBigInt()
             : payload.isEip1559
               ? // If gasPrice is not indicated, we should use the base fee defined in that block
-                payload.asEip1559?.maxFeePerGas.toBigInt() || 0n
+              payload.asEip1559?.maxFeePerGas.toBigInt() || 0n
               : (payload as any as LegacyTransaction).gasPrice?.toBigInt();
       }
       return tx.events.reduce((total, event) => {
@@ -597,8 +598,8 @@ export function generateBlockDetailsLog(
   const authorId =
     blockDetails.authorName.length > 24
       ? `${blockDetails.authorName.substring(0, 9)}..${blockDetails.authorName.substring(
-          blockDetails.authorName.length - 6,
-        )}`
+        blockDetails.authorName.length - 6,
+      )}`
       : blockDetails.authorName;
   const authorName = blockDetails.isAuthorOrbiter ? chalk.yellow(authorId) : authorId;
 
@@ -614,11 +615,10 @@ export function generateBlockDetailsLog(
     .padEnd(
       7,
       " ",
-    )} [${weightText}%, ${storageText}B, ${feesText} fees, ${extText} Txs (${evmText} Eth)(<->${coloredTransferred})]${
-    txPoolText ? `[Pool:${txPoolText}${poolIncText ? `(+${poolIncText})` : ""}]` : ``
-  }${secondText ? `[${secondText}s]` : ""}(hash: ${hash.substring(0, 7)}..${hash.substring(
-    hash.length - 4,
-  )})${options?.suffix ? ` ${options.suffix}` : ""} by ${authorName}`;
+    )} [${weightText}%, ${storageText}B, ${feesText} fees, ${extText} Txs (${evmText} Eth)(<->${coloredTransferred})]${txPoolText ? `[Pool:${txPoolText}${poolIncText ? `(+${poolIncText})` : ""}]` : ``
+    }${secondText ? `[${secondText}s]` : ""}(hash: ${hash.substring(0, 7)}..${hash.substring(
+      hash.length - 4,
+    )})${options?.suffix ? ` ${options.suffix}` : ""} by ${authorName}`;
 }
 
 export function printBlockDetails(

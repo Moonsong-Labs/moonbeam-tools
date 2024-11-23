@@ -21,6 +21,7 @@ import {
   HEATH_ADDRESS,
   JUDITH_ADDRESS,
 } from "../src/utils/constants.ts";
+import { CumulusManipulator } from "src/libs/helpers/state-manipulator/cumulus-manipulator.ts";
 
 describe("State Manipulation", () => {
   const inFile = path.join(__dirname, "sample-state.json");
@@ -35,6 +36,7 @@ describe("State Manipulation", () => {
       }),
       new SudoManipulator(JUDITH_ADDRESS),
       new AuthorFilteringManipulator(100),
+      new CumulusManipulator(288730710n),
       new AuthorizeUpgradeManipulator(
         "0xfb9f16ba6b3433ba2a273974207260c7ace6aa629992d492bad0ba873b39762d",
       ),
@@ -215,5 +217,11 @@ describe("State Manipulation", () => {
     expect(
       finalState["0x5c0d1176a568c1f92944340dbfed9e9c530ebca703c85910e7164cb7d1c9e47b"],
     ).toEqual(JUDITH_ADDRESS);
+  });
+
+  it("Should have the slot info reset to 0", async () => {
+    expect(
+      finalState["0x8985dff79e6002d0deba9ddac46f32a5a70806914c906d747e668a21f9021729"],
+    ).toEqual("0x56ae35110000000001000000");
   });
 });
