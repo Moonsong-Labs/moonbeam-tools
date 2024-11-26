@@ -1,11 +1,12 @@
 // This script is expected to run against a parachain network (using launch.ts script)
+import "@moonbeam-network/api-augment";
+
 import chalk from "chalk";
 import yargs from "yargs";
-import Web3 from "web3";
 
-import { getApiFor, NETWORK_YARGS_OPTIONS } from "..";
-import { promiseConcurrent } from "../utils/functions";
-import "@moonbeam-network/api-augment";
+import { Web3 } from "web3";
+import { getApiFor, NETWORK_YARGS_OPTIONS } from "../index.ts";
+import { promiseConcurrent } from "../utils/functions.ts";
 
 const argv = yargs(process.argv.slice(2))
   .usage("Usage: $0")
@@ -187,7 +188,7 @@ const main = async () => {
 
   const revokes = await promiseConcurrent(
     10,
-    (tx) =>
+    (tx: any) =>
       web3.eth.sendSignedTransaction(tx.rawTransaction).catch((e) => console.log(`Error: ${e}`)),
     txs,
   );

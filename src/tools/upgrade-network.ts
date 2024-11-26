@@ -1,29 +1,28 @@
-/*
-  Performs a runtime upgrade through sudo or council (requires polkadot v0.9.32+)
-
-Ex: ./node_modules/.bin/ts-node-transpile-only src/tools/upgrade-network.ts \
-   --url ws://localhost:9944 \
-   --send-proposal-as council-external \
-   --collective-threshold 3 \
-   --proxy <council-account> \
-   --account-priv-key <key> \
-*/
-import yargs from "yargs";
-import fs from "fs";
-import "@polkadot/api-augment";
+// Performs a runtime upgrade through sudo or council (requires polkadot v0.9.32+)
+//
+// Ex: bun src/tools/upgrade-network.ts \
+//    --url ws://localhost:9944 \
+//    --send-proposal-as council-external \
+//    --collective-threshold 3 \
+//    --proxy <council-account> \
+//    --account-priv-key <key>
 import "@moonbeam-network/api-augment";
+import "@polkadot/api-augment";
+
 import { Keyring } from "@polkadot/api";
 import { KeyringPair } from "@polkadot/keyring/types";
-import { getApiFor, NETWORK_YARGS_OPTIONS } from "../utils/networks";
 import { blake2AsHex } from "@polkadot/util-crypto";
-import { hexToU8a } from "@polkadot/util";
+import fs from "fs";
+import yargs from "yargs";
+
+import { ALITH_PRIVATE_KEY } from "../utils/constants.ts";
 import {
   monitorSubmittedExtrinsic,
   waitBlocks,
   waitForAllMonitoredExtrinsics,
-} from "../utils/monitoring";
-import { maybeProxyCall } from "../utils/transactions";
-import { ALITH_PRIVATE_KEY } from "../utils/constants";
+} from "../utils/monitoring.ts";
+import { getApiFor, NETWORK_YARGS_OPTIONS } from "../utils/networks.ts";
+import { maybeProxyCall } from "../utils/transactions.ts";
 
 const argv = yargs(process.argv.slice(2))
   .usage("Usage: $0")
@@ -50,6 +49,11 @@ const argv = yargs(process.argv.slice(2))
       type: "boolean",
       demandOption: false,
       conflicts: ["send-proposal-as", "collective-threshold"],
+    },
+    enact: {
+      type: "boolean",
+      demandOption: false,
+      conflicts: ["sudo", "send-proposal-as", "collective-threshold"],
     },
     alith: {
       type: "boolean",
@@ -90,7 +94,7 @@ async function main() {
     const collectiveThreshold =
       argv["collective-threshold"] ||
       Math.ceil(((await api.query.openTechCommitteeCollective.members()).length * 3) / 5);
-    const proposalAmount = api.consts.democracy.minimumDeposit;
+    const proposalAmount = api.consts?.democracy?.minimumDeposit || 0n;
 
     let account: KeyringPair;
     let nonce;
@@ -110,13 +114,19 @@ async function main() {
       console.log(`Unexpected runtime ${codeHash} size: ${code.length}`);
       process.exit(1);
     }
-    console.log(`Using runtime wasm with size: ${code.length}`);
+    console.log(`Using runtime wasm with size: ${code.length} [hash: ${codeHash}]`);
 
     const tryProxy = (call) => {
       return maybeProxyCall(api, call, argv["proxy"], argv["proxy-type"]);
     };
 
-    if (argv["sudo"]) {
+    if (argv["enact"]) {
+      await tryProxy(api.tx.system.applyAuthorizedUpgrade(codeHex)).signAndSend(
+        account,
+        { nonce: nonce++ },
+        monitorSubmittedExtrinsic(api, { id: "sudo" }),
+      );
+    } else if (argv["sudo"]) {
       const proposal = api.tx.system.setCode(codeHex);
       await tryProxy(api.tx.sudo.sudo(proposal)).signAndSend(
         account,

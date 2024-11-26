@@ -1,7 +1,7 @@
 import Debug from "debug";
-import chalk from "chalk";
-import { Action, encodeStorageKey, StateManipulator } from "./genesis-parser";
-import { hexToBn, nToHex } from "@polkadot/util";
+
+import { Action, StateManipulator } from "./genesis-parser.ts";
+
 const debug = Debug("helper:spec-manipulator");
 
 export interface SpecOptions {

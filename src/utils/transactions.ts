@@ -1,8 +1,6 @@
 import { ApiPromise } from "@polkadot/api";
 import { SubmittableExtrinsic } from "@polkadot/api/promise/types";
 import { GenericCall } from "@polkadot/types/generic";
-import { PalletPreimageRequestStatus } from "@polkadot/types/lookup";
-import { Option } from "@polkadot/types";
 
 export const sendAllAndWaitLast = async (extrinsics: SubmittableExtrinsic[]) => {
   return new Promise(async (resolve, reject) => {

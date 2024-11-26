@@ -1,12 +1,12 @@
 // This script is expected to run against a parachain network (using launch.ts script)
-import yargs from "yargs";
-import { Knex, knex } from "knex";
-import sqlite3 from "sqlite3";
 import fs from "fs";
+import { Knex, knex } from "knex";
 import path from "path";
+import sqlite3 from "sqlite3";
+import yargs from "yargs";
 
 // Usage:
-// ./node_modules/.bin/ts-node src/indexers/smart-contract-extracter.ts --client pg --connection postgresql://mws.com/moonbeam_smart_contracts --folder moonbeam-sc
+// bun src/indexers/smart-contract-extracter.ts --client pg --connection postgresql://mws.com/moonbeam_smart_contracts --folder moonbeam-sc
 // for v in $(find moonbeam-sc/ -type f -iname "*.sol" -exec grep -o -h '0\.[0-9]\.[0-9][0-9]*' {} \+ | sort | uniq); do solc-select install $v; done
 
 const debug = require("debug")("indexer:smart-contract");

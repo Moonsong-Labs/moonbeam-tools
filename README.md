@@ -1,25 +1,29 @@
 # moonbeam-tools
 
-Tools related to Moonbeam blockchains
+Tools related to Moonbeam blockchains.
 
-# Requirements
+## Requirements
 
-* NodeJS v14+
+* bun v1+
+
+## Actions
+__Installation__: `npm install`  
+__Test__: `bun run test`  
+__Build__: `bun run build`  
+__Publish__: `bun publish`  
+
+## Debug
+
+You can use `DEBUG=helper:*` for logs on the state manipation
 
 # Tools
 
-## Installation
-
-```
-sudo npm install -g moonbeam-tools@latest
-```
-
-## Running moonbeam-monitor
+## Monitoring chains
 
 Allows to monitor a Moonbeam network. To do so, run the following command:
 
 ```  
-moonbeam-monitor --networks moonriver
+bunx moonbeam-tools --networks moonbeam moonriver
 ```
 
 ```
@@ -40,7 +44,7 @@ Options:
 <html>
   <head>
     <title>Monitoring</title>
-    <script src="https://unpkg.com/moonbeam-tools@0.0.50/dist/index.umd.js" charset="UTF-8" integrity="sha384-YEu5UHBQ2fazqqXdsvej6Xr0mhCfqIEbmdkWeu8nszY7ZI1jQys6yQwxGrfThIew" crossorigin="anonymous"></script>
+    <link rel="modulepreload" href="https://unpkg.com/moonbeam-tools@0.1.2/dist/index.esm.js" charset="UTF-8" integrity="sha384-YQ+IMhoNgwPmfCEeD4eY1O7I2Tyr/Ebtk6dENIlj+eY4Kf2iTbE8amYdW3NUH/kS" crossorigin="anonymous"></script>
     <style>
       body {
         padding: 2rem;
@@ -54,7 +58,8 @@ Options:
     <div id="main-alphanet"></div>
     <div id="main-moonriver"></div>
     <div id="main-moonbeam"></div>
-    <script>
+    <script type="module">
+      import * as mbTools from "https://unpkg.com/moonbeam-tools@0.1.2/dist/index.esm.js";
       const monitorNetwork = async (api, networkName) => {
         const pre = document.createElement("pre");
         const title = document.createElement("h2");
@@ -104,7 +109,7 @@ The script `run-moonbeam-fork.ts` has been provided which allows you to fork the
 The simplest way to run a forked-network of `Moonbeam` is by calling:
 
 ```
-npm run fork
+bun run fork
 ```
 
 Which will grab the latest polkadot and moonbeam binaries, grab the latest snapshot of live state, modify some values (such as validator keys, and inject balances),
@@ -116,14 +121,14 @@ If however, you are more interested in intereacting with the contracts in the Mo
 the forked network in development mode. This allows for manual sealing of blocks which dramatically reduces execution times of tests (reduction of 12s blocktime into milliseconds).
 
 ```
-npx ts-node npx ts-node ./src/tools/run-moonbeam-fork.ts -n moonbeam --dev
+bun ./src/tools/run-moonbeam-fork.ts -n moonbeam --dev
 ```
 
 ### Further Examples
 
-Calling the script directly can be done via: `npx ts-node ./src/tools/run-moonbeam-fork.ts`
+Calling the script directly can be done via: `bun ./src/tools/run-moonbeam-fork.ts`
 
-The minimal command is: `npx ts-node ./src/tools/run-moonbeam-fork.ts -n moonbeam`
+The minimal command is: `bun ./src/tools/run-moonbeam-fork.ts -n moonbeam`
 
 By default the polkadot and moonbeam binaries will be downloaded from github if none found in the `binaries` folder, but if for whatever reason you need to provide your own (e.g. you are on an Apple Silicon chip)
 use the `--polkadot-binary` option to provide the path to the binary to use (or copy them into the folder). If doing this option, make sure the correct binary version is supplied via `--moonbeam-version` and 
@@ -186,7 +191,7 @@ Each precompile on-chain should contain some dummy code to allow Smart Contracts
 Verify currently existing precompiles
 
 ```bash
-ts-node src/tools/list-precompiles.ts --network moonbeam
+bun src/tools/list-precompiles.ts --network moonbeam
 ```
 
 would output something like:
@@ -195,7 +200,7 @@ would output something like:
 To update the dummy code, you can use the [PrecompileRegistry](https://github.com/PureStake/moonbeam/blob/master/precompiles/precompile-registry/PrecompileRegistry.sol) with a funded account:
 
 ```bash
-ts-node src/tools/list-precompiles.ts --network moonbeam --update-dummy-code --private-key $PRIVATE_KEY
+bun src/tools/list-precompiles.ts --network moonbeam --update-dummy-code --private-key $PRIVATE_KEY
 ```
 
 This will update each missing precompile (or you can use `--address 9` to upgrade only contract at address 9)

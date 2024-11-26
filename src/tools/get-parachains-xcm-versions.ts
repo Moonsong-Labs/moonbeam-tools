@@ -1,4 +1,5 @@
 import "@polkadot/api-augment/kusama";
+
 import { ApiPromise, WsProvider } from "@polkadot/api";
 import {
   prodParasKusama,
@@ -7,7 +8,6 @@ import {
   prodParasPolkadotCommon,
 } from "@polkadot/apps-config";
 import yargs from "yargs";
-import fs from "fs";
 
 export const NETWORK_WS_URLS: { [name: string]: string } = {
   rococo: "wss://rococo-rpc.polkadot.io",

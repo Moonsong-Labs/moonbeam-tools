@@ -1,6 +1,8 @@
 import { nToHex } from "@polkadot/util";
 import Debug from "debug";
-import { Action, encodeStorageKey, StateManipulator } from "./genesis-parser";
+
+import { Action, encodeStorageKey, StateManipulator } from "./genesis-parser.ts";
+
 const debug = Debug("helper:validation-manipulator");
 
 export class ValidationManipulator implements StateManipulator {

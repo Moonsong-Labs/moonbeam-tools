@@ -1,21 +1,19 @@
-import { WsProvider, HttpProvider } from "@polkadot/api";
+import { ApiPromise, HttpProvider, WsProvider } from "@polkadot/api";
 import chalk from "chalk";
+import { typesBundlePre900 } from "moonbeam-types-bundle";
 import {
   Chain,
+  createPublicClient,
+  createWalletClient,
   PrivateKeyAccount,
   PublicClient,
   Transport,
   WalletClient,
-  createPublicClient,
-  createWalletClient,
   webSocket,
 } from "viem";
-import { ApiPromise } from "@polkadot/api";
-import { typesBundlePre900 } from "moonbeam-types-bundle";
-import { listenBlocks, printBlockDetails, RealtimeBlockDetails } from "./monitoring";
 import { Options } from "yargs";
-import { privateKeyToAccount } from "viem/accounts";
-import { localhost } from "viem/chains";
+
+import { listenBlocks, printBlockDetails, RealtimeBlockDetails } from "./monitoring.ts";
 
 export type MOONBEAM_NETWORK_NAME =
   | "stagenet"
@@ -127,7 +125,7 @@ export const getWsProviderFor = (argv: Argv) => {
   if (isKnownNetwork(argv.network)) {
     return getWsProviderForNetwork(argv.network);
   }
-  return new WsProvider(argv.url);
+  return new WsProvider(argv.url || process.env.MOONBEAM_TOOLS_WS_URL);
 };
 
 export const getHttpProviderForNetwork = (name: NETWORK_NAME) => {

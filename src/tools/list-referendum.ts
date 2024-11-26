@@ -1,14 +1,14 @@
+import { ApiPromise } from "@polkadot/api";
+import { BN, BN_TEN } from "@polkadot/util";
 import humanizeNumber from "humanize-number";
 import { moment } from "moment-parseplus";
 import yargs from "yargs";
 
-import { ApiPromise } from "@polkadot/api";
-import { BN, BN_TEN } from "@polkadot/util";
-import { getBlockDate } from "../utils/block-time";
-import { getApiFor, NETWORK_YARGS_OPTIONS } from "../utils/networks";
-import { getReferendumByGroups } from "../utils/referenda";
-import { callInterpreter, renderCallInterpretation } from "../utils/transactions";
-import { promiseConcurrent } from "../utils/functions";
+import { getBlockDate } from "../utils/block-time.ts";
+import { promiseConcurrent } from "../utils/functions.ts";
+import { getApiFor, NETWORK_YARGS_OPTIONS } from "../utils/networks.ts";
+import { getReferendumByGroups } from "../utils/referenda.ts";
+import { callInterpreter, renderCallInterpretation } from "../utils/transactions.ts";
 
 const argv = yargs(process.argv.slice(2))
   .usage("Usage: $0")

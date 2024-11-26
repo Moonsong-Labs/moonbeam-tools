@@ -1,24 +1,25 @@
-/*
-  Fixes contracts that have been destructed without removing their storage
-
-Ex: ./node_modules/.bin/ts-node src/lazy-migrations/003-clear-suicided-contracts.ts \
-   --url ws://localhost:9944 \
-   --limit 1000 \
-   --at <block_hash> \
-   --account-priv-key <key> \
-*/
-import yargs from "yargs";
-import fs from "fs";
-import path from "path";
-import "@polkadot/api-augment";
+//
+//   Fixes contracts that have been destructed without removing their storage
+//
+// Ex: bun src/lazy-migrations/003-clear-suicided-contracts.ts \
+//    --url ws://localhost:9944 \
+//    --limit 1000 \
+//    --at <block_hash> \
+//    --account-priv-key <key>
 import "@moonbeam-network/api-augment";
+import "@polkadot/api-augment";
+
 import { ApiPromise, Keyring } from "@polkadot/api";
 import { KeyringPair } from "@polkadot/keyring/types";
-import { blake2AsHex, xxhashAsHex } from "@polkadot/util-crypto";
 import { Raw } from "@polkadot/types-codec";
-import { getApiFor, NETWORK_YARGS_OPTIONS } from "../utils/networks";
-import { monitorSubmittedExtrinsic, waitForAllMonitoredExtrinsics } from "../utils/monitoring";
-import { ALITH_PRIVATE_KEY } from "../utils/constants";
+import { blake2AsHex, xxhashAsHex } from "@polkadot/util-crypto";
+import fs from "fs";
+import path from "path";
+import yargs from "yargs";
+
+import { ALITH_PRIVATE_KEY } from "../utils/constants.ts";
+import { monitorSubmittedExtrinsic, waitForAllMonitoredExtrinsics } from "../utils/monitoring.ts";
+import { getApiFor, NETWORK_YARGS_OPTIONS } from "../utils/networks.ts";
 
 const argv = yargs(process.argv.slice(2))
   .usage("Usage: $0")

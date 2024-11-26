@@ -3,12 +3,14 @@
 //
 // Purpose is to find the accounts that have unreserved balances leftover from a staking
 // bug.
-import yargs from "yargs";
 import "@moonbeam-network/api-augment";
-import { getApiFor, NETWORK_YARGS_OPTIONS } from "..";
+
 import { Keyring } from "@polkadot/api";
 import { blake2AsHex } from "@polkadot/util-crypto";
-import { printTokens } from "../utils/monitoring";
+import yargs from "yargs";
+
+import { getApiFor, NETWORK_YARGS_OPTIONS } from "../index.ts";
+import { printTokens } from "../utils/monitoring.ts";
 
 const argv = yargs(process.argv.slice(2))
   .usage("Usage: $0")

@@ -1,5 +1,6 @@
 import { ApiPromise, WsProvider } from "@polkadot/api";
 import fs from "fs";
+import { getApiFor, NETWORK_YARGS_OPTIONS } from "src/utils/networks.ts";
 import yargs from "yargs";
 
 export const NETWORK_WS_URLS: { [name: string]: string } = {
@@ -13,33 +14,24 @@ const argv = yargs(process.argv.slice(2))
   .usage("Usage: $0")
   .version("1.0.0")
   .options({
+    ...NETWORK_YARGS_OPTIONS,
     at: {
       type: "number",
       description: "Block number",
-    },
-    output: {
-      alias: "o",
-      type: "number",
-      demandOption: true,
-      description: "Output file",
-    },
-    network: {
-      type: "string",
-      choices: Object.keys(NETWORK_WS_URLS),
-      string: true,
-      description: "",
-    },
+    }
   }).argv;
 
 const main = async () => {
-  const api = await ApiPromise.create({
-    provider: new WsProvider(NETWORK_WS_URLS[argv.network]),
+  const api = await getApiFor(argv);
+
+  const blockHash = argv.at
+    ? await api.rpc.chain.getBlockHash(argv.at)
+    : await api.rpc.chain.getBlockHash();
+  const block = await api.rpc.chain.getBlock(blockHash);
+
+  block.block.extrinsics.forEach((ex, index) => {
+    console.log(index, `${ex.method.section.toString()}.${ex.method.method.toString()} [${ex.hash.toHex()}]\n${ex.method.method.toString() == "setValidationData" ? "..." : ex.toHex()}`);
   });
-
-  const blockHash = (await api.rpc.chain.getBlockHash(argv.at)).toString();
-
-  const code = (await api.rpc.state.getStorage(":code", blockHash)) as any;
-  fs.writeFileSync("runtime.wasm", Buffer.from(code.unwrap()));
 
   await api.disconnect();
 };

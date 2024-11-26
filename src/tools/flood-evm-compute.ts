@@ -1,14 +1,13 @@
 // This script is expected to run against a parachain network (using launch.ts script)
-
-import { ALITH_PRIVATE_KEY } from "../utils/constants";
-import { compileSolidity } from "../utils/web3/solidity";
 import { Keyring } from "@polkadot/api";
-
 import * as rlp from "rlp";
+import { Web3 } from "web3";
 import yargs from "yargs";
-import { getMonitoredApiFor, NETWORK_YARGS_OPTIONS } from "../utils/networks";
-import Web3 from "web3";
-import { callContract, deployContract } from "../utils/web3/contracts";
+
+import { ALITH_PRIVATE_KEY } from "../utils/constants.ts";
+import { getMonitoredApiFor, NETWORK_YARGS_OPTIONS } from "../utils/networks.ts";
+import { callContract, deployContract } from "../utils/web3/contracts.ts";
+import { compileSolidity } from "../utils/web3/solidity.ts";
 
 const argv = yargs(process.argv.slice(2))
   .usage("Usage: $0")

@@ -1,10 +1,11 @@
 // This script is expected to run against a parachain network (using launch.ts script)
-import yargs from "yargs";
-import chalk from "chalk";
-import { table } from "table";
 import "@polkadot/api-augment";
 
-import { getApiFor, NETWORK_YARGS_OPTIONS } from "..";
+import chalk from "chalk";
+import { table } from "table";
+import yargs from "yargs";
+
+import { getApiFor, NETWORK_YARGS_OPTIONS } from "../index.ts";
 
 const argv = yargs(process.argv.slice(2))
   .usage("Usage: $0")

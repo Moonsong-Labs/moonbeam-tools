@@ -1,6 +1,8 @@
-import Debug from "debug";
-import { Action, encodeStorageKey, StateManipulator } from "./genesis-parser";
 import { hexToBn, hexToNumber, nToHex } from "@polkadot/util";
+import Debug from "debug";
+
+import { Action, encodeStorageKey, StateManipulator } from "./genesis-parser.ts";
+
 const debug = Debug("helper:authoring-manipulator");
 
 export class AuthorFilteringManipulator implements StateManipulator {

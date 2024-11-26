@@ -1,10 +1,9 @@
 // This script is expected to run against a parachain network (using launch.ts script)
-import yargs from "yargs";
-import fs from "fs";
-
-import { exploreBlockRange, getApiFor, NETWORK_YARGS_OPTIONS } from "..";
-
 import { ParachainInherentData } from "@polkadot/types/interfaces";
+import fs from "fs";
+import yargs from "yargs";
+
+import { exploreBlockRange, getApiFor, NETWORK_YARGS_OPTIONS } from "../index.ts";
 
 const INITIAL_ROUND_BLOCK = {
   moonbeam: 1200,

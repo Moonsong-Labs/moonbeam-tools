@@ -1,23 +1,23 @@
+import "@moonbeam-network/api-augment";
+import "@polkadot/api-augment";
+
+import { ApiDecoration } from "@polkadot/api/types";
+import { Data, GenericEthereumAccountId, Option, u128 } from "@polkadot/types";
+import { Codec, ITuple } from "@polkadot/types-codec/types";
+import { PalletIdentityRegistration } from "@polkadot/types/lookup";
+import { ISubmittableResult } from "@polkadot/types/types";
+import { u8aToString } from "@polkadot/util";
+import { ethereumEncode } from "@polkadot/util-crypto";
+import chalk from "chalk";
+import Debug from "debug";
+
+import { promiseConcurrent } from "./functions.ts";
+import { mapExtrinsics, TxWithEventAndFee } from "./types.ts";
+
 import type { ApiPromise } from "@polkadot/api";
 import type { Extrinsic, BlockHash, EventRecord } from "@polkadot/types/interfaces";
 import type { Block } from "@polkadot/types/interfaces/runtime/types";
-import { Data, GenericEthereumAccountId, Option, u128, u8, bool } from "@polkadot/types";
-import { ISubmittableResult } from "@polkadot/types/types";
-import type { EthereumTransactionTransactionV2 } from "@polkadot/types/lookup";
 import type { LegacyTransaction } from "@polkadot/types/interfaces/eth";
-import { u8aToString } from "@polkadot/util";
-import { ethereumEncode } from "@polkadot/util-crypto";
-import { mapExtrinsics, TxWithEventAndFee } from "./types";
-
-import "@polkadot/api-augment";
-import "@moonbeam-network/api-augment";
-
-import chalk from "chalk";
-import Debug from "debug";
-import { PalletIdentityRegistration } from "@polkadot/types/lookup";
-import { Codec, ITuple } from "@polkadot/types-codec/types";
-import { promiseConcurrent } from "./functions";
-import { ApiDecoration } from "@polkadot/api/types";
 const debug = Debug("monitoring");
 
 export const printTokens = (api: ApiPromise, tokens: bigint, decimals = 2, pad = 9) => {
@@ -37,6 +37,7 @@ export interface BlockDetails {
   records: EventRecord[];
   txWithEvents: TxWithEventAndFee[];
   weightPercentage: number;
+  storageUsed: number;
 }
 
 // TODO: Improve with cache and eviction
@@ -108,11 +109,11 @@ export const getAccountIdentities = async (
           const superIdentityOpts =
             validSuperOfs.length > 0
               ? await api.rpc.state.queryStorageAt<Option<PalletIdentityRegistration>[]>(
-                  validSuperOfs.map(
-                    (superOf) => api.query.identity.identityOf.key(superOf[0].toString()),
-                    at,
-                  ),
-                )
+                validSuperOfs.map(
+                  (superOf) => api.query.identity.identityOf.key(superOf[0].toString()),
+                  at,
+                ),
+              )
               : [];
           let index = 0;
           return superOfs.map((superOf) => {
@@ -147,9 +148,8 @@ export const getAccountIdentities = async (
     return account && identity
       ? u8aToString(identity.info.display.asRaw.toU8a(true))
       : superOf && superOf.identity
-        ? `${u8aToString(superOf.identity.info.display.asRaw.toU8a(true))} - Sub ${
-            (superOf.data && u8aToString(superOf.data.asRaw.toU8a(true))) || ""
-          }`
+        ? `${u8aToString(superOf.identity.info.display.asRaw.toU8a(true))} - Sub ${(superOf.data && u8aToString(superOf.data.asRaw.toU8a(true))) || ""
+        }`
         : account?.toString();
   });
 };
@@ -164,26 +164,26 @@ export const getAccountIdentity = async (
   if (!identityCache[account] || identityCache[account].lastUpdate < Date.now() - 3600 * 1000) {
     const [identity, superOfIdentity] = api.query.identity
       ? await Promise.all([
-          api.query.identity
-            .identityOf(account.toString())
-            .then((a) => (a.isSome ? a.unwrap() : null)),
-          api.query.identity.superOf(account.toString()).then(async (superOfOpt) => {
-            const superOf = (superOfOpt.isSome && superOfOpt.unwrap()) || null;
-            if (!superOf) {
-              return null;
-            }
-            const identityOpt = await api.query.identity.identityOf(superOf[0].toString());
-            const identity = (identityOpt.isSome && identityOpt.unwrap()) || null;
-            return {
-              identity,
-              data: superOf[1],
-            };
-          }),
-        ])
+        api.query.identity
+          .identityOf(account.toString())
+          .then((a) => (a.isSome ? a.unwrap() : null)),
+        api.query.identity.superOf(account.toString()).then(async (superOfOpt) => {
+          const superOf = (superOfOpt.isSome && superOfOpt.unwrap()) || null;
+          if (!superOf) {
+            return null;
+          }
+          const identityOpt = await api.query.identity.identityOf(superOf[0].toString());
+          const identity = (identityOpt.isSome && identityOpt.unwrap()) || null;
+          return {
+            identity,
+            data: superOf[1],
+          };
+        }),
+      ])
       : [null, null];
     identityCache[account] = {
       lastUpdate: Date.now(),
-      identity: identity[0],
+      identity: identity?.[0],
       superOf:
         superOfIdentity && ("info" in superOfIdentity ? superOfIdentity : superOfIdentity[0]),
     };
@@ -193,9 +193,8 @@ export const getAccountIdentity = async (
   return identity
     ? u8aToString(identity.info.display.asRaw.toU8a(true))
     : superOf
-      ? `${u8aToString(superOf.identity.info.display.asRaw.toU8a(true))} - Sub ${
-          (superOf.data && u8aToString(superOf.data.asRaw.toU8a(true))) || ""
-        }`
+      ? `${u8aToString(superOf.identity.info.display.asRaw.toU8a(true))} - Sub ${(superOf.data && u8aToString(superOf.data.asRaw.toU8a(true))) || ""
+      }`
       : account?.toString();
 };
 
@@ -203,6 +202,9 @@ export const getAccountFromNimbusKey = async (
   api: ApiPromise | ApiDecoration<"promise">,
   nmbsKey: string,
 ): Promise<string> => {
+  if (!nmbsKey) {
+    return null
+  }
   if (
     !authorMappingCache[nmbsKey] ||
     authorMappingCache[nmbsKey].lastUpdate < Date.now() - 3600 * 1000
@@ -295,26 +297,46 @@ export const getBlockDetails = async (api: ApiPromise, blockHash: BlockHash) => 
     fees.map((fee) => fee.inclusionFee.unwrapOrDefault()),
     feeMultiplier,
   );
-  const blockWeight = txWithEvents.reduce((totalWeight, tx, index) => {
-    // TODO: support weight v1/2
-    if (!tx.dispatchInfo) {
-      return totalWeight;
-    }
-    const refTime = (tx.dispatchInfo.weight as any).toBn
-      ? (tx.dispatchInfo.weight as any).toBigInt()
-      : tx.dispatchInfo.weight.refTime?.toBigInt();
-    return totalWeight + refTime;
-  }, 0n);
+
+  const [blockWeight, ethWeight] = txWithEvents.reduce(
+    (stats, tx, index) => {
+      // TODO: support weight v1/2
+      if (!tx.dispatchInfo) {
+        return stats;
+      }
+      const refTime = (tx.dispatchInfo.weight as any).toBn
+        ? (tx.dispatchInfo.weight as any).toBigInt()
+        : tx.dispatchInfo.weight.refTime?.toBigInt();
+      return [
+        stats[0] + refTime,
+        stats[1] + (tx.extrinsic.method.section == "ethereum" ? refTime : 0n),
+      ];
+    },
+    [0n, 0n],
+  );
+
+  const gasUsed = (await api.rpc.eth.getBlockByNumber(block.header.number.toNumber(), false))
+    .unwrap()
+    .gasUsed.toBigInt();
+
+  const WEIGHT_TO_GAS_RATIO = 25_000n; // TODO: Find a way to retrieve dynamically
+  const GAS_LIMIT_STORAGE_GROWTH_RATIO = 366n; // TODO: Find a way to retrieve dynamically
+  const gasByRefTime = ethWeight / WEIGHT_TO_GAS_RATIO;
+  // console.log(`[${block.header.number.toNumber()} ${blockWeight}/${ethWeight}: ${gasByRefTime}/${gasUsed}`);
+  const storageUsed =
+    gasByRefTime != gasUsed ? Number(gasByRefTime / GAS_LIMIT_STORAGE_GROWTH_RATIO) : 0; // in bytes
+
   return {
     block,
     isAuthorOrbiter:
-      collatorId.unwrapOr(null)?.toString() !=
+      (collatorId as any).unwrapOr(null)?.toString() !=
       (await getAccountFromNimbusKey(apiAt, nmbsKey))?.toString(),
     authorName,
     blockTime: blockTime.toNumber(),
     weightPercentage: Number((blockWeight * 10000n) / maxBlockWeight) / 100,
     txWithEvents,
     records,
+    storageUsed,
   } as BlockDetails;
 };
 
@@ -454,6 +476,16 @@ export function generateBlockDetailsLog(
           ? chalk.green(weight)
           : weight;
 
+  const storage = blockDetails.storageUsed.toFixed(0).padStart(5, " ");
+  const storageText =
+    blockDetails.storageUsed > 100000
+      ? chalk.red(storage)
+      : blockDetails.storageUsed > 10000
+        ? chalk.yellow(storage)
+        : blockDetails.storageUsed > 1000
+          ? chalk.green(storage)
+          : storage;
+
   let txPoolText = null;
   let poolIncText = null;
   if ("pendingTxs" in blockDetails) {
@@ -503,14 +535,14 @@ export function generateBlockDetailsLog(
     .filter(({ dispatchInfo }) => !dispatchInfo.class.isMandatory)
     .reduce((p, { dispatchInfo, extrinsic, events, fees }) => {
       if (extrinsic.method.section == "ethereum") {
-        const payload = extrinsic.method.args[0] as EthereumTransactionTransactionV2;
+        const payload = extrinsic.method.args[0] as any;
         let gasPrice = payload.isLegacy
           ? payload.asLegacy?.gasPrice.toBigInt()
           : payload.isEip2930
             ? payload.asEip2930?.gasPrice.toBigInt()
             : payload.isEip1559
               ? // If gasPrice is not indicated, we should use the base fee defined in that block
-                payload.asEip1559?.maxFeePerGas.toBigInt() || 0n
+              payload.asEip1559?.maxFeePerGas.toBigInt() || 0n
               : (payload as any as LegacyTransaction).gasPrice?.toBigInt();
 
         const refTime = (dispatchInfo.weight as any).toBn
@@ -534,14 +566,14 @@ export function generateBlockDetailsLog(
   const transferred = blockDetails.txWithEvents
     .map((tx) => {
       if (tx.extrinsic.method.section == "ethereum" && tx.extrinsic.method.method == "transact") {
-        const payload = tx.extrinsic.method.args[0] as EthereumTransactionTransactionV2;
+        const payload = tx.extrinsic.method.args[0] as any;
         let gasPrice = payload.isLegacy
           ? payload.asLegacy?.gasPrice.toBigInt()
           : payload.isEip2930
             ? payload.asEip2930?.gasPrice.toBigInt()
             : payload.isEip1559
               ? // If gasPrice is not indicated, we should use the base fee defined in that block
-                payload.asEip1559?.maxFeePerGas.toBigInt() || 0n
+              payload.asEip1559?.maxFeePerGas.toBigInt() || 0n
               : (payload as any as LegacyTransaction).gasPrice?.toBigInt();
       }
       return tx.events.reduce((total, event) => {
@@ -566,8 +598,8 @@ export function generateBlockDetailsLog(
   const authorId =
     blockDetails.authorName.length > 24
       ? `${blockDetails.authorName.substring(0, 9)}..${blockDetails.authorName.substring(
-          blockDetails.authorName.length - 6,
-        )}`
+        blockDetails.authorName.length - 6,
+      )}`
       : blockDetails.authorName;
   const authorName = blockDetails.isAuthorOrbiter ? chalk.yellow(authorId) : authorId;
 
@@ -583,11 +615,10 @@ export function generateBlockDetailsLog(
     .padEnd(
       7,
       " ",
-    )} [${weightText}%, ${feesText} fees, ${extText} Txs (${evmText} Eth)(<->${coloredTransferred})]${
-    txPoolText ? `[Pool:${txPoolText}${poolIncText ? `(+${poolIncText})` : ""}]` : ``
-  }${secondText ? `[${secondText}s]` : ""}(hash: ${hash.substring(0, 7)}..${hash.substring(
-    hash.length - 4,
-  )})${options?.suffix ? ` ${options.suffix}` : ""} by ${authorName}`;
+    )} [${weightText}%, ${storageText}B, ${feesText} fees, ${extText} Txs (${evmText} Eth)(<->${coloredTransferred})]${txPoolText ? `[Pool:${txPoolText}${poolIncText ? `(+${poolIncText})` : ""}]` : ``
+    }${secondText ? `[${secondText}s]` : ""}(hash: ${hash.substring(0, 7)}..${hash.substring(
+      hash.length - 4,
+    )})${options?.suffix ? ` ${options.suffix}` : ""} by ${authorName}`;
 }
 
 export function printBlockDetails(

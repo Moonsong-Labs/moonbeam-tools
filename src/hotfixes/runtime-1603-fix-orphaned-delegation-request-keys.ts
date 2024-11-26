@@ -1,26 +1,26 @@
 //@ts-nocheck
-/*
-  This script is intended to run once as hotfix for specific networks.
-  Do not use it without reading the code !!
-
-  This script will find candidates that have already left the network
-  but still have a empty entry in `DelegationScheduledRequests` storage,
-  and remove these entries.
-
-Ex: ./node_modules/.bin/ts-node-transpile-only src/hotfixes/runtime-1603-fix-orphaned-delegation-request-keys.ts \
-   --network alphanet \
-   --send-preimage-hash \
-   --send-proposal-as council-external \
-   --collective-threshold 3 \
-   --account-priv-key <key> \
-*/
-import yargs from "yargs";
-import "@polkadot/api-augment";
+//
+//   This script is intended to run once as hotfix for specific networks.
+//   Do not use it without reading the code !!
+//
+//   This script will find candidates that have already left the network
+//   but still have a empty entry in `DelegationScheduledRequests` storage,
+//   and remove these entries.
+//
+// Ex: bun src/hotfixes/runtime-1603-fix-orphaned-delegation-request-keys.ts \
+//    --network alphanet \
+//    --send-preimage-hash \
+//    --send-proposal-as council-external \
+//    --collective-threshold 3 \
+//    --account-priv-key <key> \
 import "@moonbeam-network/api-augment";
+import "@polkadot/api-augment";
+
 import { ApiPromise, Keyring } from "@polkadot/api";
 import { SubmittableExtrinsic } from "@polkadot/api/promise/types";
+import yargs from "yargs";
 
-import { getApiFor, NETWORK_YARGS_OPTIONS } from "..";
+import { getApiFor, NETWORK_YARGS_OPTIONS } from "../index.ts";
 
 const argv = yargs(process.argv.slice(2))
   .usage("Usage: $0")

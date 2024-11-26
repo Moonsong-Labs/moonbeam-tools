@@ -1,10 +1,11 @@
-import { xxhashAsU8a, blake2AsU8a } from "@polkadot/util-crypto";
 import { u8aConcat } from "@polkadot/util";
-import yargs from "yargs";
-import { getApiFor, getViemAccountFor, getViemFor, NETWORK_YARGS_OPTIONS } from "../utils/networks";
-import { createPublicClient, createWalletClient, encodeFunctionData, http } from "viem";
-import { privateKeyToAccount } from "viem/accounts";
+import { blake2AsU8a, xxhashAsU8a } from "@polkadot/util-crypto";
 import chalk from "chalk";
+import { encodeFunctionData } from "viem";
+import { privateKeyToAccount } from "viem/accounts";
+import yargs from "yargs";
+
+import { getViemAccountFor, getViemFor, NETWORK_YARGS_OPTIONS } from "../utils/networks.ts";
 
 const debug = require("debug")("main");
 
