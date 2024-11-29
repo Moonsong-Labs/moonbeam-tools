@@ -28,9 +28,27 @@ const main = async () => {
     ? await api.rpc.chain.getBlockHash(argv.at)
     : await api.rpc.chain.getBlockHash();
   const block = await api.rpc.chain.getBlock(blockHash);
+  const apiAt = await api.at(blockHash);
 
   block.block.extrinsics.forEach((ex, index) => {
-    console.log(index, `${ex.method.section.toString()}.${ex.method.method.toString()} [${ex.hash.toHex()}]\n${ex.method.method.toString() == "setValidationData" ? "..." : ex.toHex()}`);
+    const { method, signature, isSigned, signer, nonce } = ex;
+    console.log(index, `${ex.method.section.toString()}.${ex.method.method.toString()} [${ex.hash.toHex()}]`);
+    // if (method.args.length > 0) {
+    //   console.log(`  Args: ${method.args.map((arg) => arg.toHex()).join(', ')}`);
+    // }
+
+    if (method.section === 'sudo' && method.method.startsWith('sudo')) {
+      // Handle sudo extrinsics
+      const nestedCall = method.args[0]; // The "call" is the first argument in sudo methods
+      const { section, method: nestedMethod, args: nestedArgs } = apiAt.registry.createType('Call', nestedCall);
+
+      console.log(`  Nested Call: ${section}.${nestedMethod}`);
+      const nestedDecodedArgs = nestedArgs.map((arg: any) => arg.toHuman());
+      console.log(`  Nested Args: ${JSON.stringify(nestedDecodedArgs, null, 2)}`);
+    }
+    console.log(`${ex.method.method.toString() == "setValidationData" ? "..." : ex.toHex()}`);
+      
+
   });
 
   await api.disconnect();

@@ -48,9 +48,9 @@ export const mapExtrinsics = async (
           return event;
         });
 
-      const unadjustedWeightFee = (
+      const unadjustedWeightFee = dispatchInfo ? (
         (await api.call.transactionPaymentApi.queryWeightToFee(dispatchInfo.weight)) as any
-      ).toBigInt();
+      ).toBigInt() : 0n;
       const lengthFee = (
         (await api.call.transactionPaymentApi.queryLengthToFee(extrinsic.encodedLength)) as any
       ).toBigInt();

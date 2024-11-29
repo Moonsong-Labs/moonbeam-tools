@@ -255,7 +255,7 @@ export const getFeeMultiplier = async (api: ApiPromise, blockHash: string): Prom
   return feeMultiplierCache[blockHash];
 };
 
-export const getBlockDetails = async (api: ApiPromise, blockHash: BlockHash) => {
+export const getBlockDetails = async (api: ApiPromise, blockHash: BlockHash | string) => {
   debug(`Querying ${blockHash}`);
   const maxBlockWeight = (api.consts.system.blockWeights.maxBlock as any).toBigInt
     ? (api.consts.system.blockWeights.maxBlock as any).toBigInt()
