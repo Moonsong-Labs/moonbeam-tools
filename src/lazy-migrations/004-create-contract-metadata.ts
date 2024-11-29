@@ -11,12 +11,12 @@ import "@polkadot/api-augment";
 import "@moonbeam-network/api-augment";
 import { Keyring } from "@polkadot/api";
 import { KeyringPair } from "@polkadot/keyring/types";
-import { getApiFor, NETWORK_YARGS_OPTIONS } from "../utils/networks";
+import { getApiFor, NETWORK_YARGS_OPTIONS } from "../utils/networks.ts";
 import {
   monitorSubmittedExtrinsic,
   waitForAllMonitoredExtrinsics,
-} from "../utils/monitoring";
-import { ALITH_PRIVATE_KEY } from "../utils/constants";
+} from "../utils/monitoring.ts";
+import { ALITH_PRIVATE_KEY } from "../utils/constants.ts";
 import fs from "fs";
 import path from "path";
 

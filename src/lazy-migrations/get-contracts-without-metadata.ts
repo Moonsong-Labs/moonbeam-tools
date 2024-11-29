@@ -4,7 +4,7 @@ import path from "path";
 import "@polkadot/api-augment";
 import "@moonbeam-network/api-augment";
 import { blake2AsHex, xxhashAsHex } from "@polkadot/util-crypto";
-import { getApiFor, NETWORK_YARGS_OPTIONS } from "../utils/networks";
+import { getApiFor, NETWORK_YARGS_OPTIONS } from "../utils/networks.ts";
 import { Raw } from "@polkadot/types";
 
 const argv = yargs(process.argv.slice(2))
