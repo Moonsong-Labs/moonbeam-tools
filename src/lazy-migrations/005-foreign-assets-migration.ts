@@ -37,6 +37,11 @@ const argv = yargs(process.argv.slice(2))
       demandOption: false,
       conflicts: ["account-priv-key"],
     },
+    "skip-start": {
+      type: "boolean",
+      default: false,
+      describe: "Skip the start migration step",
+    },
   })
   .check((argv) => {
     if (!(argv["account-priv-key"] || argv["alith"])) {
@@ -49,7 +54,15 @@ interface MigrationInfo {
     assetId: string;
     remainingBalances: number;
     remainingApprovals: number;
-};
+}
+
+type MigrationStatus = {
+    type: 'Idle'
+} | {
+    type: 'Migrating',
+    info: MigrationInfo
+}
+
 
 async function checkMigrationFailure(api: ApiPromise, txId: string) {
   const events = await api.query.system.events();
@@ -94,6 +107,7 @@ async function main() {
   const api = await getApiFor(argv);
   const keyring = new Keyring({ type: "ethereum" });
   const assetId = argv["asset-id"];
+  const skipStart = argv["skip-start"];
 
   try {
     let account: KeyringPair;
@@ -108,16 +122,20 @@ async function main() {
     const rawMigrationInfo = await api.query.moonbeamLazyMigrations.foreignAssetMigrationStatusValue();
     console.log("Migration info:", rawMigrationInfo.toString());
     
-    // Step 1: Start migration
-    const txStart = api.tx.moonbeamLazyMigrations.startForeignAssetsMigration(assetId);
-    await txStart.signAndSend(
-      account,
-      { nonce: nonce++ },
-      monitorSubmittedExtrinsic(api, { id: `start-migration-${assetId}` })
-    );
-    await waitForAllMonitoredExtrinsics();
-    await checkMigrationFailure(api, `start-migration-${assetId}`);
-    console.log("Started migration for asset", assetId);
+    // Step 1: Start migration (skip if flag is set)
+    if (!skipStart) {
+      const txStart = api.tx.moonbeamLazyMigrations.startForeignAssetsMigration(assetId);
+      await txStart.signAndSend(
+        account,
+        { nonce: nonce++ },
+        monitorSubmittedExtrinsic(api, { id: `start-migration-${assetId}` })
+      );
+      await waitForAllMonitoredExtrinsics();
+      await checkMigrationFailure(api, `start-migration-${assetId}`);
+      console.log("Started migration for asset", assetId);
+    } else {
+      console.log("Skipping start migration step");
+    }
 
     // Step 2: Migrate balances
     const txBalances = api.tx.moonbeamLazyMigrations.migrateForeignAssetBalances(argv.limit);
