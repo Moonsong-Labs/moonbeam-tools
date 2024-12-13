@@ -76,7 +76,8 @@ async function main() {
         await api.query.moonbeamLazyMigrations.foreignAssetMigrationStatusValue();
 
       if (!status.isMigrating) {
-        throw new Error("Migration did not start");
+        console.error("Migration did not start correctly");
+        return;
       }
 
       remainingBalances = status.asMigrating?.remainingBalances.toNumber();
@@ -113,6 +114,18 @@ async function main() {
       remainingApprovals -= argv.limit;
     }
     console.log("Completed approvals migration for asset", assetId);
+
+    await waitForAllMonitoredExtrinsics();
+    const status: PalletMoonbeamLazyMigrationsForeignAssetForeignAssetMigrationStatus =
+      await api.query.moonbeamLazyMigrations.foreignAssetMigrationStatusValue();
+    if (
+      (status.asMigrating?.remainingBalances.toNumber() || 0) > 0 ||
+      (status.asMigrating?.remainingApprovals.toNumber() || 0) > 0
+    ) {
+      // If there are still balances or approvals to migrate, we should not finish the migration
+      console.log("Migration is still in progress, not finishing yet");
+      return;
+    }
 
     // Step 4: Finish migration
     const txFinish = api.tx.moonbeamLazyMigrations.finishForeignAssetsMigration();
