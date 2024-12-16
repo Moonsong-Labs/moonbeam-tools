@@ -1,4 +1,20 @@
 // 005-foreign-assets-migration.ts
+/**
+ * Script to migrate foreign assets from the old system to the new one.
+ *
+ * Usage:
+ *   bun src/lazy-migrations/005-foreign-assets-migration.ts \
+ *     --url wss://wss.api.moondev.network \
+ *     --asset-id 1234 \
+ *     --alith \
+ *     --limit 50
+ *
+ * Options:
+ *   --url              Websocket url
+ *   --asset-id         Asset ID to migrate
+ *   --account-priv-key Private key of the account to use
+ *   --limit            Maximum number of balances/approvals to migrate per batch (default: 100)
+ */
 
 import yargs from "yargs";
 import "@polkadot/api-augment";
