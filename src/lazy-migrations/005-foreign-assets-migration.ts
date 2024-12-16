@@ -71,6 +71,7 @@ async function main() {
         { nonce: nonce++ },
         monitorSubmittedExtrinsic(api, { id: `start-migration-${assetId}` }),
       );
+      await waitForAllMonitoredExtrinsics();
 
       const status: PalletMoonbeamLazyMigrationsForeignAssetForeignAssetMigrationStatus =
         await api.query.moonbeamLazyMigrations.foreignAssetMigrationStatusValue();
