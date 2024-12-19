@@ -16,7 +16,7 @@
   "browser": "dist/index.esm.js",
   "types": "dist/index.d.ts",
   "dependencies": {
-    "@moonbeam-network/api-augment": "^0.3200.3",
+    "@moonbeam-network/api-augment": "^0.3400.0",
     "@polkadot/api": "^12.4.2",
     "@polkadot/apps-config": "^0.138.1",
     "@polkadot/util": "^13.1.1",
