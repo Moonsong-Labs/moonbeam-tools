@@ -28,7 +28,8 @@ import type {
   AccountId20,
 } from "@polkadot/types/interfaces";
 
-const debug = require("debug")("indexer:fee");
+import debugPkg from "debug";
+const debug = debugPkg("indexer:fee");
 
 const WEIGHT_PER_GAS = 1_000_000_000_000n / 40_000_000n;
 

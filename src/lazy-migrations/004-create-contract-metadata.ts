@@ -8,6 +8,10 @@ Ex: ./node_modules/.bin/ts-node src/lazy-migrations/004-create-contract-metadata
 */
 import yargs from "yargs";
 import "@polkadot/api-augment";
+import { fileURLToPath } from "url";
+import path from "path";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 import "@moonbeam-network/api-augment";
 import { Keyring } from "@polkadot/api";
 import { KeyringPair } from "@polkadot/keyring/types";
@@ -18,7 +22,6 @@ import {
 } from "../utils/monitoring.ts";
 import { ALITH_PRIVATE_KEY } from "../utils/constants.ts";
 import fs from "fs";
-import path from "path";
 
 const argv = yargs(process.argv.slice(2))
   .usage("Usage: $0")

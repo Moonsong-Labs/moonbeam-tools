@@ -2,7 +2,8 @@ import { u8aConcat, u8aToHex } from "@polkadot/util";
 import { xxhashAsU8a } from "@polkadot/util-crypto";
 import yargs from "yargs";
 
-const debug = require("debug")("main");
+import debugPkg from "debug";
+const debug = debugPkg("main");
 
 const argv = yargs(process.argv.slice(2))
   .usage("Usage: $0")

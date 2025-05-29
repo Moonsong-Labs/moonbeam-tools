@@ -8,7 +8,8 @@ import yargs from "yargs";
 
 import { getApiFor, NETWORK_YARGS_OPTIONS } from "../index.ts";
 
-const debug = require("debug")("indexer:smart-contract");
+import debugPkg from "debug";
+const debug = debugPkg("indexer:smart-contract");
 
 const argv = yargs(process.argv.slice(2))
   .usage("Usage: $0")

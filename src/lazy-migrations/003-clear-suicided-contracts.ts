@@ -8,13 +8,16 @@
 //    --account-priv-key <key>
 import "@moonbeam-network/api-augment";
 import "@polkadot/api-augment";
+import { fileURLToPath } from "url";
+import path from "path";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 import { ApiPromise, Keyring } from "@polkadot/api";
 import { KeyringPair } from "@polkadot/keyring/types";
 import { Raw } from "@polkadot/types-codec";
 import { blake2AsHex, xxhashAsHex } from "@polkadot/util-crypto";
 import fs from "fs";
-import path from "path";
 import yargs from "yargs";
 
 import { ALITH_PRIVATE_KEY } from "../utils/constants.ts";

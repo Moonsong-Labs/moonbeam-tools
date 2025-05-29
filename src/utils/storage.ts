@@ -1,7 +1,8 @@
 import { promiseConcurrent } from "./functions.ts";
 
 import type { ProviderInterface } from "@polkadot/rpc-provider/types";
-const debug = require("debug")("utils:storage-query");
+import debugPkg from "debug";
+const debug = debugPkg("utils:storage-query");
 
 // Timer must be wrapped to be passed
 const startReport = (total: () => number) => {

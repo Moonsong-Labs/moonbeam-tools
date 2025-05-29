@@ -5,7 +5,8 @@ import { promiseConcurrent } from "../utils/functions.ts";
 import { getAccountIdentity } from "../utils/monitoring.ts";
 import { getApiFor, NETWORK_YARGS_OPTIONS } from "../utils/networks.ts";
 
-const debug = require("debug")("check:finality");
+import debugPkg from "debug";
+const debug = debugPkg("check:finality");
 
 const argv = yargs(process.argv.slice(2))
   .usage("Usage: $0")

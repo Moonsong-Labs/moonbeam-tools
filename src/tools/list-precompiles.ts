@@ -7,7 +7,8 @@ import yargs from "yargs";
 
 import { getViemAccountFor, getViemFor, NETWORK_YARGS_OPTIONS } from "../utils/networks.ts";
 
-const debug = require("debug")("main");
+import debugPkg from "debug";
+const debug = debugPkg("main");
 
 const argv = yargs(process.argv.slice(2))
   .usage("Usage: $0")

@@ -7,7 +7,8 @@ import yargs from "yargs";
 
 import { ALITH_PRIVATE_KEY, getApiFor, NETWORK_YARGS_OPTIONS } from "../index.ts";
 
-const debug = require("debug")("fast-executor");
+import debugPkg from "debug";
+const debug = debugPkg("fast-executor");
 const argv = yargs(process.argv.slice(2))
   .usage("Usage: $0")
   .version("1.0.0")

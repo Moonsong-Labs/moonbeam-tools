@@ -34,9 +34,9 @@ const main = async () => {
   const api = await getApiFor(argv);
 
   let sendExtrinsic = api.tx.xcmPallet.send(
-    { V2: { parents: new BN(0), interior: { X1: { Parachain: argv.para } } } },
+    { V5: { parents: new BN(0), interior: { X1: { Parachain: argv.para } } } },
     {
-      V2: [{ ClearOrigin: null }],
+      V5: [{ ClearOrigin: null }],
     },
   );
   let Txs = [];

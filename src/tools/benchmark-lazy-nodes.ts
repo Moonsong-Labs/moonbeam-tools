@@ -65,7 +65,7 @@ const main = async () => {
 
         const unsubscribe = await api.rpc.chain.subscribeNewHeads(async (header) => {
             // console.log(`[${serverName}] Chain is at block: #${header.number}`);
-            const block = await getBlockDetails(api, header.hash);
+            const block = await getBlockDetails(api, header.hash.toHex());
 
             for (const tx of block.txWithEvents) {
                 if (tx.extrinsic.hash.toHex().toLocaleLowerCase() == argv.tx.toLocaleLowerCase()) {

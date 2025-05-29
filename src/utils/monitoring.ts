@@ -411,7 +411,7 @@ export const listenBlocks = async (
   const call = finalized ? api.rpc.chain.subscribeFinalizedHeads : api.rpc.chain.subscribeNewHeads;
   const unsubHeads = await call(async (lastHeader) => {
     const [blockDetails, pendingTxs] = await Promise.all([
-      getBlockDetails(api, lastHeader.hash),
+      getBlockDetails(api, lastHeader.hash.toHex()),
       api.rpc.author.pendingExtrinsics(),
     ]);
     callBack({

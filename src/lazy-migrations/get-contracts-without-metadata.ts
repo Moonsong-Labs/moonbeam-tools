@@ -1,6 +1,9 @@
 import yargs from "yargs";
 import fs from "fs";
 import path from "path";
+import { fileURLToPath } from "url";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 import "@polkadot/api-augment";
 import "@moonbeam-network/api-augment";
 import { blake2AsHex, xxhashAsHex } from "@polkadot/util-crypto";

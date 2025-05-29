@@ -9,7 +9,8 @@ import yargs from "yargs";
 // bun src/indexers/smart-contract-extracter.ts --client pg --connection postgresql://mws.com/moonbeam_smart_contracts --folder moonbeam-sc
 // for v in $(find moonbeam-sc/ -type f -iname "*.sol" -exec grep -o -h '0\.[0-9]\.[0-9][0-9]*' {} \+ | sort | uniq); do solc-select install $v; done
 
-const debug = require("debug")("indexer:smart-contract");
+import debugPkg from "debug";
+const debug = debugPkg("indexer:smart-contract");
 
 const argv = yargs(process.argv.slice(2))
   .usage("Usage: $0")
