@@ -1,4 +1,4 @@
-import { getApiFor, NETWORK_YARGS_OPTIONS } from "src/utils/networks.ts";
+import { getApiFor, NETWORK_YARGS_OPTIONS } from "src/utils/networks";
 import yargs from "yargs";
 
 export const NETWORK_WS_URLS: { [name: string]: string } = {

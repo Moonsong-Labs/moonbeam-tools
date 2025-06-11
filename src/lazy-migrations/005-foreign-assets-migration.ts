@@ -21,9 +21,10 @@ import "@polkadot/api-augment";
 import "@moonbeam-network/api-augment";
 import { Keyring } from "@polkadot/api";
 import { KeyringPair } from "@polkadot/keyring/types";
-import { getApiFor, NETWORK_YARGS_OPTIONS } from "../utils/networks.ts";
-import { monitorSubmittedExtrinsic, waitForAllMonitoredExtrinsics } from "../utils/monitoring.ts";
-import { ALITH_PRIVATE_KEY } from "../utils/constants.ts";
+import { getApiFor, NETWORK_YARGS_OPTIONS } from "../utils/networks";
+import { monitorSubmittedExtrinsic, waitForAllMonitoredExtrinsics } from "../utils/monitoring";
+import { ALITH_PRIVATE_KEY } from "../utils/constants";
+// @ts-ignore - The type exists at runtime
 import { PalletMoonbeamLazyMigrationsForeignAssetForeignAssetMigrationStatus } from "@polkadot/types/lookup";
 
 const argv = yargs(process.argv.slice(2))
@@ -67,12 +68,12 @@ async function main() {
   try {
     let account: KeyringPair;
     let nonce: bigint;
-    let remainingBalances: number;
-    let remainingApprovals: number;
+    let remainingBalances: number = 0;
+    let remainingApprovals: number = 0;
 
     // Setup account
     const privKey = argv["alith"] ? ALITH_PRIVATE_KEY : argv["account-priv-key"];
-    account = keyring.addFromUri(privKey, null, "ethereum");
+    account = keyring.addFromUri(privKey, undefined, "ethereum");
     const { nonce: rawNonce } = await api.query.system.account(account.address);
     nonce = BigInt(rawNonce.toString());
 
@@ -97,13 +98,13 @@ async function main() {
         return;
       }
 
-      remainingBalances = status.asMigrating?.remainingBalances.toNumber();
-      remainingApprovals = status.asMigrating?.remainingApprovals.toNumber();
+      remainingBalances = status.asMigrating?.remainingBalances.toNumber() || 0;
+      remainingApprovals = status.asMigrating?.remainingApprovals.toNumber() || 0;
       console.log("Started migration for asset", assetId);
     } else {
       console.log("Migration already in progress for asset", assetId);
-      remainingBalances = migrationInfo.asMigrating?.remainingBalances.toNumber();
-      remainingApprovals = migrationInfo.asMigrating?.remainingApprovals.toNumber();
+      remainingBalances = migrationInfo.asMigrating?.remainingBalances.toNumber() || 0;
+      remainingApprovals = migrationInfo.asMigrating?.remainingApprovals.toNumber() || 0;
     }
 
     // Step 2: Migrate balances

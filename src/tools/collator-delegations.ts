@@ -3,7 +3,8 @@ import chalk from "chalk";
 import { table } from "table";
 import yargs from "yargs";
 
-import { combineRequestsPerDelegators, getApiFor, NETWORK_YARGS_OPTIONS } from "../index.ts";
+import { combineRequestsPerDelegators, getApiFor, NETWORK_YARGS_OPTIONS } from "../index";
+import { ApiPromise } from "@polkadot/api";
 
 const argv = yargs(process.argv.slice(2))
   .usage("Usage: $0")
@@ -23,7 +24,7 @@ const argv = yargs(process.argv.slice(2))
 
 const main = async () => {
   // Instantiate Api
-  const api = await getApiFor(argv);
+  const api: ApiPromise = await getApiFor(argv);
 
   const blockHash = argv.at
     ? await api.rpc.chain.getBlockHash(argv.at)

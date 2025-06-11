@@ -9,8 +9,8 @@ import { Keyring } from "@polkadot/api";
 import { blake2AsHex } from "@polkadot/util-crypto";
 import yargs from "yargs";
 
-import { getApiFor, NETWORK_YARGS_OPTIONS } from "../index.ts";
-import { printTokens } from "../utils/monitoring.ts";
+import { getApiFor, NETWORK_YARGS_OPTIONS } from "../index";
+import { printTokens } from "../utils/monitoring";
 
 const argv = yargs(process.argv.slice(2))
   .usage("Usage: $0")

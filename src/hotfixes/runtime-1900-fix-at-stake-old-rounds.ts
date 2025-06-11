@@ -25,9 +25,9 @@ import chalk from "chalk";
 import Debug from "debug";
 import yargs from "yargs";
 
-import { promiseConcurrent } from "../utils/functions.ts";
-import { monitorSubmittedExtrinsic, waitForAllMonitoredExtrinsics } from "../utils/monitoring.ts";
-import { getApiFor, NETWORK_YARGS_OPTIONS } from "../utils/networks.ts";
+import { promiseConcurrent } from "../utils/functions";
+import { monitorSubmittedExtrinsic, waitForAllMonitoredExtrinsics } from "../utils/monitoring";
+import { getApiFor, NETWORK_YARGS_OPTIONS } from "../utils/networks";
 
 const debug = Debug("hotfix:1900-at-stake");
 

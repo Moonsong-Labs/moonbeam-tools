@@ -9,7 +9,7 @@ import chalk from "chalk";
 import fs from "fs";
 import yargs from "yargs";
 
-import { getApiFor, NETWORK_YARGS_OPTIONS } from "../utils/networks.ts";
+import { getApiFor, NETWORK_YARGS_OPTIONS } from "../utils/networks";
 
 const argv = yargs(process.argv.slice(2))
   .usage("Usage: $0")

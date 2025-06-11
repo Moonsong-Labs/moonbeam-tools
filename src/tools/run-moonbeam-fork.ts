@@ -15,9 +15,9 @@ import {
   downloadExportedState,
   NetworkName,
   neutralizeExportedState,
-} from "../libs/helpers/state-manipulator/index.ts";
-import { ALITH_PRIVATE_KEY } from "../utils/constants.ts";
-import { runTask, spawnTask } from "../utils/runner.ts";
+} from "../libs/helpers/state-manipulator/index";
+import { ALITH_PRIVATE_KEY } from "../utils/constants";
+import { runTask, spawnTask } from "../utils/runner";
 
 const argv = yargs(process.argv.slice(2))
   .usage("Usage: $0")

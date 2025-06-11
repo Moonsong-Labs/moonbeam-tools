@@ -14,7 +14,7 @@ import {
   NETWORK_YARGS_OPTIONS,
   printTokens,
   promiseWhile,
-} from "../index.ts";
+} from "../index";
 
 import type { u128 } from "@polkadot/types";
 import type {
@@ -235,11 +235,11 @@ const main = async () => {
             event.section == "system" &&
             (event.method == "ExtrinsicSuccess" || event.method == "ExtrinsicFailed"),
         );
-        const isSuccess = extrinsicResult.method == "ExtrinsicSuccess";
+        const isSuccess = extrinsicResult?.method == "ExtrinsicSuccess";
 
         const dispatchInfo = isSuccess
-          ? (extrinsicResult.data[0] as DispatchInfo)
-          : (extrinsicResult.data[1] as DispatchInfo);
+          ? (extrinsicResult?.data[0] as DispatchInfo)
+          : (extrinsicResult?.data[1] as DispatchInfo);
         debug(`  - Extrinsic ${extrinsic.method.toString()}: ${isSuccess ? "Ok" : "Failed"}`);
 
         if (
@@ -306,7 +306,7 @@ const main = async () => {
               const treasuryDepositEvent = events.find(
                 (event, index) => event.section == "treasury" && event.method == "Deposit",
               );
-              const treasuryDeposit = (treasuryDepositEvent.data[0] as any).toBigInt();
+              const treasuryDeposit = (treasuryDepositEvent?.data[0] as any).toBigInt();
 
               if (
                 treasuryDeposit !=
@@ -412,7 +412,7 @@ const main = async () => {
               }
               if (extrinsic.method.method == "vote") {
                 const votedEvent = events.find((event) => event.method == "Voted");
-                const account = votedEvent.data[0] as AccountId20;
+                const account = votedEvent?.data[0] as AccountId20;
                 const hash = (extrinsic.method.args[0] as any).toString();
                 // combine the committee type with the hash to make it unique.
                 const hashKey = `${extrinsic.method.section}_${hash}`;
@@ -522,7 +522,7 @@ const main = async () => {
         "Compact<u64>",
         blockDetails.block.extrinsics.find(
           (e) => e.method.section == "timestamp" && e.method.method == "set",
-        ).data,
+        )?.data,
       );
 
       await db("blocks").insert({
@@ -542,12 +542,12 @@ const main = async () => {
   };
 
   await promiseWhile(argv.concurrency, (index) => {
-    if (fromBlockNumber + index > toBlockNumber) {
+    if (fromBlockNumber + (index || 0) > toBlockNumber) {
       return;
     }
     blockCount++;
     return async () => {
-      const current = index + fromBlockNumber;
+      const current = (index || 0) + fromBlockNumber;
 
       const alreadyIndexed =
         (

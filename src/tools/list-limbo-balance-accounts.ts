@@ -4,8 +4,8 @@ import { table } from "table";
 import Web3 from "web3";
 import yargs from "yargs";
 
-import { getApiFor, NETWORK_YARGS_OPTIONS } from "../index.ts";
-import { getAccountIdentity } from "../utils/monitoring.ts";
+import { getApiFor, NETWORK_YARGS_OPTIONS } from "../index";
+import { getAccountIdentity } from "../utils/monitoring";
 
 const argv = yargs(process.argv.slice(2))
   .usage("Usage: $0")

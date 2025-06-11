@@ -17,7 +17,7 @@ import { u8aToHex } from "@polkadot/util";
 import { blake2AsHex } from "@polkadot/util-crypto";
 import yargs from "yargs";
 
-import { getApiFor, NETWORK_YARGS_OPTIONS } from "../utils/networks.ts";
+import { getApiFor, NETWORK_YARGS_OPTIONS } from "../utils/networks";
 
 const PROPOSAL_AMOUNT = 10_000_000_000_000_000_000n;
 

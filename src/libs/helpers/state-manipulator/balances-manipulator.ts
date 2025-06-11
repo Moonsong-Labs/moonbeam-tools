@@ -6,7 +6,7 @@ import {
   encodeStorageBlake128MapKey,
   encodeStorageKey,
   StateManipulator,
-} from "./genesis-parser.ts";
+} from "./genesis-parser";
 
 const debug = Debug("helper:balances-manipulator");
 

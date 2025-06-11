@@ -4,10 +4,10 @@ import * as rlp from "rlp";
 import { Web3 } from "web3";
 import yargs from "yargs";
 
-import { ALITH_PRIVATE_KEY } from "../utils/constants.ts";
-import { getMonitoredApiFor, NETWORK_YARGS_OPTIONS } from "../utils/networks.ts";
-import { callContract, deployContract } from "../utils/web3/contracts.ts";
-import { compileSolidity } from "../utils/web3/solidity.ts";
+import { ALITH_PRIVATE_KEY } from "../utils/constants";
+import { getMonitoredApiFor, NETWORK_YARGS_OPTIONS } from "../utils/networks";
+import { callContract, deployContract } from "../utils/web3/contracts";
+import { compileSolidity } from "../utils/web3/solidity";
 
 const argv = yargs(process.argv.slice(2))
   .usage("Usage: $0")

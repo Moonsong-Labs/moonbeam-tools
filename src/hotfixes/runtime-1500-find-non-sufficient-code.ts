@@ -6,7 +6,7 @@ import { Keyring } from "@polkadot/api";
 import fs from "fs";
 import yargs from "yargs";
 
-import { getApiFor, NETWORK_YARGS_OPTIONS } from "../index.ts";
+import { getApiFor, NETWORK_YARGS_OPTIONS } from "../index";
 
 import type { FrameSystemAccountInfo } from "@polkadot/types/lookup";
 

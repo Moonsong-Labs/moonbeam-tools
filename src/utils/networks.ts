@@ -13,7 +13,7 @@ import {
 } from "viem";
 import { Options } from "yargs";
 
-import { listenBlocks, printBlockDetails, RealtimeBlockDetails } from "./monitoring.ts";
+import { listenBlocks, printBlockDetails, RealtimeBlockDetails } from "./monitoring";
 
 export type MOONBEAM_NETWORK_NAME =
   | "stagenet"

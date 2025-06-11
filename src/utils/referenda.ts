@@ -27,7 +27,7 @@ import {
 import { HexString } from "@polkadot/util/types";
 import Debug from "debug";
 
-import { promiseConcurrent } from "./functions.ts";
+import { promiseConcurrent } from "./functions";
 
 import type { Bytes } from "@polkadot/types";
 import type { Call, Hash } from "@polkadot/types/interfaces";

@@ -19,8 +19,8 @@ import { KeyringPair } from "@polkadot/keyring/types";
 import { blake2AsHex, xxhashAsHex } from "@polkadot/util-crypto";
 import yargs from "yargs";
 
-import { monitorSubmittedExtrinsic, waitForAllMonitoredExtrinsics } from "../utils/monitoring.ts";
-import { getApiFor, NETWORK_YARGS_OPTIONS } from "../utils/networks.ts";
+import { monitorSubmittedExtrinsic, waitForAllMonitoredExtrinsics } from "../utils/monitoring";
+import { getApiFor, NETWORK_YARGS_OPTIONS } from "../utils/networks";
 
 const argv = yargs(process.argv.slice(2))
   .usage("Usage: $0")

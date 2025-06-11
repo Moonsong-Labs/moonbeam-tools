@@ -3,8 +3,8 @@ import { PalletDemocracyReferendumInfo } from "@polkadot/types/lookup";
 import { blake2AsHex } from "@polkadot/util-crypto";
 import yargs from "yargs";
 
-import { ALITH_PRIVATE_KEY } from "../utils/constants.ts";
-import { getApiFor, NETWORK_YARGS_OPTIONS } from "../utils/networks.ts";
+import { ALITH_PRIVATE_KEY } from "../utils/constants";
+import { getApiFor, NETWORK_YARGS_OPTIONS } from "../utils/networks";
 
 import debugPkg from "debug";
 const debug = debugPkg("main");

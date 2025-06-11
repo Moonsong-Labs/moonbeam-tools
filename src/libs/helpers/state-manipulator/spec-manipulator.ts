@@ -1,6 +1,6 @@
 import Debug from "debug";
 
-import { Action, StateManipulator } from "./genesis-parser.ts";
+import { Action, StateManipulator } from "./genesis-parser";
 
 const debug = Debug("helper:spec-manipulator");
 

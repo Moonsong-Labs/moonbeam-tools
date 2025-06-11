@@ -1,9 +1,9 @@
 // This script is expected to run against a parachain network (using launch.ts script)
 import yargs from "yargs";
 
-import { promiseConcurrent } from "../utils/functions.ts";
-import { getAccountIdentity } from "../utils/monitoring.ts";
-import { getApiFor, NETWORK_YARGS_OPTIONS } from "../utils/networks.ts";
+import { promiseConcurrent } from "../utils/functions";
+import { getAccountIdentity } from "../utils/monitoring";
+import { getApiFor, NETWORK_YARGS_OPTIONS } from "../utils/networks";
 
 import debugPkg from "debug";
 const debug = debugPkg("check:finality");

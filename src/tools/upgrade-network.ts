@@ -15,14 +15,14 @@ import { blake2AsHex } from "@polkadot/util-crypto";
 import fs from "fs";
 import yargs from "yargs";
 
-import { ALITH_PRIVATE_KEY } from "../utils/constants.ts";
+import { ALITH_PRIVATE_KEY } from "../utils/constants";
 import {
   monitorSubmittedExtrinsic,
   waitBlocks,
   waitForAllMonitoredExtrinsics,
-} from "../utils/monitoring.ts";
-import { getApiFor, NETWORK_YARGS_OPTIONS } from "../utils/networks.ts";
-import { maybeProxyCall } from "../utils/transactions.ts";
+} from "../utils/monitoring";
+import { getApiFor, NETWORK_YARGS_OPTIONS } from "../utils/networks";
+import { maybeProxyCall } from "../utils/transactions";
 
 const argv = yargs(process.argv.slice(2))
   .usage("Usage: $0")

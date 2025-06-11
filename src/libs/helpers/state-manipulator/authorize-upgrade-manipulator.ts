@@ -1,6 +1,6 @@
 import Debug from "debug";
 
-import { Action, encodeStorageKey, StateManipulator } from "./genesis-parser.ts";
+import { Action, encodeStorageKey, StateManipulator } from "./genesis-parser";
 
 const debug = Debug("helper:authorize-upgrade-manipulator");
 

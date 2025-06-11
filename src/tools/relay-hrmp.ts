@@ -5,7 +5,7 @@ import chalk from "chalk";
 import { table } from "table";
 import yargs from "yargs";
 
-import { getApiFor, NETWORK_YARGS_OPTIONS } from "../index.ts";
+import { getApiFor, NETWORK_YARGS_OPTIONS } from "../index";
 
 const argv = yargs(process.argv.slice(2))
   .usage("Usage: $0")

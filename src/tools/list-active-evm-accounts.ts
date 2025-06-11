@@ -1,7 +1,7 @@
 import { ApiPromise } from "@polkadot/api";
 import yargs from "yargs";
 
-import { exploreBlockRange, getApiFor, NETWORK_YARGS_OPTIONS } from "../index.ts";
+import { exploreBlockRange, getApiFor, NETWORK_YARGS_OPTIONS } from "../index";
 
 const XEN_ADDRESS = "0xb564A5767A00Ee9075cAC561c427643286F8F4E1".toLowerCase();
 

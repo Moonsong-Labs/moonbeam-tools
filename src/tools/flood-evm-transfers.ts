@@ -3,9 +3,9 @@ import { Keyring } from "@polkadot/api";
 import { TransactionReceipt, Web3 } from "web3";
 import yargs from "yargs";
 
-import { ALITH_PRIVATE_KEY } from "../utils/constants.ts";
-import { getMonitoredApiFor, NETWORK_YARGS_OPTIONS } from "../utils/networks.ts";
-import { customWeb3Request } from "../utils/web3/transactions.ts";
+import { ALITH_PRIVATE_KEY } from "../utils/constants";
+import { getMonitoredApiFor, NETWORK_YARGS_OPTIONS } from "../utils/networks";
+import { customWeb3Request } from "../utils/web3/transactions";
 
 const argv = yargs(process.argv.slice(2))
   .usage("Usage: $0")

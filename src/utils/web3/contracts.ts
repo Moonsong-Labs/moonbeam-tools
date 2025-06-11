@@ -1,7 +1,7 @@
 import * as rlp from "rlp";
 import { TransactionReceipt, Web3, Web3BaseWalletAccount } from "web3";
 
-import { customWeb3Request } from "./transactions.ts";
+import { customWeb3Request } from "./transactions";
 
 export interface SolidityContractBundle {
   abi: any;

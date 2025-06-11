@@ -8,21 +8,19 @@
 //    --account-priv-key <key>
 import "@moonbeam-network/api-augment";
 import "@polkadot/api-augment";
-import { fileURLToPath } from "url";
-import path from "path";
-
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
+import * as path from "path";
 
 import { ApiPromise, Keyring } from "@polkadot/api";
 import { KeyringPair } from "@polkadot/keyring/types";
-import { Raw } from "@polkadot/types-codec";
+// @ts-ignore - Raw type exists at runtime
+import type { Raw } from "@polkadot/types-codec";
 import { blake2AsHex, xxhashAsHex } from "@polkadot/util-crypto";
-import fs from "fs";
+import * as fs from "fs";
 import yargs from "yargs";
 
-import { ALITH_PRIVATE_KEY } from "../utils/constants.ts";
-import { monitorSubmittedExtrinsic, waitForAllMonitoredExtrinsics } from "../utils/monitoring.ts";
-import { getApiFor, NETWORK_YARGS_OPTIONS } from "../utils/networks.ts";
+import { ALITH_PRIVATE_KEY } from "../utils/constants";
+import { monitorSubmittedExtrinsic, waitForAllMonitoredExtrinsics } from "../utils/monitoring";
+import { getApiFor, NETWORK_YARGS_OPTIONS } from "../utils/networks";
 
 const argv = yargs(process.argv.slice(2))
   .usage("Usage: $0")
@@ -77,8 +75,8 @@ async function main() {
   try {
     const chain = (await api.rpc.system.chain()).toString().toLowerCase().replaceAll(/\s/g, "-");
     const TEMPORADY_DB_FILE = path.resolve(
-      __dirname,
-      `003-clear-suicided-contracts-${chain}-db.json`,
+      process.cwd(),
+      `src/lazy-migrations/003-clear-suicided-contracts-${chain}-db.json`,
     );
 
     let db = {
@@ -94,13 +92,14 @@ async function main() {
     db.at_block ||= (await api.query.system.parentHash()).toHex();
 
     let account: KeyringPair;
-    let nonce;
+    let nonce: bigint;
     const privKey = argv["alith"] ? ALITH_PRIVATE_KEY : argv["account-priv-key"];
-    if (privKey) {
-      account = keyring.addFromUri(privKey, null, "ethereum");
-      const { nonce: rawNonce } = await api.query.system.account(account.address);
-      nonce = BigInt(rawNonce.toString());
+    if (!privKey) {
+      throw new Error("No private key provided");
     }
+    account = keyring.addFromUri(privKey, undefined, "ethereum");
+    const { nonce: rawNonce } = await api.query.system.account(account.address);
+    nonce = BigInt(rawNonce.toString());
 
     let removedSuicidedContracts = await suicidedContractsRemoved(api);
     console.log(`Contracts already removed before this run: `, removedSuicidedContracts);

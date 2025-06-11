@@ -5,7 +5,7 @@ import fs from "fs";
 import { table } from "table";
 import yargs from "yargs";
 
-import { getApiFor, NETWORK_YARGS_OPTIONS, numberWithCommas } from "../index.ts";
+import { getApiFor, NETWORK_YARGS_OPTIONS, numberWithCommas } from "../index";
 
 const argv = yargs(process.argv.slice(2))
   .usage("Usage: $0")

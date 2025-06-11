@@ -11,7 +11,7 @@ import yargs from "yargs";
 import { Keyring, ApiPromise } from "@polkadot/api";
 import "@moonbeam-network/api-augment";
 import { xxhashAsHex } from "@polkadot/util-crypto";
-import { getApiFor, NETWORK_YARGS_OPTIONS } from "../index.ts";
+import { getApiFor, NETWORK_YARGS_OPTIONS } from "../index";
 
 const argv = yargs(process.argv.slice(2))
   .usage("Usage: $0")
@@ -45,15 +45,15 @@ const main = async () => {
   // XX128("Democracy") || XX128("Preimages")
   const preimagePrefix = xxhashAsHex("Democracy", 128) + xxhashAsHex("Preimages", 128).slice(2);
 
-  async function getAllKeys(api: ApiPromise, prefix: string, startKey?: string) {
+  async function getAllKeys(api: ApiPromise, prefix: string, startKey?: string): Promise<string[]> {
     const keys = (
       await api.rpc.state.getKeysPaged(prefix, 1000, startKey || prefix, atBlockHash)
-    ).map((d) => d.toHex());
+    ).map((d) => d.toHex()) as string[];
 
     if (keys.length == 0) {
       return [];
     }
-    return keys.concat(await getAllKeys(api, prefix, keys[keys.length - 1]));
+    return keys.concat(await getAllKeys(api, prefix, keys[keys.length - 1]))  as string[];
   }
 
   // We retrieve all keys starting with this keys
@@ -64,7 +64,7 @@ const main = async () => {
 
   if (argv["account-priv-key"]) {
     const keyring = new Keyring({ type: "ethereum" });
-    const account = await keyring.addFromUri(argv["account-priv-key"], null, "ethereum");
+    const account = await keyring.addFromUri(argv["account-priv-key"], undefined, "ethereum");
     const { nonce: rawNonce, data: balance } = (await api.query.system.account(
       account.address,
     )) as any;

@@ -4,7 +4,7 @@ import { Keyring } from "@polkadot/api";
 import { BN } from "@polkadot/util";
 import yargs from "yargs";
 
-import { getApiFor } from "../utils/networks.ts";
+import { getApiFor } from "../utils/networks";
 
 const argv = yargs(process.argv.slice(2))
   .usage("Usage: $0")

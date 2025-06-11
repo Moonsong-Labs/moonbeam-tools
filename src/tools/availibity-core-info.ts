@@ -2,8 +2,8 @@ import "@polkadot/api-augment";
 
 import yargs from "yargs";
 
-import { getAccountIdentity } from "../utils/monitoring.ts";
-import { getApiFor } from "../utils/networks.ts";
+import { getAccountIdentity } from "../utils/monitoring";
+import { getApiFor } from "../utils/networks";
 
 const argv = yargs(process.argv.slice(2))
   .usage("Usage: $0")

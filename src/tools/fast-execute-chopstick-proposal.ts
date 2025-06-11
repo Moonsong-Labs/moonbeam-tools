@@ -5,7 +5,7 @@ import { blake2AsHex } from "@polkadot/util-crypto";
 import chalk from "chalk";
 import yargs from "yargs";
 
-import { ALITH_PRIVATE_KEY, getApiFor, NETWORK_YARGS_OPTIONS } from "../index.ts";
+import { ALITH_PRIVATE_KEY, getApiFor, NETWORK_YARGS_OPTIONS } from "../index";
 
 import debugPkg from "debug";
 const debug = debugPkg("fast-executor");

@@ -3,7 +3,7 @@ import { ParachainInherentData } from "@polkadot/types/interfaces";
 import fs from "fs";
 import yargs from "yargs";
 
-import { exploreBlockRange, getApiFor, NETWORK_YARGS_OPTIONS } from "../index.ts";
+import { exploreBlockRange, getApiFor, NETWORK_YARGS_OPTIONS } from "../index";
 
 const INITIAL_ROUND_BLOCK = {
   moonbeam: 1200,

@@ -6,7 +6,7 @@ import {
   encodeStorageKey,
   StateLine,
   StateManipulator,
-} from "./genesis-parser.ts";
+} from "./genesis-parser";
 import { nToHex } from "@polkadot/util";
 
 const debug = Debug("helper:cumulus-manipulator");
@@ -23,8 +23,7 @@ export class CumulusManipulator implements StateManipulator {
 
   processRead = (_) => {};
 
-  prepareWrite = () => {
-  };
+  prepareWrite = () => {};
 
   processWrite = ({ key, value }) => {
     if (key.startsWith(this.slotInfoKey)) {

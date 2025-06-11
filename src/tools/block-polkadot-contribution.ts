@@ -2,7 +2,7 @@
 import { ApiPromise, WsProvider } from "@polkadot/api";
 import yargs from "yargs";
 
-import { promiseConcurrent } from "../index.ts";
+import { promiseConcurrent } from "../index";
 
 const argv = yargs(process.argv.slice(2))
   .usage("Usage: $0")

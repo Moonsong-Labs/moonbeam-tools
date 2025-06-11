@@ -1,4 +1,4 @@
-import { promiseConcurrent } from "./functions.ts";
+import { promiseConcurrent } from "./functions";
 
 import type { ProviderInterface } from "@polkadot/rpc-provider/types";
 import debugPkg from "debug";

@@ -27,7 +27,7 @@ import {
   CHARLETH_ADDRESS,
   CHARLETH_PRIVATE_KEY,
   DOROTHY_PRIVATE_KEY,
-} from "../utils/constants.ts";
+} from "../utils/constants";
 
 const httpUrl = "http://127.0.0.1:9933";
 const wssUrl = "ws://127.0.0.1:9944";

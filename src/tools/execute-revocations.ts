@@ -5,8 +5,8 @@ import chalk from "chalk";
 import yargs from "yargs";
 
 import { Web3 } from "web3";
-import { getApiFor, NETWORK_YARGS_OPTIONS } from "../index.ts";
-import { promiseConcurrent } from "../utils/functions.ts";
+import { getApiFor, NETWORK_YARGS_OPTIONS } from "../index";
+import { promiseConcurrent } from "../utils/functions";
 
 const argv = yargs(process.argv.slice(2))
   .usage("Usage: $0")

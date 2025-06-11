@@ -7,8 +7,8 @@ import moment from "moment";
 import path from "path";
 import yargs from "yargs";
 
-import { getApiFor, getWsProviderFor, NETWORK_YARGS_OPTIONS } from "../utils/networks.ts";
-import { processAllStorage } from "../utils/storage.ts";
+import { getApiFor, getWsProviderFor, NETWORK_YARGS_OPTIONS } from "../utils/networks";
+import { processAllStorage } from "../utils/storage";
 
 const argv = yargs(process.argv.slice(2))
   .usage("Usage: $0")

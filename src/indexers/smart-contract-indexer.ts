@@ -6,7 +6,7 @@ import { Knex, knex } from "knex";
 import sqlite3 from "sqlite3";
 import yargs from "yargs";
 
-import { getApiFor, NETWORK_YARGS_OPTIONS } from "../index.ts";
+import { getApiFor, NETWORK_YARGS_OPTIONS } from "../index";
 
 import debugPkg from "debug";
 const debug = debugPkg("indexer:smart-contract");

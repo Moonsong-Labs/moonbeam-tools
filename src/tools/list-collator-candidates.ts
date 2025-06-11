@@ -11,7 +11,7 @@ import {
   getApiFor,
   NETWORK_YARGS_OPTIONS,
   numberWithCommas,
-} from "../index.ts";
+} from "../index";
 
 const argv = yargs(process.argv.slice(2))
   .usage("Usage: $0")

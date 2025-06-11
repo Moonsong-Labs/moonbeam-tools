@@ -5,7 +5,7 @@ import { encodeFunctionData } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import yargs from "yargs";
 
-import { getViemAccountFor, getViemFor, NETWORK_YARGS_OPTIONS } from "../utils/networks.ts";
+import { getViemAccountFor, getViemFor, NETWORK_YARGS_OPTIONS } from "../utils/networks";
 
 import debugPkg from "debug";
 const debug = debugPkg("main");

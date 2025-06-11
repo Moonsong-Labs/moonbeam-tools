@@ -1,6 +1,6 @@
 import solc from "solc";
 
-import { SolidityContractBundle } from "./contracts.ts";
+import { SolidityContractBundle } from "./contracts";
 
 export function compileSolidity(
   contractContent: string,
