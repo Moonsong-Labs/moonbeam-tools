@@ -53,7 +53,7 @@ const main = async () => {
     if (keys.length == 0) {
       return [];
     }
-    return keys.concat(await getAllKeys(api, prefix, keys[keys.length - 1]))  as string[];
+    return keys.concat(await getAllKeys(api, prefix, keys[keys.length - 1])) as string[];
   }
 
   // We retrieve all keys starting with this keys
