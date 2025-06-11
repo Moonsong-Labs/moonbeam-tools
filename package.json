@@ -55,6 +55,7 @@
   "devDependencies": {
     "@babel/core": "^7.27.1",
     "@types/axios": "^0.14.4",
+    "@types/debug": "^4.1.12",
     "@types/jest": "^29.5.14",
     "@types/lodash.isobject": "^3.0.9",
     "@types/lodash.mergewith": "^4.6.9",
@@ -93,6 +94,7 @@
     "build:bins:export-state": "bun build src/tools/export-state.ts --compile --outfile dist/export-state  --sourcemap",
     "build:readme": "./scripts/update-readme.sh",
     "lint": "bunx prettier --write .",
+    "typecheck": "tsc --noEmit",
     "fork": "bunx ./src/tools/run-moonbeam-fork.ts --base-path /tmp/fork-data/ --network moonbeam --smaller-state"
   },
   "repository": {
