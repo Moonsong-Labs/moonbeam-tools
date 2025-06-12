@@ -4,7 +4,7 @@ import { GenericCall } from "@polkadot/types/generic";
 
 export const sendAllAndWaitLast = async (extrinsics: SubmittableExtrinsic[]) => {
   console.log(`Preparing to send ${extrinsics.length} extrinsics`);
-  
+
   // Send all but the last extrinsic
   for (let i = 0; i < extrinsics.length - 1; i++) {
     await extrinsics[i].send();
@@ -12,24 +12,27 @@ export const sendAllAndWaitLast = async (extrinsics: SubmittableExtrinsic[]) => 
       console.log(`Sending extrinsic: ${i}...`);
     }
   }
-  
+
   console.log(`Waiting for last extrinsic...`);
-  
+
   // Send the last extrinsic and wait for it
   return new Promise((resolve, reject) => {
     let unsub: () => void;
-    extrinsics[extrinsics.length - 1].send((result) => {
-      if (result.isError) {
-        reject(result.toHuman());
-      }
-      if (result.isInBlock) {
-        console.log(`Last extrinsic submitted`);
-        if (unsub) unsub();
-        resolve(null);
-      }
-    }).then((unsubscribe) => {
-      unsub = unsubscribe;
-    }).catch(reject);
+    extrinsics[extrinsics.length - 1]
+      .send((result) => {
+        if (result.isError) {
+          reject(result.toHuman());
+        }
+        if (result.isInBlock) {
+          console.log(`Last extrinsic submitted`);
+          if (unsub) unsub();
+          resolve(null);
+        }
+      })
+      .then((unsubscribe) => {
+        unsub = unsubscribe;
+      })
+      .catch(reject);
   });
 };
 
@@ -58,7 +61,7 @@ export const sendAllStreamAndWaitLast = async (
                 reject(`timed out`);
                 if (unsub) unsub();
               }, timeout);
-              
+
               tx.send((result) => {
                 // reset the timer
                 if (result.isError) {
@@ -71,12 +74,14 @@ export const sendAllStreamAndWaitLast = async (
                   clearTimeout(timer);
                   resolve(null);
                 }
-              }).then((unsubscribe) => {
-                unsub = unsubscribe;
-              }).catch((error) => {
-                clearTimeout(timer);
-                reject(error);
-              });
+              })
+                .then((unsubscribe) => {
+                  unsub = unsubscribe;
+                })
+                .catch((error) => {
+                  clearTimeout(timer);
+                  reject(error);
+                });
             }).catch((e) => {});
           }),
         ),

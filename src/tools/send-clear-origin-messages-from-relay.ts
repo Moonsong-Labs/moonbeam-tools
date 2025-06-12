@@ -72,7 +72,7 @@ async function accountWrapper(api, privateKey) {
   // Create account and get nonce
   const account = await keyring.addFromUri(privateKey, null, "sr25519");
   console.log(account.address);
-  const { nonce: rawNonce } = (await api.query.system.account(account.address));
+  const { nonce: rawNonce } = await api.query.system.account(account.address);
   const nonce = BigInt(rawNonce.toString());
 
   return [account, nonce];

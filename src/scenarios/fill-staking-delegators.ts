@@ -111,10 +111,7 @@ const main = async () => {
       const transferTxs = (
         await Promise.all(
           chunk.map(async (delegator) => {
-            if (
-              (await api.query.system.account(delegator.address)).data.free.toBigInt() >
-              0n
-            ) {
+            if ((await api.query.system.account(delegator.address)).data.free.toBigInt() > 0n) {
               return null;
             }
             return api.tx.balances.transfer(delegator.address, amountToTransfer);

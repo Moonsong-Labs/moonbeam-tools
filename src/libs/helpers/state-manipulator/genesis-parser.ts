@@ -194,7 +194,9 @@ export async function processState(
             .map(
               (extraLine) =>
                 `${new Array(lineMeta.indentSpaces).fill(" ").join("")}"${extraLine.key}": ${
-                  typeof extraLine.value === "string" ? `"${extraLine.value}"` : `${extraLine.value}`
+                  typeof extraLine.value === "string"
+                    ? `"${extraLine.value}"`
+                    : `${extraLine.value}`
                 },\n`,
             )
             .join("");

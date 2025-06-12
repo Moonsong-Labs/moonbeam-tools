@@ -451,12 +451,14 @@ const main = async () => {
       ];
       if (
         relayChainSpec.genesis?.runtimeGenesis &&
-        relayChainSpec.genesis?.runtimeGenesis && "patch" in relayChainSpec.genesis.runtimeGenesis
+        relayChainSpec.genesis?.runtimeGenesis &&
+        "patch" in relayChainSpec.genesis.runtimeGenesis
       ) {
         relayChainSpec.genesis.runtimeGenesis.patch.paras = paras;
       } else if (
         relayChainSpec.genesis?.runtime &&
-        relayChainSpec.genesis?.runtime && "runtime_genesis_config" in relayChainSpec.genesis.runtime
+        relayChainSpec.genesis?.runtime &&
+        "runtime_genesis_config" in relayChainSpec.genesis.runtime
       ) {
         relayChainSpec.genesis.runtime.runtime_genesis_config.paras = paras;
       } else if (relayChainSpec.genesis?.runtime && "paras" in relayChainSpec.genesis.runtime) {
@@ -628,8 +630,8 @@ const main = async () => {
           try {
             aliceProcess.kill();
           } catch (e) {
-          // Process might already be dead
-        }
+            // Process might already be dead
+          }
         });
       }),
       new Promise<void>((resolve) => {
@@ -643,8 +645,8 @@ const main = async () => {
           try {
             bobProcess.kill();
           } catch (e) {
-          // Process might already be dead
-        }
+            // Process might already be dead
+          }
         });
       }),
     );

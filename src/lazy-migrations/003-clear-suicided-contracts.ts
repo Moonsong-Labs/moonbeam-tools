@@ -157,10 +157,7 @@ async function main() {
       }
 
       keys_vec = Object.keys(contract_code_keys);
-      const has_code_result = (await api.rpc.state.queryStorageAt(
-        keys_vec,
-        db.at_block,
-      )) as Raw[];
+      const has_code_result = (await api.rpc.state.queryStorageAt(keys_vec, db.at_block)) as Raw[];
 
       const codeless_contracts = has_code_result.reduce((s, v, idx) => {
         if (v.isEmpty) {

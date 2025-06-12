@@ -35,11 +35,9 @@ const argv = yargs(process.argv.slice(2))
 export async function getXCMVersion(provider: any): Promise<[string, string]> {
   // Get XCM Version - Not great but there is no chain state approach
   const xcmpQueueVersion =
-    (provider.query.xcmpQueue && ((await provider.query.xcmpQueue.palletVersion()))) ||
-    "N/A";
+    (provider.query.xcmpQueue && (await provider.query.xcmpQueue.palletVersion())) || "N/A";
   const xcmSafeVersion =
-    (provider.query.polkadotXcm && ((await provider.query.polkadotXcm.safeXcmVersion()))) ||
-    "N/A";
+    (provider.query.polkadotXcm && (await provider.query.polkadotXcm.safeXcmVersion())) || "N/A";
   return [xcmpQueueVersion, xcmSafeVersion];
 }
 

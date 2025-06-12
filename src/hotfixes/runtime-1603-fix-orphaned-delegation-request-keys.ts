@@ -120,11 +120,13 @@ async function waitTxDone(
 
         resolveUnsub(status.asInBlock.toString());
       }
-    }).then((unsubscribe) => {
-      unsub = unsubscribe;
-    }).catch((error) => {
-      rejectUnsub(error);
-    });
+    })
+      .then((unsubscribe) => {
+        unsub = unsubscribe;
+      })
+      .catch((error) => {
+        rejectUnsub(error);
+      });
   });
 }
 
