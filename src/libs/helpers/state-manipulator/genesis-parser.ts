@@ -192,12 +192,12 @@ export async function processState(
 
           lineBuffer[lineSize++] = extraLines
             .map(
-              (extraLine) =>
+              (extraLine, index) =>
                 `${new Array(lineMeta.indentSpaces).fill(" ").join("")}"${extraLine.key}": ${
                   typeof extraLine.value === "string"
                     ? `"${extraLine.value}"`
                     : `${extraLine.value}`
-                },\n`,
+                }${index < extraLines.length - 1 || lineMeta.endWithComma ? "," : ""}\n`,
             )
             .join("");
         }
