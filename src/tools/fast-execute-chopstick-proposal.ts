@@ -203,7 +203,8 @@ const main = async () => {
     }
     const callData = api.createType("Call", call.asInline.toHex());
     return (
-      callData.method === "nudgeReferendum" && (callData.args[0] as any).toNumber() === proposalIndex
+      callData.method === "nudgeReferendum" &&
+      (callData.args[0] as any).toNumber() === proposalIndex
     );
   });
 

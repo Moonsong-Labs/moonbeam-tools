@@ -149,7 +149,8 @@ export async function callInterpreter(
   call: GenericCall,
 ): Promise<CallInterpretation> {
   const nested = NESTED_CALLS.find(
-    ({ section, method }) => section === call.section.toString() && method === call.method.toString(),
+    ({ section, method }) =>
+      section === call.section.toString() && method === call.method.toString(),
   );
   const text = `${call.section}.${call.method}`;
   if (nested) {

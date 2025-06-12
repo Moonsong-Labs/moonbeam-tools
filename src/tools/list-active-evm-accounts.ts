@@ -62,7 +62,8 @@ const compareDate = (api: ApiPromise, targetDate: string) => async (n) => {
   const { block } = await api.rpc.chain.getBlock(await api.rpc.chain.getBlockHash(n));
   const timestamp = api.registry.createType(
     "Compact<u64>",
-    block.extrinsics.find((e) => e.method.section === "timestamp" && e.method.method === "set").data,
+    block.extrinsics.find((e) => e.method.section === "timestamp" && e.method.method === "set")
+      .data,
   );
   const date = new Date(timestamp.toNumber()).toISOString().slice(0, targetDate.length);
   return date === targetDate ? 0 : date > targetDate ? -1 : 1;
