@@ -1,16 +1,8 @@
 import Debug from "debug";
 import fs from "node:fs/promises";
-import { Client } from "undici";
 import path from "node:path";
-import { processState, StateManipulator } from "./genesis-parser";
-import { RoundManipulator } from "./round-manipulator";
-import { AuthorFilteringManipulator } from "./author-filtering-manipulator";
-import { CollatorManipulator } from "./collator-manipulator";
-import { HRMPManipulator } from "./hrmp-manipulator";
-import { CollectiveManipulator } from "./collective-manipulator";
-import { ValidationManipulator } from "./validation-manipulator";
-import { XCMPManipulator } from "./xcmp-manipulator";
-import { BalancesManipulator } from "./balances-manipulator";
+import { Client } from "undici";
+
 import {
   ALITH_ADDRESS,
   ALITH_SESSION_ADDRESS,
@@ -18,11 +10,22 @@ import {
   CHARLETH_ADDRESS,
   RELAY_ASSET_ID,
   USDT_ASSET_ID,
-} from "../../../utils/constants";
-import { SpecManipulator } from "./spec-manipulator";
-import { SudoManipulator } from "./sudo-manipulator";
-import { AssetManipulator } from "./asset-manipulator";
-import { AuthorizeUpgradeManipulator } from "./authorize-upgrade-manipulator";
+} from "../../../utils/constants.ts";
+import { AssetManipulator } from "./asset-manipulator.ts";
+import { AuthorFilteringManipulator } from "./author-filtering-manipulator.ts";
+import { AuthorizeUpgradeManipulator } from "./authorize-upgrade-manipulator.ts";
+import { BalancesManipulator } from "./balances-manipulator.ts";
+import { CollatorManipulator } from "./collator-manipulator.ts";
+import { CollectiveManipulator } from "./collective-manipulator.ts";
+import { processState, StateManipulator } from "./genesis-parser.ts";
+import { HRMPManipulator } from "./hrmp-manipulator.ts";
+import { RoundManipulator } from "./round-manipulator.ts";
+import { SpecManipulator } from "./spec-manipulator.ts";
+import { SudoManipulator } from "./sudo-manipulator.ts";
+import { ValidationManipulator } from "./validation-manipulator.ts";
+import { XCMPManipulator } from "./xcmp-manipulator.ts";
+import { CumulusManipulator } from "./cumulus-manipulator.ts";
+
 const debug = Debug("helper:state-manager");
 
 export type NetworkName = "moonbeam" | "moonriver" | "alphanet" | "stagenet";
@@ -62,17 +65,20 @@ export interface DownloadOptions {
 
   // Prefers clean state (without heavy contract, 80% smaller on moonbeam)
   useCleanState?: boolean;
+
+  // Will download the state of the given date or the latest if not provided
+  stateDate?: string;
 }
 
 // Downloads the exported state from s3. Only if the xxx-chain-info.json file hasn't changed
 // 2 files are created:
 export async function downloadExportedState(
   options: DownloadOptions,
-  onStart?: (size: number) => void,
+  onStart?: (size: number, filename: string) => void,
   onProgress?: (bytes: number) => void,
   onComplete?: () => void,
 ): Promise<{ stateFile: string; stateInfo: StateInfo }> {
-  const { network, outPath, checkLatest, useCleanState } = options;
+  const { network, outPath, checkLatest, useCleanState, stateDate } = options;
 
   if (!STORAGE_NAMES[network]) {
     console.warn(`Invalid network ${network}, expecting ${Object.keys(STORAGE_NAMES).join(", ")}`);
@@ -110,13 +116,13 @@ export async function downloadExportedState(
       return { stateFile, stateInfo };
     }
   }
-  const client = new Client(`http://states.kaki.dev`);
-  const downloadedStateInfo: StateInfo = await (
+  const client = new Client(`https://export.kaki.dev`);
+  const downloadedStateInfo: StateInfo = (await (
     await client.request({
-      path: `/${network}-state.info.json`,
+      path: `/${network}-state${stateDate ? `-${stateDate}` : ""}.info.json`,
       method: "GET",
     })
-  ).body.json();
+  ).body.json()) as StateInfo;
 
   // Already latest version
   if (stateInfo && stateInfo.blockHash == downloadedStateInfo.blockHash) {
@@ -164,6 +170,7 @@ export async function downloadExportedState(
           onStart &&
             onStart(
               parseInt(headerStrings[headerStrings.findIndex((h) => h == "Content-Length") + 1]),
+              stateFileName,
             );
           return true;
         },
@@ -209,6 +216,7 @@ export async function neutralizeExportedState(
       return { current, first: 0, length: 100 };
     }),
     new AuthorFilteringManipulator(100),
+    new CumulusManipulator(0n),
     new SudoManipulator(ALITH_ADDRESS),
     new CollatorManipulator(ALITH_ADDRESS, ALITH_SESSION_ADDRESS),
     new HRMPManipulator(),

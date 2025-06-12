@@ -1,14 +1,15 @@
 // This script is expected to run against a parachain network (using launch.ts script)
-import yargs from "yargs";
-import { Knex, knex } from "knex";
-import sqlite3 from "sqlite3";
-import axios from "axios";
-
 import "@moonbeam-network/api-augment";
 
-import { getApiFor, NETWORK_YARGS_OPTIONS } from "..";
+import axios from "axios";
+import { Knex, knex } from "knex";
+import sqlite3 from "sqlite3";
+import yargs from "yargs";
 
-const debug = require("debug")("indexer:smart-contract");
+import { getApiFor, NETWORK_YARGS_OPTIONS } from "../index.ts";
+
+import debugPkg from "debug";
+const debug = debugPkg("indexer:smart-contract");
 
 const argv = yargs(process.argv.slice(2))
   .usage("Usage: $0")

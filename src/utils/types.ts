@@ -1,3 +1,7 @@
+import { ApiPromise } from "@polkadot/api";
+
+import { EXTRINSIC_BASE_WEIGHT } from "./constants.ts";
+
 import type {
   DispatchError,
   DispatchInfo,
@@ -6,13 +10,7 @@ import type {
   InclusionFee,
 } from "@polkadot/types/interfaces";
 import type { u128 } from "@polkadot/types";
-import { BN } from "@polkadot/util";
-
 import type { TxWithEvent } from "@polkadot/api-derive/types";
-import { ApiPromise } from "@polkadot/api";
-import { toPairsIn } from "lodash";
-import { EXTRINSIC_BASE_WEIGHT } from "./constants";
-
 export interface ComputedFees {
   baseFee: bigint;
   lenFee: bigint;
@@ -50,9 +48,9 @@ export const mapExtrinsics = async (
           return event;
         });
 
-      const unadjustedWeightFee = (
+      const unadjustedWeightFee = dispatchInfo ? (
         (await api.call.transactionPaymentApi.queryWeightToFee(dispatchInfo.weight)) as any
-      ).toBigInt();
+      ).toBigInt() : 0n;
       const lengthFee = (
         (await api.call.transactionPaymentApi.queryLengthToFee(extrinsic.encodedLength)) as any
       ).toBigInt();

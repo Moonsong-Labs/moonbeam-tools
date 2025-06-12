@@ -1,23 +1,23 @@
 // This script is expected to run against a parachain network (using launch.ts script)
-
-import moment from "moment";
-import prettyBytes from "pretty-bytes";
+import chalk from "chalk";
 import { SingleBar } from "cli-progress";
-import { runTask, spawnTask } from "../utils/runner";
+import fs from "fs/promises";
+import inquirer from "inquirer";
+import moment from "moment";
+import fetch from "node-fetch";
 import { ChildProcessWithoutNullStreams } from "node:child_process";
+import path from "path";
+import prettyBytes from "pretty-bytes";
 import semver from "semver";
 import yargs from "yargs";
-import chalk from "chalk";
-import fs from "fs/promises";
-import fetch from "node-fetch";
-import path from "path";
+
 import {
   downloadExportedState,
   NetworkName,
   neutralizeExportedState,
-} from "../libs/helpers/state-manipulator";
-import { ALITH_PRIVATE_KEY } from "../utils/constants";
-import inquirer from "inquirer";
+} from "../libs/helpers/state-manipulator/index.ts";
+import { ALITH_PRIVATE_KEY } from "../utils/constants.ts";
+import { runTask, spawnTask } from "../utils/runner.ts";
 
 const argv = yargs(process.argv.slice(2))
   .usage("Usage: $0")
@@ -51,6 +51,10 @@ const argv = yargs(process.argv.slice(2))
       type: "boolean",
       description: "Downloads the smaller state version (without super heavy contracts)",
       default: true,
+    },
+    "state-date": {
+      type: "string",
+      description: "Specify the date of the state to download (default to latest available) ",
     },
     sealing: {
       type: "string",
@@ -297,9 +301,10 @@ const main = async () => {
       outPath: argv["base-path"],
       checkLatest: argv.latest,
       useCleanState: argv["smaller-state"],
+      stateDate: argv["state-date"],
     },
-    (length) => {
-      process.stdout.write(`${chalk.yellow(`Downloading`)}\n`);
+    (length, filename) => {
+      process.stdout.write(`${chalk.yellow(`Downloading ${filename}...`)}\n`);
       progressBar = new SingleBar({
         etaAsynchronousUpdate: true,
         fps: 5,
@@ -565,6 +570,7 @@ const main = async () => {
     "--collator",
     "--db-cache 4096",
     `--trie-cache-size ${argv["trie-cache-size"]}`,
+    "--unsafe-force-node-key-generation",
   ];
   const devParams = [
     "--no-hardware-benchmarks",

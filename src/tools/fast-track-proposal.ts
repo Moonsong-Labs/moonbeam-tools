@@ -1,22 +1,23 @@
-/*
-  Performs a runtime upgrade through sudo or council (requires polkadot v0.9.32+)
-
-Ex: ./node_modules/.bin/ts-node-transpile-only src/tools/upgrade-network.ts \
-   --url ws://localhost:9944 \
-   --send-proposal-as council-external \
-   --collective-threshold 3 \
-   --proxy <council-account> \
-   --account-priv-key <key> \
-*/
-import yargs from "yargs";
-import "@polkadot/api-augment";
+//
+//   Performs a runtime upgrade through sudo or council (requires polkadot v0.9.32+)
+//
+// Ex: bun src/tools/upgrade-network.ts \
+//    --url ws://localhost:9944 \
+//    --send-proposal-as council-external \
+//    --collective-threshold 3 \
+//    --proxy <council-account> \
+//    --account-priv-key <key> \
 import "@moonbeam-network/api-augment";
+import "@polkadot/api-augment";
+
 import { Keyring } from "@polkadot/api";
-import { getApiFor, NETWORK_YARGS_OPTIONS } from "../utils/networks";
-import { monitorSubmittedExtrinsic, waitForAllMonitoredExtrinsics } from "../utils/monitoring";
-import { maybeProxyCall } from "../utils/transactions";
-import { ALITH_PRIVATE_KEY } from "../utils/constants";
 import { SubmittableExtrinsic } from "@polkadot/api/promise/types";
+import yargs from "yargs";
+
+import { ALITH_PRIVATE_KEY } from "../utils/constants.ts";
+import { monitorSubmittedExtrinsic, waitForAllMonitoredExtrinsics } from "../utils/monitoring.ts";
+import { getApiFor, NETWORK_YARGS_OPTIONS } from "../utils/networks.ts";
+import { maybeProxyCall } from "../utils/transactions.ts";
 
 const argv = yargs(process.argv.slice(2))
   .usage("Usage: $0")

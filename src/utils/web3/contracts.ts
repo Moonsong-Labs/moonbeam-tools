@@ -1,7 +1,7 @@
-import Web3 from "web3";
 import * as rlp from "rlp";
-import { customWeb3Request } from "./transactions";
-import { Account, TransactionReceipt } from "web3-core";
+import { TransactionReceipt, Web3, Web3BaseWalletAccount } from "web3";
+
+import { customWeb3Request } from "./transactions.ts";
 
 export interface SolidityContractBundle {
   abi: any;
@@ -15,7 +15,7 @@ export interface SolidityContractBundle {
 export const deployContract = async (
   web3: Web3,
   contract: SolidityContractBundle,
-  deployer: Account,
+  deployer: Web3BaseWalletAccount,
   nonce: number,
   gasLimit = 1000000,
 ) => {
@@ -27,7 +27,7 @@ export const deployContract = async (
 
   const code = await customWeb3Request(web3, "eth_getCode", [contractAddress]);
   if (code && code.result && code.result != "0x") {
-    console.log(`Contract already deployed: ${code.result.length} bytes`);
+    console.log(`Contract already deployed: ${code.result?.["length"]} bytes`);
     return;
   }
 
@@ -68,7 +68,7 @@ export const callContract = async (
   contractBundle: SolidityContractBundle,
   contractAddress: string,
   call: { funcName: string; params: any[]; gasLimit: number },
-  caller: Account,
+  caller: Web3BaseWalletAccount,
   nonce: number,
 ) => {
   const contract = new web3.eth.Contract(contractBundle.abi, contractAddress);

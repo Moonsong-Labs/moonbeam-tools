@@ -1,9 +1,10 @@
+import { u8aConcat, u8aToHex } from "@polkadot/util";
+import { blake2AsU8a, xxhashAsU8a } from "@polkadot/util-crypto";
+import chalk from "chalk";
 import Debug from "debug";
 import fs from "node:fs/promises";
 import readline from "readline";
-import chalk from "chalk";
-import { xxhashAsU8a, blake2AsU8a } from "@polkadot/util-crypto";
-import { u8aConcat, u8aToHex } from "@polkadot/util";
+
 const debug = Debug("helper:state-manipulator");
 
 // Buffer size in lines used to write to the file

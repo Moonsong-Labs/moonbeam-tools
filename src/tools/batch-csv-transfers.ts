@@ -1,16 +1,15 @@
 // Script to do a batch of transfers using a CSV file containing format:
-
+//
 // 0x4BD99C921C410B4129C129B9Ae8edEF2522C4c4c,505
 // 0xCFA4879A0Ba0D59b097C3b84401c51f120b98665,255
 // 0x217fDd8B6cDF8F3f8f2388C7aF749A6F9cc1034A,55
 // 0x22149c295D3CC843E2A14ABe93D33e0765Fb18c4,55
-
 import { Keyring } from "@polkadot/api";
 import chalk from "chalk";
 import fs from "fs";
 import yargs from "yargs";
 
-import { getApiFor, NETWORK_YARGS_OPTIONS } from "../utils/networks";
+import { getApiFor, NETWORK_YARGS_OPTIONS } from "../utils/networks.ts";
 
 const argv = yargs(process.argv.slice(2))
   .usage("Usage: $0")

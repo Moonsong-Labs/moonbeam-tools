@@ -1,5 +1,7 @@
 import Debug from "debug";
-import { Action, encodeStorageKey, StateManipulator } from "./genesis-parser";
+
+import { Action, encodeStorageKey, StateManipulator } from "./genesis-parser.ts";
+
 const debug = Debug("helper:authorize-upgrade-manipulator");
 
 export class AuthorizeUpgradeManipulator implements StateManipulator {
@@ -9,10 +11,14 @@ export class AuthorizeUpgradeManipulator implements StateManipulator {
 
   constructor(runtimeHash: string) {
     this.runtimeHash = runtimeHash;
-    this.storageKey = encodeStorageKey("ParachainSystem", "AuthorizedUpgrade");
+    this.storageKey = encodeStorageKey("System", "AuthorizedUpgrade"); // Previously ParachainSystem
     this.lastRelayChainBlockNumberKey = encodeStorageKey(
       "ParachainSystem",
       "LastRelayChainBlockNumber",
+    );
+    debug(`Using key ${this.storageKey} for System.AuthorizedUpgrade`);
+    debug(
+      `Using key ${this.lastRelayChainBlockNumberKey} for ParachainSystem.LastRelayChainBlockNumber`,
     );
   }
 

@@ -2,7 +2,7 @@
 import chalk from "chalk";
 import yargs from "yargs";
 
-import { getApiFor, DelegatorRequest, NETWORK_YARGS_OPTIONS } from "..";
+import { DelegatorRequest, getApiFor, NETWORK_YARGS_OPTIONS } from "../index.ts";
 
 const argv = yargs(process.argv.slice(2))
   .usage("Usage: $0")

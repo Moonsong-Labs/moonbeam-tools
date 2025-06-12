@@ -1,14 +1,14 @@
 // This script is expected to run against a parachain network (using launch.ts script)
-
-import yargs from "yargs";
-import chalk from "chalk";
-import { FrameSupportPreimagesBounded } from "@polkadot/types/lookup";
-const debug = require("debug")("fast-executor");
-
-import { ALITH_PRIVATE_KEY, getApiFor, NETWORK_YARGS_OPTIONS } from "..";
 import { ApiPromise, Keyring } from "@polkadot/api";
+import { FrameSupportPreimagesBounded } from "@polkadot/types/lookup";
 import { blake2AsHex } from "@polkadot/util-crypto";
+import chalk from "chalk";
+import yargs from "yargs";
 
+import { ALITH_PRIVATE_KEY, getApiFor, NETWORK_YARGS_OPTIONS } from "../index.ts";
+
+import debugPkg from "debug";
+const debug = debugPkg("fast-executor");
 const argv = yargs(process.argv.slice(2))
   .usage("Usage: $0")
   .version("1.0.0")

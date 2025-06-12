@@ -1,12 +1,14 @@
-import yargs from "yargs";
-import fs from "fs";
-import path from "path";
-import "@polkadot/api-augment";
 import "@moonbeam-network/api-augment";
-import { getApiFor, getWsProviderFor, NETWORK_YARGS_OPTIONS } from "../utils/networks";
+import "@polkadot/api-augment";
+
 import { hexToNumber } from "@polkadot/util";
-import { processAllStorage } from "../utils/storage";
+import fs from "fs";
 import moment from "moment";
+import path from "path";
+import yargs from "yargs";
+
+import { getApiFor, getWsProviderFor, NETWORK_YARGS_OPTIONS } from "../utils/networks.ts";
+import { processAllStorage } from "../utils/storage.ts";
 
 const argv = yargs(process.argv.slice(2))
   .usage("Usage: $0")

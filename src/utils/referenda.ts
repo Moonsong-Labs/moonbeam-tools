@@ -1,16 +1,14 @@
 // Extracted from useReference from @polkadot/apps page-referenda
-
 import { ApiPromise } from "@polkadot/api";
 import { DeriveProposalImage } from "@polkadot/api-derive/types";
 import { ApiDecoration } from "@polkadot/api/types";
-import type { Bytes } from "@polkadot/types";
-import type { Call, Hash } from "@polkadot/types/interfaces";
 import {
   FrameSupportPreimagesBounded,
   PalletConvictionVotingTally,
   PalletPreimageRequestStatus,
   PalletRankedCollectiveTally,
   PalletReferendaCurve,
+  PalletReferendaReferendumInfo,
   PalletReferendaReferendumInfoConvictionVotingTally,
   PalletReferendaReferendumInfoRankedCollectiveTally,
   PalletReferendaReferendumStatusConvictionVotingTally,
@@ -18,26 +16,29 @@ import {
 } from "@polkadot/types/lookup";
 import {
   BN,
-  bnMax,
-  bnMin,
   BN_BILLION,
   BN_ONE,
   BN_ZERO,
+  bnMax,
+  bnMin,
   isString,
   stringPascalCase,
 } from "@polkadot/util";
 import { HexString } from "@polkadot/util/types";
 import Debug from "debug";
-import { promiseConcurrent } from "./functions";
+
+import { promiseConcurrent } from "./functions.ts";
+
+import type { Bytes } from "@polkadot/types";
+import type { Call, Hash } from "@polkadot/types/interfaces";
+import { PalletReferendaReferendumStatus } from "@polkadot/types/lookup";
 const debug = Debug("tools:referenda");
 
 export interface Referendum {
   decidingEnd?: BN;
   id: number;
-  ongoing: PalletReferendaReferendumStatusConvictionVotingTally;
-  info:
-    | PalletReferendaReferendumInfoConvictionVotingTally
-    | PalletReferendaReferendumInfoRankedCollectiveTally;
+  ongoing: PalletReferendaReferendumStatus;
+  info: PalletReferendaReferendumInfo;
   isConvictionVote: boolean;
   key: string;
   track?: PalletReferendaTrackInfo;
@@ -69,7 +70,7 @@ export function isConvictionTally(
   );
 }
 
-function curveDelay(curve: PalletReferendaCurve, input: BN, div: BN): BN {
+export function curveDelay(curve: PalletReferendaCurve, input: BN, div: BN): BN {
   // if divisor is zero, we return the max
   if (div.isZero()) {
     return BN_BILLION;
@@ -148,10 +149,8 @@ function calcDecidingEnd(
 }
 
 export function isConvictionVote(
-  info:
-    | PalletReferendaReferendumInfoConvictionVotingTally
-    | PalletReferendaReferendumInfoRankedCollectiveTally,
-): info is PalletReferendaReferendumInfoConvictionVotingTally {
+  info: PalletReferendaReferendumInfo,
+): info is PalletReferendaReferendumInfo {
   return info.isOngoing && isConvictionTally(info.asOngoing.tally);
 }
 
@@ -181,13 +180,8 @@ function parseImage(
   }
 
   const [proposer, balance] = status.isUnrequested
-    ? "deposit" in status.asUnrequested
-      ? status.asUnrequested["deposit"]
-      : status.asUnrequested.ticket
-    : ("deposit" in status.asRequested
-        ? status.asRequested["deposit"]
-        : status.asRequested.maybeTicket
-      ).unwrapOrDefault();
+    ? status.asUnrequested.ticket
+    : status.asRequested.maybeTicket.unwrapOrDefault();
   let proposal: Call | undefined;
 
   if (bytes) {
@@ -202,10 +196,7 @@ function parseImage(
 }
 
 async function getImageProposal(api: ApiPromise | ApiDecoration<"promise">, hash: string) {
-  const optStatus =
-    "requestStatusFor" in api.query.preimage
-      ? await api.query.preimage["requestStatusFor"](hash)
-      : await api.query.preimage.statusFor(hash);
+  const optStatus = await api.query.preimage.requestStatusFor(hash);
   const status = optStatus.unwrapOr(null) as PalletPreimageRequestStatus;
   if (!status) {
     return null;
@@ -228,9 +219,7 @@ async function getImageProposal(api: ApiPromise | ApiDecoration<"promise">, hash
 }
 
 // Returns the block at which the referendum ended, 0 if onGoing;
-function getReferendumConclusionBlock(
-  info: PalletReferendaReferendumInfoConvictionVotingTally,
-): number {
+function getReferendumConclusionBlock(info: PalletReferendaReferendumInfo): number {
   if (info.isOngoing) {
     return 0;
   }
@@ -253,7 +242,7 @@ function getReferendumConclusionBlock(
 async function getReferendumOnGoing(
   api: ApiPromise,
   id: number,
-  info: PalletReferendaReferendumInfoConvictionVotingTally,
+  info: PalletReferendaReferendumInfo,
 ) {
   if (info.isOngoing) {
     return { apiAt: api, ongoing: info.asOngoing };

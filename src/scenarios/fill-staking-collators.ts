@@ -1,12 +1,11 @@
 // This script is expected to run against a parachain network (using launch.ts script)
-
 import { Keyring } from "@polkadot/api";
-
 import yargs from "yargs";
-import { getMonitoredApiFor, NETWORK_YARGS_OPTIONS } from "../utils/networks";
 import { SubmittableExtrinsic } from "@polkadot/api/promise/types";
-import { sendAllStreamAndWaitLast } from "../utils/transactions";
-import { ALITH_PRIVATE_KEY, BALTATHAR_PRIVATE_KEY } from "..";
+
+import { ALITH_PRIVATE_KEY, BALTATHAR_PRIVATE_KEY } from "../index.ts";
+import { getMonitoredApiFor, NETWORK_YARGS_OPTIONS } from "../utils/networks.ts";
+import { sendAllStreamAndWaitLast } from "../utils/transactions.ts";
 
 const argv = yargs(process.argv.slice(2))
   .usage("Usage: $0")

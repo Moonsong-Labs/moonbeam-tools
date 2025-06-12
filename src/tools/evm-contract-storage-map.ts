@@ -2,7 +2,7 @@
 import * as web3Utils from "web3-utils";
 import yargs from "yargs";
 
-import { getApiFor, NETWORK_YARGS_OPTIONS } from "..";
+import { getApiFor, NETWORK_YARGS_OPTIONS } from "../index.ts";
 
 const argv = yargs(process.argv.slice(2))
   .usage("Usage: $0")

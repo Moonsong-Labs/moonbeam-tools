@@ -1,12 +1,14 @@
 //@ts-nocheck
 // This script is expected to run against a parachain network (using launch.ts script)
-import yargs from "yargs";
-import fs from "fs";
-import type { FrameSystemAccountInfo } from "@polkadot/types/lookup";
-import { Keyring } from "@polkadot/api";
 import "@moonbeam-network/api-augment";
 
-import { getApiFor, NETWORK_YARGS_OPTIONS } from "..";
+import { Keyring } from "@polkadot/api";
+import fs from "fs";
+import yargs from "yargs";
+
+import { getApiFor, NETWORK_YARGS_OPTIONS } from "../index.ts";
+
+import type { FrameSystemAccountInfo } from "@polkadot/types/lookup";
 
 const argv = yargs(process.argv.slice(2))
   .usage("Usage: $0")

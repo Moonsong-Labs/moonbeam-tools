@@ -1,13 +1,11 @@
 // This script is expected to run against a parachain network (using launch.ts script)
-
-import { ALITH_PRIVATE_KEY } from "../utils/constants";
 import { Keyring } from "@polkadot/api";
-import { TransactionReceipt } from "web3-core";
-
+import { TransactionReceipt, Web3 } from "web3";
 import yargs from "yargs";
-import { getMonitoredApiFor, NETWORK_YARGS_OPTIONS } from "../utils/networks";
-import Web3 from "web3";
-import { customWeb3Request } from "../utils/web3/transactions";
+
+import { ALITH_PRIVATE_KEY } from "../utils/constants.ts";
+import { getMonitoredApiFor, NETWORK_YARGS_OPTIONS } from "../utils/networks.ts";
+import { customWeb3Request } from "../utils/web3/transactions.ts";
 
 const argv = yargs(process.argv.slice(2))
   .usage("Usage: $0")
