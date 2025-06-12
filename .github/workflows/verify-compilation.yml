@@ -21,13 +21,21 @@ jobs:
           node-version: "24"
           cache: 'npm'
 
+      - name: Verify package-lock.json exists
+        run: |
+          if [ ! -f "package-lock.json" ]; then
+            echo "ERROR: package-lock.json not found!"
+            exit 1
+          fi
+          echo "package-lock.json found ✓"
+
       - name: Install dependencies
         timeout-minutes: 10
         run: |
           echo "Node version: $(node --version)"
           echo "NPM version: $(npm --version)"
           echo "NPM cache directory: $(npm config get cache)"
-          echo "Starting npm ci (clean install)..."
+          echo "Starting npm ci (clean install from package-lock.json)..."
           npm ci --no-audit
 
       - name: Setup bun
