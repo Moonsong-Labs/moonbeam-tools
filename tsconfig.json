@@ -2,8 +2,9 @@
   "compilerOptions": {
     "target": "esnext",
     "module": "esnext",
-    "moduleResolution": "node",
+    "moduleResolution": "Bundler",
     "strict": false,
+    "allowImportingTsExtensions": true,
     "noImplicitAny": false,
     "noImplicitReturns": false,
     "esModuleInterop": true,
