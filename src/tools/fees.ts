@@ -223,6 +223,7 @@ async function runTest(
   const loadFactors = [...Array(183).fill(55)];
   // const loadFactors = [...Array(1).fill(0)];
   const repsPerLoad = 30;
+  const result = [];
   for await (const [loadFactorIndex, loadFactor] of loadFactors.entries()) {
     console.log(
       `load: ${loadFactor} (${repsPerLoad} reps)  ${loadFactorIndex + 1}/${loadFactors.length}`,
@@ -726,14 +727,14 @@ function compileSolidity(fileContents: string): Compiled {
       },
     ),
   );
-  if (!result.contracts) {
-    throw result;
+  if (!_result.contracts) {
+    throw _result;
   }
-  const allContractNames = Object.keys(result.contracts["main.sol"]);
+  const allContractNames = Object.keys(_result.contracts["main.sol"]);
   const reduced = allContractNames.reduce((p, contractName) => {
     p[contractName] = {
-      byteCode: "0x" + result.contracts["main.sol"][contractName].evm.bytecode.object,
-      contract: result.contracts["main.sol"][contractName],
+      byteCode: "0x" + _result.contracts["main.sol"][contractName].evm.bytecode.object,
+      contract: _result.contracts["main.sol"][contractName],
       sourceCode: fileContents,
     };
     return p;

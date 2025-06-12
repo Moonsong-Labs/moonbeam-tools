@@ -26,5 +26,5 @@ export function compileSolidity(
     ),
   );
 
-  return result.contracts["main.sol"][contractName] as SolidityContractBundle;
+  return _result.contracts["main.sol"][contractName] as SolidityContractBundle;
 }

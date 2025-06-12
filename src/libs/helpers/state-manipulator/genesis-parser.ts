@@ -168,11 +168,11 @@ export async function processState(
     if (stateLine?.value) {
       manipulators.map((manipulator) => {
         const _result = manipulator.processWrite(stateLine);
-        if (!result) {
+        if (!_result) {
           return;
         }
-        const { action, extraLines } = result;
-        debug(
+        const { action, extraLines } = _result;
+        _debug(
           `      - ${chalk.red(action.padStart(6, " "))} ${stateLine.key}: ${stateLine.value.slice(
             0,
             100,
@@ -183,7 +183,7 @@ export async function processState(
         }
         if (extraLines && extraLines.length > 0) {
           for (const line of extraLines) {
-            debug(
+            _debug(
               `      - ${chalk.green("add".padStart(6, " "))} ${line.key}: ${line.value
                 .toString()
                 .slice(0, 100)}`,

@@ -19,14 +19,14 @@ export class HRMPManipulator implements StateManipulator {
 
   processWrite = ({ key, value }) => {
     if (key.startsWith(this.revelantMessagingKey)) {
-      debug(`Clearing RelevantMessaging dmq_mqc_head: ${value.slice(0, 66)}`);
+      _debug(`Clearing RelevantMessaging dmq_mqc_head: ${value.slice(0, 66)}`);
       return {
         action: "remove" as Action,
         extraLines: [{ key, value: `0x${new Array(64).fill(0).join("")}${value.slice(66)}` }],
       };
     }
     if (key.startsWith(this.lastDmqMqcHeadKey)) {
-      debug(`Clearing LastDmqMqcHead: ${value}`);
+      _debug(`Clearing LastDmqMqcHead: ${value}`);
       return {
         action: "remove" as Action,
         extraLines: [],

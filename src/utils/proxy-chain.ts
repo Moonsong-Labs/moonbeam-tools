@@ -62,7 +62,7 @@ export class ProxyChain {
       .slice()
       .reverse()
       .reduce((call, proxy, index) => {
-        debug(
+        _debug(
           `chain [${index}]: ${proxy.address}${proxy.type ? `:${proxy.type}` : ""} - ${
             call.method.section
           }.${call.method.method}`,

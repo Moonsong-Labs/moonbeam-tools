@@ -45,7 +45,7 @@ async function moveScheduledCallTo(
         if (scheduledEntry.unwrap().maybeId.isSome) {
           const id = scheduledEntry.unwrap().maybeId.unwrap().toHex();
           const lookup = await api.query.scheduler.lookup(id);
-          debug(
+          _debug(
             `Checking lookup ${scheduledEntry.unwrap().maybeId.unwrap().toHex()}: ${lookup.isSome}`,
           );
           if (lookup.isSome) {
@@ -56,7 +56,7 @@ async function moveScheduledCallTo(
               0,
             ]);
             const _result = await api.rpc("dev_setStorage", [[lookupKey, fastLookup.toHex()]]);
-            debug(`Updated lookup to ${fastLookup.toJSON()}`);
+            _debug(`Updated lookup to ${fastLookup.toJSON()}`);
           }
         }
       }

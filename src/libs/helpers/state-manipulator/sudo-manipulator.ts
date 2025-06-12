@@ -19,7 +19,7 @@ export class SudoManipulator implements StateManipulator {
     if (!key.startsWith(this.storagePrefix)) {
       return;
     }
-    debug(`Found sudo key: ${value}`);
+    _debug(`Found sudo key: ${value}`);
     return {
       action: "remove" as Action,
       extraLines: [{ key, value: this.sudoAccount }],

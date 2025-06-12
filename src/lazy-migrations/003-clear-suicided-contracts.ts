@@ -97,7 +97,7 @@ async function main() {
     if (!privKey) {
       throw new Error("No private key provided");
     }
-    const account = keyring.addFromUri(privKey, undefined, "ethereum");
+    account = keyring.addFromUri(privKey, undefined, "ethereum");
     const { nonce: rawNonce } = await api.query.system.account(account.address);
     nonce = BigInt(rawNonce.toString());
 
@@ -129,10 +129,10 @@ async function main() {
           .toHex()
           .slice(2)
           .slice(SKIP_BYTES * 2);
-        const address_blake2_hash = blake2AsHex("0x" + address, 128).slice(2);
+        const address_blake2_hash = blake2AsHex("0x" + _address, 128).slice(2);
 
-        const contract_suicided_key = evmIsSuicidedPrefix + address_blake2_hash + address;
-        contract_suicided_keys[contract_suicided_key] = address;
+        const contract_suicided_key = evmIsSuicidedPrefix + address_blake2_hash + _address;
+        contract_suicided_keys[contract_suicided_key] = _address;
       }
 
       let keys_vec = Object.keys(contract_suicided_keys);

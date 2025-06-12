@@ -80,8 +80,8 @@ async function main() {
 
   const _result = await dichotomicSearch(api, startBlock, endBlock, storageKey);
 
-  if (result !== null) {
-    console.log(`Change detected at block: ${result}`);
+  if (_result !== null) {
+    console.log(`Change detected at block: ${_result}`);
   } else {
     console.log("No change detected in the specified range.");
   }

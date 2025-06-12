@@ -198,7 +198,7 @@ const main = async () => {
       let blockBurnt = 0n;
       let blockWeight = 0n;
       let blockTreasure = 0n;
-      debug(
+      _debug(
         `Processing ${blockDetails.block.header.number.toString()}: ${blockDetails.block.header.hash.toString()}`,
       );
 
@@ -240,7 +240,7 @@ const main = async () => {
         const dispatchInfo = isSuccess
           ? (extrinsicResult?.data[0] as DispatchInfo)
           : (extrinsicResult?.data[1] as DispatchInfo);
-        debug(`  - Extrinsic ${extrinsic.method.toString()}: ${isSuccess ? "Ok" : "Failed"}`);
+        _debug(`  - Extrinsic ${extrinsic.method.toString()}: ${isSuccess ? "Ok" : "Failed"}`);
 
         if (
           extrinsic.method.section === "parachainSystem" &&
@@ -334,7 +334,7 @@ const main = async () => {
             if (collatorDepositEvent && runtimeVersion < 1600) {
               const extraFees = payload.isEip1559 ? gasTips : gasFee - baseFeePerGas;
               collatorDeposit = (collatorDepositEvent.data[1] as any).toBigInt();
-              debug(`collator deposit : ${collatorDeposit.toString().padStart(30, " ")}`);
+              _debug(`collator deposit : ${collatorDeposit.toString().padStart(30, " ")}`);
 
               if (collatorDeposit !== extraFees * gasUsed) {
                 console.log(
@@ -442,7 +442,7 @@ const main = async () => {
               txBurnt = (txFees * 80n) / 100n; // 80% goes to burnt (20% - round-up will go to treasury)
             }
           }
-          debug(`    Validated`);
+          _debug(`    Validated`);
         }
         blockWeight += (dispatchInfo.weight.refTime || (dispatchInfo.weight as any)).toBigInt();
         blockFees += txFees;

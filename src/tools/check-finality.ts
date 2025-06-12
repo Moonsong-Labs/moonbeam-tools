@@ -28,7 +28,7 @@ const main = async () => {
 
   const batchSize = 20000;
   const i = argv.start;
-  debug(`Checking from ${i} to ${endNumber}...`);
+  _debug(`Checking from ${i} to ${endNumber}...`);
   for (let i = argv.start; i < endNumber; i += batchSize) {
     await promiseConcurrent(
       10,
@@ -53,14 +53,14 @@ const main = async () => {
       },
       new Array(batchSize).fill(0),
     ).catch(async (err) => {
-      debug(`Failed ${i} retrying`, err);
+      _debug(`Failed ${i} retrying`, err);
       i -= batchSize;
       await new Promise((resolve) => {
         setTimeout(resolve, 1000);
       });
     });
 
-    debug(`${i}...`);
+    _debug(`${i}...`);
   }
   console.log(`Analyzed from ${argv.start} to ${endNumber}`);
   api.disconnect();

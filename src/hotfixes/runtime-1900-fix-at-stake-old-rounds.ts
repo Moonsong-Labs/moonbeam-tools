@@ -154,7 +154,7 @@ async function main() {
 
           // skip if unpaid round
           if (round.gte(maxUnpaidRound)) {
-            debug(
+            _debug(
               `Skipping round ${round} (current: ${currentRound.current.toNumber()}): ${candidate.toString()}`,
             );
             return;
@@ -187,7 +187,7 @@ async function main() {
           }
           // Cannot use atStake(...) directly because of different types in 1900
           const storageSize = await api.rpc.state.getStorageSize(key, blockHash);
-          debug(
+          _debug(
             `Round ${round.toString().padStart(5, " ")} [${storageSize
               .toString()
               .padStart(5, " ")} Bytes]: ${candidate.toString()}`,

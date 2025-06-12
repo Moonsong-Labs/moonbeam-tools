@@ -59,10 +59,10 @@ export class AssetManipulator implements StateManipulator {
       const currentTotal = hexToBigInt(value.slice(162, 194), { isLe: true });
       const supply = bnToHex(currentTotal + this.amount, { isLe: true, bitLength: 128 }).slice(2);
       const _address = "6d6f646c617373746d6e67720000000000000000";
-      const owner = address;
-      const issuer = address;
-      const admin = address;
-      const freezer = address;
+      const owner = _address;
+      const issuer = _address;
+      const admin = _address;
+      const freezer = _address;
       const deposit = nToHex(0, { isLe: true, bitLength: 128 }).slice(2);
       const minBalance = nToHex(1, { isLe: true, bitLength: 128 }).slice(2);
       const isSufficient = nToHex(1, { isLe: true }).slice(2);

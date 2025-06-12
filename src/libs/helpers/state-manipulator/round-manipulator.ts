@@ -28,8 +28,8 @@ export class RoundManipulator implements StateManipulator {
     const current = hexToBn(value.slice(0, 2 + 8), { isLe: true }).toNumber();
     const first = hexToBn(`0x${value.slice(10, 10 + 8)}`, { isLe: true }).toNumber();
     const length = hexToBn(`0x${value.slice(18, 18 + 8)}`, { isLe: true }).toNumber();
-    debug(`Found round info`, { current, first, length });
-    const _result = this.roundProcessor(current, first, length);
+    _debug(`Found round info`, { current, first, length });
+    const result = this.roundProcessor(current, first, length);
     return {
       action: "remove" as Action,
       extraLines: [

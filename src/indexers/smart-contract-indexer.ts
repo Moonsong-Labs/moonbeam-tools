@@ -130,7 +130,7 @@ const main = async () => {
 
       const sourceData = await axios
         .get(
-          `https://api-${runtimeName}.moonscan.io/api?module=contract&action=getsourcecode&address=${address}`,
+          `https://api-${runtimeName}.moonscan.io/api?module=contract&action=getsourcecode&address=${_address}`,
         )
         .then((res) => {
           const jsonResp = res.data;
@@ -173,12 +173,12 @@ const main = async () => {
           key,
           ...sourceData,
           bytecode,
-          address,
-          tokens: (await apiAt.query.system.account(address)).data.free.toBigInt().toString(),
+          address: _address,
+          tokens: (await apiAt.query.system.account(_address)).data.free.toBigInt().toString(),
         })
         .onConflict("key")
         .merge();
-      console.log(`${address}: ${sourceData.name}`);
+      console.log(`${_address}: ${sourceData.name}`);
       await new Promise((resolve) => setTimeout(resolve, 200));
 
       last_key = key;
@@ -186,7 +186,7 @@ const main = async () => {
 
     // Debug logs to make sure it keeps progressing
     if (count % (10 * limit) === 0) {
-      debug(`Retrieved ${count} accountCodes`);
+      _debug(`Retrieved ${count} accountCodes`);
     }
 
     return false;

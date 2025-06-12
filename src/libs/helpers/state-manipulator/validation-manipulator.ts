@@ -30,7 +30,7 @@ export class ValidationManipulator implements StateManipulator {
       const relayParentStorageRoot = value.slice(-(8 + 64), -8);
       const maxPovSize = value.slice(-8);
 
-      debug(`Reset parachain validation data: ${head}`);
+      _debug(`Reset parachain validation data: ${head}`);
       return {
         action: "remove" as Action,
         extraLines: [
@@ -39,7 +39,7 @@ export class ValidationManipulator implements StateManipulator {
       };
     }
     if (key.startsWith(this.lastRelayChainBlockNumberKey)) {
-      debug(`Reset parachain relay chain block number: ${value}`);
+      _debug(`Reset parachain relay chain block number: ${value}`);
       return {
         action: "remove" as Action,
         extraLines: [{ key, value: nToHex(this.parentNumber, { bitLength: 32 }) }],

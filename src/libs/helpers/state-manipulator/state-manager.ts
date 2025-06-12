@@ -87,7 +87,7 @@ export async function downloadExportedState(
   const stateInfoFileName = `${network}-state.info.json`;
   const stateInfoFile = path.join(outPath, stateInfoFileName);
 
-  debug(`Checking ${STORAGE_NAMES[network]} in ${stateInfoFile}`);
+  _debug(`Checking ${STORAGE_NAMES[network]} in ${stateInfoFile}`);
 
   await fs.mkdir(outPath, { recursive: true });
 
@@ -149,7 +149,7 @@ export async function downloadExportedState(
 
   const fileStream = (await fs.open(stateFile, "w")).createWriteStream();
 
-  debug(
+  _debug(
     `Preparing to download ${stateFileName} (best-hash: ${downloadedStateInfo.blockHash}) to ${stateFile}`,
   );
 
@@ -193,7 +193,7 @@ export async function downloadExportedState(
   // Writing the chain-info after the full state to ensure it is not updated
   // in case of state download failure
   await fs.writeFile(stateInfoFile, JSON.stringify(downloadedStateInfo));
-  debug(`Downloaded ${stateFileName} to ${stateFile}`);
+  _debug(`Downloaded ${stateFileName} to ${stateFile}`);
 
   return { stateFile, stateInfo: downloadedStateInfo };
 }

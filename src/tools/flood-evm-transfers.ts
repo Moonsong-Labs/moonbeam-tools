@@ -56,8 +56,8 @@ const _sendTransfer = async (web3: Web3, from: any, nonce: number) => {
   );
 
   const _result = await customWeb3Request(web3, "eth_sendRawTransaction", [tx.rawTransaction]);
-  if (result.error) {
-    console.error(result.error);
+  if (_result.error) {
+    console.error(_result.error);
     throw new Error(`Error sending transaction!`);
   }
 
@@ -104,7 +104,7 @@ const main = async () => {
     const pending = await polkadotApi.rpc.author.pendingExtrinsics();
     if (pending.length < argv.threshold) {
       new Array(argv.count).fill(0).map(() => {
-        return sendTransfer(web3, deployer, fromNonce++).catch((e) => {
+        return _sendTransfer(web3, _deployer, fromNonce++).catch((e) => {
           console.log(e);
         });
       });

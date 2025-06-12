@@ -94,15 +94,15 @@ const main = async () => {
   const fromAccount = await keyring.addFromUri(argv.from);
   const _deployer = web3.eth.accounts.privateKeyToAccount(argv.from);
   const storageContractAddress =
-    "0x" + web3.utils.sha3(rlp.encode([deployer.address, 0]) as any).substr(26);
+    "0x" + web3.utils.sha3(rlp.encode([_deployer.address, 0]) as any).substr(26);
   const computerContractAddress =
-    "0x" + web3.utils.sha3(rlp.encode([deployer.address, 1]) as any).substr(26);
+    "0x" + web3.utils.sha3(rlp.encode([_deployer.address, 1]) as any).substr(26);
   const storageContract = compileSolidity(storageSource, "Storage");
   const computercontract = compileSolidity(computerSource, "Computer");
 
   await Promise.all([
-    deployContract(web3, storageContract, deployer, 0),
-    deployContract(web3, computercontract, deployer, 1),
+    deployContract(web3, storageContract, _deployer, 0),
+    deployContract(web3, computercontract, _deployer, 1),
   ]);
 
   const computeWeight = {
@@ -127,7 +127,7 @@ const main = async () => {
             computercontract,
             computerContractAddress,
             { ...compute, params: [compute.params[0], fromNonce] },
-            deployer,
+            _deployer,
             fromNonce++,
           ).catch((e) => {});
         }),

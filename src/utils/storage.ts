@@ -14,7 +14,7 @@ const startReport = (total: () => number) => {
     const duration = t1 - t0;
     const qps = total() / (duration / 1000);
     const used = process.memoryUsage().heapUsed / 1024 / 1024;
-    debug(`Queried ${total()} keys @ ${qps.toFixed(0)} keys/sec, ${used.toFixed(0)} MB heap used`);
+    _debug(`Queried ${total()} keys @ ${qps.toFixed(0)} keys/sec, ${used.toFixed(0)} MB heap used`);
 
     timer = setTimeout(report, 5000);
   };
@@ -60,12 +60,12 @@ export async function concurrentGetKeys(
             startKey,
             blockHash,
           ]);
-          total += result.length;
-          keys.push(...result);
-          if (result.length !== maxKeys) {
+          total += _result.length;
+          keys.push(..._result);
+          if (_result.length !== maxKeys) {
             hasMore = false;
           } else {
-            startKey = result[result.length - 1];
+            startKey = _result[_result.length - 1];
           }
         }
         global.gc();
@@ -91,7 +91,7 @@ export async function queryUnorderedRawStorage(
 > {
   const _result = await provider.send("state_queryStorageAt", [keys, blockHash]);
 
-  return result[0].changes.map((pair) => ({
+  return _result[0].changes.map((pair) => ({
     value: pair[1],
     key: pair[0],
   }));

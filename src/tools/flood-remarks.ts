@@ -56,8 +56,8 @@ const _sendTransfer = async (web3: Web3, from: any, nonce: number) => {
   );
 
   const _result = await customWeb3Request(web3, "eth_sendRawTransaction", [tx.rawTransaction]);
-  if (result.error) {
-    console.error(result.error);
+  if (_result.error) {
+    console.error(_result.error);
     throw new Error(`Error sending transaction!`);
   }
 

@@ -27,7 +27,7 @@ export class CumulusManipulator implements StateManipulator {
 
   processWrite = ({ key, value }) => {
     if (key.startsWith(this.slotInfoKey)) {
-      debug(`Found async backing SlotInfo: ${value}. Resetting to ${this.newTimestamp}`);
+      _debug(`Found async backing SlotInfo: ${value}. Resetting to ${this.newTimestamp}`);
       return {
         action: "remove" as Action,
         extraLines: [

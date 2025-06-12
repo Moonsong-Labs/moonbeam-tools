@@ -123,7 +123,7 @@ const main = async () => {
 
     // Debug logs to make sure it keeps progressing
     if (count % (10 * limit) === 0) {
-      debug(`Retrieved ${count} sources`);
+      _debug(`Retrieved ${count} sources`);
     }
 
     return false;

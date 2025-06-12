@@ -40,8 +40,8 @@ const getPrecompileStorageKey = (addressNumber: number) => {
     u8aConcat(
       xxhashAsU8a("EVM", 128),
       xxhashAsU8a("AccountCodes", 128),
-      blake2AsU8a(address, 128),
-      address,
+      blake2AsU8a(_address, 128),
+      _address,
     ),
   ).toString("hex")}`;
 };
@@ -242,7 +242,7 @@ const main = async () => {
               console.log(`Updating precompile ${addressNumber}: ${hash}...`);
               return { addressNumber, hash };
             } catch (err) {
-              debug(err);
+              _debug(err);
               console.log(
                 `Failed to update precompile ${addressNumber}: ${
                   err.details || err.message || err

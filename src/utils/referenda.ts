@@ -213,7 +213,7 @@ async function getImageProposal(api: ApiPromise | ApiDecoration<"promise">, hash
     const preImage = await api.query.preimage.preimageFor([h256Hash, len]);
     return parseImage(api, [status, (preImage as any).unwrap()]);
   } catch (e) {
-    debug(e);
+    _debug(e);
   }
   return null;
 }
@@ -249,7 +249,7 @@ async function getReferendumOnGoing(
   }
   const blockNumber = getReferendumConclusionBlock(info);
 
-  debug(`Ref: ${id} - retrieving past OnGoingfrom block #${blockNumber - 1}`);
+  _debug(`Ref: ${id} - retrieving past OnGoingfrom block #${blockNumber - 1}`);
   const apiAt = await api.at(await api.rpc.chain.getBlockHash(blockNumber - 1));
   const referendumInfo = await apiAt.query.referenda.referendumInfoFor(id);
 

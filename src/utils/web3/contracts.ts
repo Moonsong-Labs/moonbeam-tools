@@ -43,9 +43,9 @@ export const deployContract = async (
     deployer.privateKey,
   );
   const _result = await customWeb3Request(web3, "eth_sendRawTransaction", [tx.rawTransaction]);
-  if (result.error) {
+  if (_result.error) {
     console.error(`Error deploying contract!`);
-    console.error(result.error);
+    console.error(_result.error);
     return;
   }
   console.log(`Transaction sent: ${tx.transactionHash}`);
@@ -88,8 +88,8 @@ export const callContract = async (
   );
 
   const _result = await customWeb3Request(web3, "eth_sendRawTransaction", [tx.rawTransaction]);
-  if (result.error) {
-    console.error(result.error);
+  if (_result.error) {
+    console.error(_result.error);
     throw new Error(`Error calling contract!`);
   }
 

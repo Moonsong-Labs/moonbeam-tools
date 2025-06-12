@@ -70,9 +70,9 @@ const main = async () => {
           call = scheduled[i][1][index].unwrap().call.asInline;
         }
 
-        const extrinsic = api.createType("GenericExtrinsicV4", call).toHuman();
+        const extrinsic = api.createType("GenericExtrinsicV4", call).toHuman() as any;
 
-        if (extrinsic.method.method === "newAuction" && extrinsic.method.section === "auctions") {
+        if (extrinsic.method?.method === "newAuction" && extrinsic.method?.section === "auctions") {
           const key = scheduled[i][0];
           const sliced = key.slice(-4);
 
