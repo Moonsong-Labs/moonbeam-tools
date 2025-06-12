@@ -25,8 +25,8 @@ export const mapExtrinsics = async (
   api: ApiPromise,
   extrinsics: Extrinsic[],
   records: EventRecord[],
-  fees: InclusionFee[],
-  feeMultiplier: u128,
+  _fees: InclusionFee[],
+  _feeMultiplier: u128,
 ) => {
   return Promise.all(
     extrinsics.map(async (extrinsic, index) => {

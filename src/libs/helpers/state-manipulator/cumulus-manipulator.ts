@@ -9,7 +9,7 @@ import {
 } from "./genesis-parser";
 import { nToHex } from "@polkadot/util";
 
-const debug = Debug("helper:cumulus-manipulator");
+const _debug = Debug("helper:cumulus-manipulator");
 
 export class CumulusManipulator implements StateManipulator {
   private readonly newTimestamp: bigint;

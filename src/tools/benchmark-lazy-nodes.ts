@@ -31,7 +31,7 @@ const main = async () => {
   const block = await getBlockDetails(api, blockHash);
 
   const tx = block.txWithEvents.find((tx) => {
-    return tx.extrinsic.hash.toHex().toLocaleLowerCase() == argv.tx.toLocaleLowerCase();
+    return tx.extrinsic.hash.toHex().toLocaleLowerCase() === argv.tx.toLocaleLowerCase();
   });
 
   if (!tx) {
@@ -73,7 +73,7 @@ const main = async () => {
         const block = await getBlockDetails(api, header.hash.toHex());
 
         for (const tx of block.txWithEvents) {
-          if (tx.extrinsic.hash.toHex().toLocaleLowerCase() == argv.tx.toLocaleLowerCase()) {
+          if (tx.extrinsic.hash.toHex().toLocaleLowerCase() === argv.tx.toLocaleLowerCase()) {
             console.log(
               `[${serverName}] Transaction ${argv.tx} found in block ${header.number} ${!tx.dispatchError ? "✅" : "🟥"} (ref: ${tx.dispatchInfo.weight.refTime.toString().padStart(12)}, pov: ${tx.dispatchInfo.weight.proofSize.toString().padStart(9)})`,
             );
@@ -93,7 +93,7 @@ const main = async () => {
         console.error(`[${serverName}] Failed to submit:`, error);
       }
 
-      while (valid == 0) {
+      while (valid === 0) {
         await new Promise((resolve) => setTimeout(resolve, 1000));
       }
 

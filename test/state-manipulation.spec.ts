@@ -31,7 +31,7 @@ describe("State Manipulation", () => {
 
   beforeAll(async () => {
     await processState(inFile, outFile, [
-      new RoundManipulator((current, first, length) => {
+      new RoundManipulator((current, _first, _length) => {
         return { current, first: 0, length: 100 };
       }),
       new SudoManipulator(JUDITH_ADDRESS),

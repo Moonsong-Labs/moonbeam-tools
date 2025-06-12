@@ -53,7 +53,7 @@ const main = async () => {
     api,
     { from: fromBlockNumber, to: toBlockNumber, concurrency: 50 },
     async (blockDetails) => {
-      if (blockDetails.block.header.number.toNumber() % 100 == 0) {
+      if (blockDetails.block.header.number.toNumber() % 100 === 0) {
         console.log(`${blockDetails.block.header.number.toNumber()}...`);
       }
       if (!initialTimestamp || blockDetails.blockTime < initialTimestamp) {
@@ -64,7 +64,7 @@ const main = async () => {
       }
 
       const parachainData = blockDetails.block.extrinsics.find(
-        (e) => e.method.section == "parachainSystem" && e.method.method == "setValidationData",
+        (e) => e.method.section === "parachainSystem" && e.method.method === "setValidationData",
       ).args[0] as ParachainInherentData;
 
       const round = Math.ceil(

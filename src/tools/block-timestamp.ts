@@ -34,7 +34,7 @@ const main = async () => {
       (await api.rpc.chain.getBlockHash(atBlockNumber)).toString(),
     );
     const timestampExt = pastBlock.block.extrinsics.find(
-      (e) => e.method.section == "timestamp" && e.method.method == "set",
+      (e) => e.method.section === "timestamp" && e.method.method === "set",
     );
 
     const timestamp = api.registry.createType("Compact<u64>", timestampExt.data);
@@ -47,7 +47,7 @@ const main = async () => {
     const currentTimestamp = api.registry.createType(
       "Compact<u64>",
       currentBlock.block.extrinsics.find(
-        (e) => e.method.section == "timestamp" && e.method.method == "set",
+        (e) => e.method.section === "timestamp" && e.method.method === "set",
       ).data,
     );
 
@@ -69,7 +69,7 @@ const main = async () => {
       const previousTimestamp = api.registry.createType(
         "Compact<u64>",
         previousBlock.block.extrinsics.find(
-          (e) => e.method.section == "timestamp" && e.method.method == "set",
+          (e) => e.method.section === "timestamp" && e.method.method === "set",
         ).data,
       );
 

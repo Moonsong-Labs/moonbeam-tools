@@ -2,7 +2,7 @@ import Debug from "debug";
 
 import { Action, encodeStorageKey, StateManipulator } from "./genesis-parser";
 
-const debug = Debug("helper:hrmp-manipulator");
+const _debug = Debug("helper:hrmp-manipulator");
 
 export class HRMPManipulator implements StateManipulator {
   private readonly revelantMessagingKey: string;

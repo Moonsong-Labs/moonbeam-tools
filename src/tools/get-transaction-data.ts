@@ -53,7 +53,7 @@ const main = async () => {
       const nestedDecodedArgs = nestedArgs.map((arg: any) => arg.toHuman());
       console.log(`  Nested Args: ${JSON.stringify(nestedDecodedArgs, null, 2)}`);
     }
-    console.log(`${ex.method.method.toString() == "setValidationData" ? "..." : ex.toHex()}`);
+    console.log(`${ex.method.method.toString() === "setValidationData" ? "..." : ex.toHex()}`);
   });
 
   await api.disconnect();

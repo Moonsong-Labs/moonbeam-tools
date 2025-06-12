@@ -26,7 +26,7 @@ export const deployContract = async (
     "0x" + web3.utils.sha3(rlp.encode([deployer.address, nonce]) as any).substr(26);
 
   const code = await customWeb3Request(web3, "eth_getCode", [contractAddress]);
-  if (code && code.result && code.result != "0x") {
+  if (code && code.result && code.result !== "0x") {
     console.log(`Contract already deployed: ${code.result?.["length"]} bytes`);
     return;
   }
@@ -42,7 +42,7 @@ export const deployContract = async (
     },
     deployer.privateKey,
   );
-  const result = await customWeb3Request(web3, "eth_sendRawTransaction", [tx.rawTransaction]);
+  const _result = await customWeb3Request(web3, "eth_sendRawTransaction", [tx.rawTransaction]);
   if (result.error) {
     console.error(`Error deploying contract!`);
     console.error(result.error);
@@ -87,7 +87,7 @@ export const callContract = async (
     caller.privateKey,
   );
 
-  const result = await customWeb3Request(web3, "eth_sendRawTransaction", [tx.rawTransaction]);
+  const _result = await customWeb3Request(web3, "eth_sendRawTransaction", [tx.rawTransaction]);
   if (result.error) {
     console.error(result.error);
     throw new Error(`Error calling contract!`);

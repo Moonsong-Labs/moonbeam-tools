@@ -6,7 +6,7 @@ export function compileSolidity(
   contractContent: string,
   contractName: string = "Test",
 ): SolidityContractBundle {
-  const result = JSON.parse(
+  const _result = JSON.parse(
     solc.compile(
       JSON.stringify({
         language: "Solidity",

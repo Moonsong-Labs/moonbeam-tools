@@ -3,7 +3,7 @@ import Debug from "debug";
 
 import { Action, encodeStorageKey, StateManipulator } from "./genesis-parser";
 
-const debug = Debug("helper:collective-manipulator");
+const _debug = Debug("helper:collective-manipulator");
 
 export class CollectiveManipulator implements StateManipulator {
   private readonly collectiveName: string;

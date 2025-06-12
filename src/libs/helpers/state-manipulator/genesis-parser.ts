@@ -5,7 +5,7 @@ import Debug from "debug";
 import fs from "node:fs/promises";
 import readline from "readline";
 
-const debug = Debug("helper:state-manipulator");
+const _debug = Debug("helper:state-manipulator");
 
 // Buffer size in lines used to write to the file
 const BUFFER_LINE_SIZE = 200;
@@ -85,7 +85,7 @@ export async function processState(
   if (!inputFile || !destFile) {
     throw new Error("Missing input and destination file");
   }
-  if (inputFile == destFile) {
+  if (inputFile === destFile) {
     throw new Error("Input and output files are the same");
   }
   // Read each line and callback with the line and extracted key/value if available
@@ -103,38 +103,38 @@ export async function processState(
     for await (const line of lineReaderPass) {
       const keyValue = line.split('": ');
       let value: string = null;
-      if (keyValue.length == 1) {
+      if (keyValue.length === 1) {
         // line is not a traditional key:value (but can be an array value)
         let i = 0;
         for (; i < line.length; i += 2) {
-          if (line[i] != " ") {
+          if (line[i] !== " ") {
             break;
           }
         }
-        if (line[i] == "]" || line[i] == "}" || line[i] == "{" || line[i] == "[") {
+        if (line[i] === "]" || line[i] === "}" || line[i] === "{" || line[i] === "[") {
           callback(line, null);
           continue;
         }
-        if (line[i] == '"') {
+        if (line[i] === '"') {
           // string value
           value = line.split('"')[1];
         } else {
-          value = line[line.length - 1] == "," ? line.slice(-1).trim() : line.trim();
+          value = line[line.length - 1] === "," ? line.slice(-1).trim() : line.trim();
         }
       } else {
         // Where we have key:value line
         lastKnownKey = keyValue[0].split('"')[1];
         value =
-          keyValue[1][0] == '"'
+          keyValue[1][0] === '"'
             ? keyValue[1].split('"')[1]
-            : keyValue[1][0] == "{" || keyValue[1][0] == "["
+            : keyValue[1][0] === "{" || keyValue[1][0] === "["
               ? null
               : keyValue[1].split(",")[0];
       }
-      const endWithComma = line[line.length - 1] == ",";
+      const endWithComma = line[line.length - 1] === ",";
       let indentSpaces;
       for (indentSpaces = 0; indentSpaces < line.length; indentSpaces += 2) {
-        if (line[indentSpaces] != " ") {
+        if (line[indentSpaces] !== " ") {
           break;
         }
       }
@@ -167,7 +167,7 @@ export async function processState(
     let keepLine = true;
     if (stateLine?.value) {
       manipulators.map((manipulator) => {
-        const result = manipulator.processWrite(stateLine);
+        const _result = manipulator.processWrite(stateLine);
         if (!result) {
           return;
         }
@@ -178,7 +178,7 @@ export async function processState(
             100,
           )}`,
         );
-        if (action == "remove") {
+        if (action === "remove") {
           keepLine = false;
         }
         if (extraLines && extraLines.length > 0) {

@@ -3,7 +3,7 @@ import Debug from "debug";
 import { ChildProcessWithoutNullStreams } from "node:child_process";
 import { promisify } from "node:util";
 
-const debug = Debug("actions:runner");
+const _debug = Debug("actions:runner");
 const execAsync = promisify(child_process.exec);
 
 // Execute process and return the output
@@ -14,7 +14,7 @@ export async function runTask(
 ): Promise<string> {
   debug(`${title ? `Title: ${title}\n` : ""}Running task on directory ${cwd}: ${cmd}\n`);
   try {
-    const result = await execAsync(cmd, { cwd, env });
+    const _result = await execAsync(cmd, { cwd, env });
     return result.stdout;
   } catch (error: any) {
     console.log(error);

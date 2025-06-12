@@ -113,7 +113,7 @@ const main = async () => {
             ? request.action.asDecrease.toBigInt()
             : request.action.asRevoke.toBigInt();
           if (
-            delegatorId == request.delegator.toHex() &&
+            delegatorId === request.delegator.toHex() &&
             request.whenExecutable.toNumber() <= roundInfo.current.toNumber() &&
             (!argv.threshold || amount / 10n ** 18n > argv.threshold)
           ) {

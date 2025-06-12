@@ -29,7 +29,7 @@ import type {
 } from "@polkadot/types/interfaces";
 
 import debugPkg from "debug";
-const debug = debugPkg("indexer:fee");
+const _debug = debugPkg("indexer:fee");
 
 const WEIGHT_PER_GAS = 1_000_000_000_000n / 40_000_000n;
 
@@ -75,7 +75,7 @@ const runTimer = setTimeout(() => {
 }, 18000000);
 
 const main = async () => {
-  if (argv.client == "pg" && !argv.connection) {
+  if (argv.client === "pg" && !argv.connection) {
     console.log(`Missing connection parameter for pg database`);
     process.exit(1);
   }
@@ -90,7 +90,7 @@ const main = async () => {
   const config: Knex.Config = {
     client: argv.client,
     connection:
-      argv.client == "sqlite3"
+      argv.client === "sqlite3"
         ? ({
             filename: `./db-fee.${runtimeName}.${paraId}.db`,
             mode: sqlite3.OPEN_READWRITE | sqlite3.OPEN_CREATE,
@@ -128,7 +128,7 @@ const main = async () => {
     total_issuance NUMERIC,
     fee NUMERIC,
     runtime INTEGER,
-    created_at ${argv.client == "sqlite3" ? "DATETIME" : "TIMESTAMP"}
+    created_at ${argv.client === "sqlite3" ? "DATETIME" : "TIMESTAMP"}
   );`;
   const indexblockRuntimeDbQuery = `CREATE INDEX IF NOT EXISTS idx_blocks_runtime on blocks(runtime);`;
   const indexblockCreatedAtDbQuery = `CREATE INDEX IF NOT EXISTS idx_blocks_created_at on blocks(created_at);`;
@@ -156,7 +156,7 @@ const main = async () => {
   let fromBlockNumber: number;
   if (argv.first !== undefined && argv.first !== null) {
     fromBlockNumber = argv.first;
-  } else if (latestKnownBlock != 0) {
+  } else if (latestKnownBlock !== 0) {
     fromBlockNumber = latestKnownBlock + 1;
   } else {
     fromBlockNumber = 1;
@@ -232,10 +232,10 @@ const main = async () => {
         // For every extrinsic, iterate over every event and search for ExtrinsicSuccess or ExtrinsicFailed
         const extrinsicResult = events.find(
           (event) =>
-            event.section == "system" &&
-            (event.method == "ExtrinsicSuccess" || event.method == "ExtrinsicFailed"),
+            event.section === "system" &&
+            (event.method === "ExtrinsicSuccess" || event.method === "ExtrinsicFailed"),
         );
-        const isSuccess = extrinsicResult?.method == "ExtrinsicSuccess";
+        const isSuccess = extrinsicResult?.method === "ExtrinsicSuccess";
 
         const dispatchInfo = isSuccess
           ? (extrinsicResult?.data[0] as DispatchInfo)
@@ -243,16 +243,16 @@ const main = async () => {
         debug(`  - Extrinsic ${extrinsic.method.toString()}: ${isSuccess ? "Ok" : "Failed"}`);
 
         if (
-          extrinsic.method.section == "parachainSystem" &&
-          extrinsic.method.method == "setValidationData"
+          extrinsic.method.section === "parachainSystem" &&
+          extrinsic.method.method === "setValidationData"
         ) {
           // XCM transaction are not extrinsic but consume fees.
 
-          const payload = extrinsic.method.args[0] as ParachainInherentData;
+          const _payload = extrinsic.method.args[0] as ParachainInherentData;
           if (runtimeVersion < 1900) {
             // There is no precise way to compute fees for now:
             events
-              .filter((event, index) => event.section == "treasury" && event.method == "Deposit")
+              .filter((event, _index) => event.section === "treasury" && event.method === "Deposit")
               .forEach((depositEvent) => {
                 const deposit = (depositEvent.data[0] as u128).toBigInt();
                 txFees += deposit * 5n;
@@ -262,13 +262,13 @@ const main = async () => {
         } else if (
           dispatchInfo.paysFee.isYes &&
           (!extrinsic.signer.isEmpty ||
-            extrinsic.method.section == "ethereum" ||
-            extrinsic.method.section == "parachainSystem")
+            extrinsic.method.section === "ethereum" ||
+            extrinsic.method.section === "parachainSystem")
         ) {
           // We are only interested in fee paying extrinsics:
           // Either ethereum transactions or signed extrinsics with fees (substrate tx)
 
-          if (extrinsic.method.section == "ethereum") {
+          if (extrinsic.method.section === "ethereum") {
             const payload = extrinsic.method.args[0] as EthereumTransactionTransactionV2;
             // For Ethereum tx we caluculate fee by first converting weight to gas
             let gasUsed =
@@ -304,12 +304,12 @@ const main = async () => {
             if (isSuccess && runtimeVersion >= 800 && runtimeVersion < 1000) {
               // Bug where an account with balance == gasLimit * fee loses all its balance into fees
               const treasuryDepositEvent = events.find(
-                (event, index) => event.section == "treasury" && event.method == "Deposit",
+                (event, _index) => event.section === "treasury" && event.method === "Deposit",
               );
               const treasuryDeposit = (treasuryDepositEvent?.data[0] as any).toBigInt();
 
               if (
-                treasuryDeposit !=
+                treasuryDeposit !==
                 gasUsed * gasPriceParam - (gasUsed * gasPriceParam * 80n) / 100n
               ) {
                 gasUsed = gasLimitParam;
@@ -326,9 +326,9 @@ const main = async () => {
             // Bug where a collator receives unexpected fees ("minted")
             const collatorDepositEvent = events.find(
               (event) =>
-                event.section == "balances" &&
-                event.method == "Deposit" &&
-                authorId == event.data[0].toString(),
+                event.section === "balances" &&
+                event.method === "Deposit" &&
+                authorId === event.data[0].toString(),
             );
 
             if (collatorDepositEvent && runtimeVersion < 1600) {
@@ -384,18 +384,18 @@ const main = async () => {
           } else {
             let payFees = true;
             if (
-              extrinsic.method.section == "parachainSystem" &&
-              extrinsic.method.method == "enactAuthorizedUpgrade" &&
+              extrinsic.method.section === "parachainSystem" &&
+              extrinsic.method.method === "enactAuthorizedUpgrade" &&
               isSuccess
             ) {
               // No fees to pay if successfully enacting an authorized upgrade
               payFees = false;
-            } else if (extrinsic.method.section == "sudo") {
+            } else if (extrinsic.method.section === "sudo") {
               // No fees to pay if sudo
               payFees = false;
             } else if (
-              extrinsic.method.section == "evm" &&
-              extrinsic.method.method == "hotfixIncAccountSufficients"
+              extrinsic.method.section === "evm" &&
+              extrinsic.method.method === "hotfixIncAccountSufficients"
             ) {
               payFees = runtimeVersion < 1401;
             } else if (
@@ -405,13 +405,13 @@ const main = async () => {
               ) &&
               isSuccess
             ) {
-              if (extrinsic.method.method == "close") {
-                const disapproved = events.find((event) => event.method == "Disapproved");
+              if (extrinsic.method.method === "close") {
+                const disapproved = events.find((event) => event.method === "Disapproved");
                 // No fees are paid if collective disapproved the proposal
                 payFees = !disapproved;
               }
-              if (extrinsic.method.method == "vote") {
-                const votedEvent = events.find((event) => event.method == "Voted");
+              if (extrinsic.method.method === "vote") {
+                const votedEvent = events.find((event) => event.method === "Voted");
                 const account = votedEvent?.data[0] as AccountId20;
                 const hash = (extrinsic.method.args[0] as any).toString();
                 // combine the committee type with the hash to make it unique.
@@ -450,7 +450,7 @@ const main = async () => {
         // Then search for Deposit event from treasury
         // This is for bug detection when the fees are not matching the expected value
         const treasureDepositEvents = events.filter(
-          (event) => event.section == "treasury" && event.method == "Deposit",
+          (event) => event.section === "treasury" && event.method === "Deposit",
         );
         const treasureDeposit = treasureDepositEvents.reduce(
           (p, e) => p + (e.data[0] as any).toBigInt(),
@@ -521,7 +521,7 @@ const main = async () => {
       const timestamp = apiAt.registry.createType(
         "Compact<u64>",
         blockDetails.block.extrinsics.find(
-          (e) => e.method.section == "timestamp" && e.method.method == "set",
+          (e) => e.method.section === "timestamp" && e.method.method === "set",
         )?.data,
       );
 

@@ -9,7 +9,7 @@ import {
   StateManipulator,
 } from "./genesis-parser";
 
-const debug = Debug("helper:balances-manipulator");
+const _debug = Debug("helper:balances-manipulator");
 
 export class AssetManipulator implements StateManipulator {
   account: string;
@@ -58,7 +58,7 @@ export class AssetManipulator implements StateManipulator {
     if (key.startsWith(this.assetSupplyPrefix)) {
       const currentTotal = hexToBigInt(value.slice(162, 194), { isLe: true });
       const supply = bnToHex(currentTotal + this.amount, { isLe: true, bitLength: 128 }).slice(2);
-      const address = "6d6f646c617373746d6e67720000000000000000";
+      const _address = "6d6f646c617373746d6e67720000000000000000";
       const owner = address;
       const issuer = address;
       const admin = address;

@@ -10,7 +10,7 @@ import yargs from "yargs";
 // for v in $(find moonbeam-sc/ -type f -iname "*.sol" -exec grep -o -h '0\.[0-9]\.[0-9][0-9]*' {} \+ | sort | uniq); do solc-select install $v; done
 
 import debugPkg from "debug";
-const debug = debugPkg("indexer:smart-contract");
+const _debug = debugPkg("indexer:smart-contract");
 
 const argv = yargs(process.argv.slice(2))
   .usage("Usage: $0")
@@ -48,11 +48,11 @@ setTimeout(() => {
 }, 1800000); // 30min
 
 const main = async () => {
-  if (argv.client == "pg" && !argv.connection) {
+  if (argv.client === "pg" && !argv.connection) {
     console.log(`Missing connection parameter for pg database`);
     process.exit(1);
   }
-  if (argv.client == "sqlite3" && !argv.file) {
+  if (argv.client === "sqlite3" && !argv.file) {
     console.log(`Missing file parameter for sqlite3 database`);
     process.exit(1);
   }
@@ -64,7 +64,7 @@ const main = async () => {
   const config: Knex.Config = {
     client: argv.client,
     connection:
-      argv.client == "sqlite3"
+      argv.client === "sqlite3"
         ? ({
             filename: argv.file,
             mode: sqlite3.OPEN_READWRITE | sqlite3.OPEN_CREATE,
@@ -91,10 +91,10 @@ const main = async () => {
       if (!fs.existsSync(`${argv.folder}/${address}`)) {
         fs.mkdirSync(`${argv.folder}/${address}`);
       }
-      if (source[0] == "{") {
+      if (source[0] === "{") {
         try {
-          const jsonData = JSON.parse(source[1] == "{" ? source.slice(1, -1) : source);
-          const sources = source[1] == "{" ? jsonData.sources : jsonData;
+          const jsonData = JSON.parse(source[1] === "{" ? source.slice(1, -1) : source);
+          const sources = source[1] === "{" ? jsonData.sources : jsonData;
           for (const index in Object.keys(sources)) {
             const name = Object.keys(sources)[index];
             const filePath = path.join(`${argv.folder}/${address}/`, name);
@@ -116,13 +116,13 @@ const main = async () => {
       }
     }
 
-    if (data.length != limit) {
+    if (data.length !== limit) {
       return true;
     }
     count += data.length;
 
     // Debug logs to make sure it keeps progressing
-    if (count % (10 * limit) == 0) {
+    if (count % (10 * limit) === 0) {
       debug(`Retrieved ${count} sources`);
     }
 

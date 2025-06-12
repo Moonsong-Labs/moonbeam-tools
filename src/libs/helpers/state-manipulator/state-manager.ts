@@ -26,7 +26,7 @@ import { ValidationManipulator } from "./validation-manipulator";
 import { XCMPManipulator } from "./xcmp-manipulator";
 import { CumulusManipulator } from "./cumulus-manipulator";
 
-const debug = Debug("helper:state-manager");
+const _debug = Debug("helper:state-manager");
 
 export type NetworkName = "moonbeam" | "moonriver" | "alphanet" | "stagenet";
 
@@ -125,7 +125,7 @@ export async function downloadExportedState(
   ).body.json()) as StateInfo;
 
   // Already latest version
-  if (stateInfo && stateInfo.blockHash == downloadedStateInfo.blockHash) {
+  if (stateInfo && stateInfo.blockHash === downloadedStateInfo.blockHash) {
     const stateFileName =
       useCleanState && stateInfo.cleanFile ? stateInfo.cleanFile : stateInfo.file;
     const stateFile = path.join(outPath, stateFileName);
@@ -169,7 +169,7 @@ export async function downloadExportedState(
           const headerStrings = headers.map((h) => h.toString());
           onStart &&
             onStart(
-              parseInt(headerStrings[headerStrings.findIndex((h) => h == "Content-Length") + 1]),
+              parseInt(headerStrings[headerStrings.findIndex((h) => h === "Content-Length") + 1]),
               stateFileName,
             );
           return true;
@@ -212,7 +212,7 @@ export async function neutralizeExportedState(
   };
 
   const manipulators: StateManipulator[] = [
-    new RoundManipulator((current, first, length) => {
+    new RoundManipulator((current, _first, _length) => {
       return { current, first: 0, length: 100 };
     }),
     new AuthorFilteringManipulator(100),
@@ -255,7 +255,7 @@ export async function neutralizeExportedState(
 // It makes Alith the main collator and restore XCMP/HRMP data.
 export async function insertParachainCodeIntoRelay(inFile: string, outFile: string) {
   await processState(inFile, outFile, [
-    new RoundManipulator((current, first, length) => {
+    new RoundManipulator((current, _first, _length) => {
       return { current, first: 0, length: 100 };
     }),
     new AuthorFilteringManipulator(100),

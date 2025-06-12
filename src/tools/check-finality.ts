@@ -6,7 +6,7 @@ import { getAccountIdentity } from "../utils/monitoring";
 import { getApiFor, NETWORK_YARGS_OPTIONS } from "../utils/networks";
 
 import debugPkg from "debug";
-const debug = debugPkg("check:finality");
+const _debug = debugPkg("check:finality");
 
 const argv = yargs(process.argv.slice(2))
   .usage("Usage: $0")

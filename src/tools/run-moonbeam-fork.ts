@@ -193,7 +193,7 @@ const main = async () => {
                 .filter((release) => release.tag_name.includes("v" + argv["polkadot-binary"]))
                 .find((release) => release.assets.find((asset) => asset.name === "polkadot"));
 
-        if (release == null) {
+        if (release === null) {
           throw new Error(`Release not found for ${argv["polkadot-binary"]}`);
         }
         process.stdout.write(
@@ -262,7 +262,7 @@ const main = async () => {
           : moonbeamReleases
               .filter((release) => release.tag_name.includes("v" + argv["moonbeam-binary"]))
               .find((release) => release.assets.find((asset) => asset.name === "moonbeam"));
-      if (release == null) {
+      if (release === null) {
         throw new Error(`Release not found for ${argv["moonbeam-binary"]}`);
       }
       process.stdout.write(

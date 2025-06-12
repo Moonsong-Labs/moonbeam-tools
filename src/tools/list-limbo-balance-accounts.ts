@@ -59,7 +59,7 @@ const main = async () => {
   console.log(
     table(tableData, {
       drawHorizontalLine: (lineIndex: number) =>
-        lineIndex == 0 || lineIndex == 1 || lineIndex == tableData.length,
+        lineIndex === 0 || lineIndex === 1 || lineIndex === tableData.length,
       columns: [
         { alignment: "left" },
         { alignment: "left" },

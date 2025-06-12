@@ -8,7 +8,7 @@ import yargs from "yargs";
 import { getViemAccountFor, getViemFor, NETWORK_YARGS_OPTIONS } from "../utils/networks";
 
 import debugPkg from "debug";
-const debug = debugPkg("main");
+const _debug = debugPkg("main");
 
 const argv = yargs(process.argv.slice(2))
   .usage("Usage: $0")
@@ -35,7 +35,7 @@ const getAddress = (addressNumber: number): `0x${string}` => {
 };
 
 const getPrecompileStorageKey = (addressNumber: number) => {
-  const address = getAddress(addressNumber);
+  const _address = getAddress(addressNumber);
   return `0x${Buffer.from(
     u8aConcat(
       xxhashAsU8a("EVM", 128),
@@ -196,7 +196,7 @@ const main = async () => {
 
   const precompileCodes: { [key: string]: boolean } = {};
   for (const addressNumber of addresses) {
-    const name = KNOWN_PRECOMPILES.find((p) => p.index == addressNumber)?.name || "";
+    const name = KNOWN_PRECOMPILES.find((p) => p.index === addressNumber)?.name || "";
     const storageKey = getPrecompileStorageKey(addressNumber);
     const code = await viem.getBytecode({ address: getAddress(addressNumber) });
     const hasCode = !!code;

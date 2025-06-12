@@ -41,7 +41,7 @@ const main = async () => {
       const callData = await callInterpreter(api, referendum.image.proposal);
       imageText = callData.text;
       subText =
-        callData.depth == 0 || argv["single-line"]
+        callData.depth === 0 || argv["single-line"]
           ? null
           : callData.subCalls
               .map((c) => renderCallInterpretation(c, 1, "                 "))
@@ -105,7 +105,7 @@ const main = async () => {
             (ref.ongoing.enactment.isAt && ref.ongoing.enactment.asAt.toNumber() < currentBlock));
 
         const networkIcon =
-          polkadotPrefix == "moonbeam" ? "🌒" : polkadotPrefix == "moonriver" ? "⛵" : "?";
+          polkadotPrefix === "moonbeam" ? "🌒" : polkadotPrefix === "moonriver" ? "⛵" : "?";
         const statusIcon = ref.info.isApproved
           ? isExecuted
             ? "⚡"
@@ -144,7 +144,7 @@ const main = async () => {
             : "";
         const subText =
           !callData ||
-          callData.depth == 0 ||
+          callData.depth === 0 ||
           callData.text.startsWith("whitelist.dispatch") ||
           argv["single-line"]
             ? null

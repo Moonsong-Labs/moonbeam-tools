@@ -52,7 +52,7 @@ contract Storage {
   uint256 sum = 0;
   function store(uint storage_item, uint value, uint loop) external returns (uint result) {
     for (uint i=0; i<loop; i++) {
-      if (bloat[storage_item] == 0) {
+      if (bloat[storage_item] === 0) {
         bloat[storage_item] = value;
       }
       bloat[storage_item] = bloat[storage_item] * i;
@@ -77,7 +77,7 @@ contract Computer {
 
   function compute(uint storage_item, uint loop) public {
     for (uint i=0; i<loop; i++) {
-      if (i % 4 == 3) {
+      if (i % 4 === 3) {
         bloat[storage_item] = bloat[storage_item] + story.store(storage_item + i,  i, i / 4);
       }
       sum = sum + i;
@@ -92,7 +92,7 @@ const main = async () => {
   const keyring = new Keyring({ type: "ethereum" });
 
   const fromAccount = await keyring.addFromUri(argv.from);
-  const deployer = web3.eth.accounts.privateKeyToAccount(argv.from);
+  const _deployer = web3.eth.accounts.privateKeyToAccount(argv.from);
   const storageContractAddress =
     "0x" + web3.utils.sha3(rlp.encode([deployer.address, 0]) as any).substr(26);
   const computerContractAddress =

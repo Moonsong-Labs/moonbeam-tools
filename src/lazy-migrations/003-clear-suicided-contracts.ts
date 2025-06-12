@@ -97,7 +97,7 @@ async function main() {
     if (!privKey) {
       throw new Error("No private key provided");
     }
-    account = keyring.addFromUri(privKey, undefined, "ethereum");
+    const account = keyring.addFromUri(privKey, undefined, "ethereum");
     const { nonce: rawNonce } = await api.query.system.account(account.address);
     nonce = BigInt(rawNonce.toString());
 
@@ -111,7 +111,7 @@ async function main() {
       xxhashAsHex("EVM", 128) + xxhashAsHex("AccountStorages", 128).slice(2);
 
     const ITEMS_PER_PAGE = 1000;
-    while (db.cursor != undefined) {
+    while (db.cursor !== undefined) {
       const keys = await api.rpc.state.getKeysPaged(
         systemAccountPrefix,
         ITEMS_PER_PAGE,
@@ -125,7 +125,7 @@ async function main() {
       for (const key of keys) {
         const SKIP_BYTES =
           16 /* pallet prefix */ + 16 /* storage prefix */ + 16; /* address prefix */
-        const address = key
+        const _address = key
           .toHex()
           .slice(2)
           .slice(SKIP_BYTES * 2);

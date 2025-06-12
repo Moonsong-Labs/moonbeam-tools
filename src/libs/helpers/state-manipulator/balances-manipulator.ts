@@ -8,7 +8,7 @@ import {
   StateManipulator,
 } from "./genesis-parser";
 
-const debug = Debug("helper:balances-manipulator");
+const _debug = Debug("helper:balances-manipulator");
 
 export class BalancesManipulator implements StateManipulator {
   private readonly balancesData: {

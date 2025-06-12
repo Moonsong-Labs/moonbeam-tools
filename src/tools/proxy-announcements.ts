@@ -62,7 +62,7 @@ const main = async () => {
   for (let index = 1; index < lines.length; index++) {
     const line = lines[index];
     const data = line.split(",");
-    if (data.length != 5) {
+    if (data.length !== 5) {
       throw new Error(`Invalid data line ${index}`);
     }
     const to = data[2].toLowerCase().replace(/"/g, "");
@@ -111,10 +111,10 @@ const main = async () => {
   console.log(
     table(tableData, {
       drawHorizontalLine: (lineIndex: number) =>
-        lineIndex == 0 ||
-        lineIndex == 1 ||
-        lineIndex == tableData.length - Object.keys(sumByAddress).length ||
-        lineIndex == tableData.length,
+        lineIndex === 0 ||
+        lineIndex === 1 ||
+        lineIndex === tableData.length - Object.keys(sumByAddress).length ||
+        lineIndex === tableData.length,
       columns: [
         { alignment: "left" },
         { alignment: "left" },

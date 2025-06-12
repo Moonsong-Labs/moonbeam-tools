@@ -41,7 +41,7 @@ const argv = yargs(process.argv.slice(2))
   }).argv;
 
 const hashes = {};
-const sendTransfer = async (web3: Web3, from: any, nonce: number) => {
+const _sendTransfer = async (web3: Web3, from: any, nonce: number) => {
   // console.log(`Sending ${nonce}`)
   const tx = await web3.eth.accounts.signTransaction(
     {
@@ -55,7 +55,7 @@ const sendTransfer = async (web3: Web3, from: any, nonce: number) => {
     from.privateKey,
   );
 
-  const result = await customWeb3Request(web3, "eth_sendRawTransaction", [tx.rawTransaction]);
+  const _result = await customWeb3Request(web3, "eth_sendRawTransaction", [tx.rawTransaction]);
   if (result.error) {
     console.error(result.error);
     throw new Error(`Error sending transaction!`);
@@ -91,7 +91,7 @@ const main = async () => {
   const keyring = new Keyring({ type: "ethereum" });
 
   const fromAccount = await keyring.addFromUri(argv.from);
-  const deployer = web3.eth.accounts.privateKeyToAccount(argv.from);
+  const _deployer = web3.eth.accounts.privateKeyToAccount(argv.from);
 
   let fromNonce = (await polkadotApi.rpc.system.accountNextIndex(fromAccount.address)).toNumber();
   console.log(`Sending from nonce ${fromNonce}`);

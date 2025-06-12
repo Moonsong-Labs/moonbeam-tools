@@ -57,7 +57,7 @@ const main = async () => {
       const records = await api.query.system.events.at(blockHash);
 
       const contrib = records.find(
-        ({ event }) => event.section == "crowdloan" && event.method == "Contributed",
+        ({ event }) => event.section === "crowdloan" && event.method === "Contributed",
       );
       if (contrib) {
         const [account, paraId, amount] = contrib.event.data as any;

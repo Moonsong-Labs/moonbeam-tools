@@ -95,7 +95,7 @@ async function main() {
     if (!privKey) {
       throw new Error("No private key provided");
     }
-    account = keyring.addFromUri(privKey, undefined, "ethereum");
+    const account = keyring.addFromUri(privKey, undefined, "ethereum");
     const { nonce: rawNonce } = await api.query.system.account(account.address);
     nonce = BigInt(rawNonce.toString());
 

@@ -72,7 +72,7 @@ async function main() {
     const privKey = argv["alith"] ? ALITH_PRIVATE_KEY : argv["account-priv-key"];
     if (privKey) {
       account = keyring.addFromUri(privKey, null, "ethereum");
-      const { nonce: rawNonce, data: balance } = (await api.query.system.account(
+      const { nonce: rawNonce, data: _balance } = (await api.query.system.account(
         account.address,
       )) as any;
       nonce = BigInt(rawNonce.toString());

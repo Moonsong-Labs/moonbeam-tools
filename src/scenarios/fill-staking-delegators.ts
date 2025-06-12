@@ -159,7 +159,7 @@ const main = async () => {
       await Promise.all(
         chunk.map(async (delegator) => {
           const nonce = (await api.rpc.system.accountNextIndex(delegator.address)).toNumber();
-          if (nonce == 0) {
+          if (nonce === 0) {
             return; // Delegator doesn't have previous delegation tx
           }
           transactions.push(
@@ -173,7 +173,7 @@ const main = async () => {
       await Promise.all(
         chunk.map(async (delegator) => {
           const nonce = (await api.rpc.system.accountNextIndex(delegator.address)).toNumber();
-          if (nonce == 0) {
+          if (nonce === 0) {
             return; // Delegator doesn't have previous delegation tx
           }
           transactions.push(

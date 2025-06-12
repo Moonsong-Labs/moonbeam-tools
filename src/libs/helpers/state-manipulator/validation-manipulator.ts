@@ -3,7 +3,7 @@ import Debug from "debug";
 
 import { Action, encodeStorageKey, StateManipulator } from "./genesis-parser";
 
-const debug = Debug("helper:validation-manipulator");
+const _debug = Debug("helper:validation-manipulator");
 
 export class ValidationManipulator implements StateManipulator {
   private readonly validationDataKey: string;

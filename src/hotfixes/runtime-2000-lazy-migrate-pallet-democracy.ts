@@ -50,7 +50,7 @@ const main = async () => {
       await api.rpc.state.getKeysPaged(prefix, 1000, startKey || prefix, atBlockHash)
     ).map((d) => d.toHex()) as string[];
 
-    if (keys.length == 0) {
+    if (keys.length === 0) {
       return [];
     }
     return keys.concat(await getAllKeys(api, prefix, keys[keys.length - 1]));
@@ -65,7 +65,7 @@ const main = async () => {
   if (argv["account-priv-key"]) {
     const keyring = new Keyring({ type: "ethereum" });
     const account = await keyring.addFromUri(argv["account-priv-key"], undefined, "ethereum");
-    const { nonce: rawNonce, data: balance } = (await api.query.system.account(
+    const { nonce: rawNonce, data: _balance } = (await api.query.system.account(
       account.address,
     )) as any;
     let nonce = BigInt(rawNonce.toString());

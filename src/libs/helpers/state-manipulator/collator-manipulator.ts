@@ -8,7 +8,7 @@ import {
   StateManipulator,
 } from "./genesis-parser";
 
-const debug = Debug("helper:collator-manipulator");
+const _debug = Debug("helper:collator-manipulator");
 
 export class CollatorManipulator implements StateManipulator {
   private readonly newCollator: string;

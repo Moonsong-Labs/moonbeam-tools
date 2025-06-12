@@ -39,7 +39,7 @@ const main = async () => {
   const lines = csvData.toString().split(/\r?\n/);
   const transfers = lines.map((l, index) => {
     const data = l.split(",");
-    if (data.length != 2) {
+    if (data.length !== 2) {
       throw new Error(`Invalid data line ${index + 1}`);
     }
     const account = data[0];
@@ -93,10 +93,10 @@ const main = async () => {
       let unsub: () => void;
       api.tx.utility
         .batchAll(txs)
-        .signAndSend(account, {}, ({ events = [], status }) => {
+        .signAndSend(account, {}, ({ events: _events = [], status }) => {
           console.log(
             `Transaction status: ${
-              status.type == "Ready" ? chalk.yellow(status.type) : chalk.green(status.type)
+              status.type === "Ready" ? chalk.yellow(status.type) : chalk.green(status.type)
             }`,
           );
 

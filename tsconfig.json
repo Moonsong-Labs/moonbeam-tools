@@ -13,7 +13,7 @@
     "declaration": true,
     "outDir": "build"
   },
-  "include": ["src/**/*.ts", "test/**/*.spec.ts"],
+  "include": ["src/**/*.ts", "test/**/*.spec.ts", "vitest.config.ts"],
   "exclude": ["node_modules"],
   "ts-node": {
     "esm": true

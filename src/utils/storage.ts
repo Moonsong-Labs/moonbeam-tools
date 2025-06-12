@@ -2,7 +2,7 @@ import { promiseConcurrent } from "./functions";
 
 import type { ProviderInterface } from "@polkadot/rpc-provider/types";
 import debugPkg from "debug";
-const debug = debugPkg("utils:storage-query");
+const _debug = debugPkg("utils:storage-query");
 
 // Timer must be wrapped to be passed
 const startReport = (total: () => number) => {
@@ -54,7 +54,7 @@ export async function concurrentGetKeys(
         let startKey = null;
         let hasMore = true;
         while (hasMore) {
-          const result = await provider.send("state_getKeysPaged", [
+          const _result = await provider.send("state_getKeysPaged", [
             prefix,
             maxKeys,
             startKey,
@@ -62,7 +62,7 @@ export async function concurrentGetKeys(
           ]);
           total += result.length;
           keys.push(...result);
-          if (result.length != maxKeys) {
+          if (result.length !== maxKeys) {
             hasMore = false;
           } else {
             startKey = result[result.length - 1];
@@ -89,7 +89,7 @@ export async function queryUnorderedRawStorage(
     value: string;
   }[]
 > {
-  const result = await provider.send("state_queryStorageAt", [keys, blockHash]);
+  const _result = await provider.send("state_queryStorageAt", [keys, blockHash]);
 
   return result[0].changes.map((pair) => ({
     value: pair[1],
@@ -128,7 +128,7 @@ export async function processAllStorage(
             startKey,
             blockHash,
           ]);
-          if (keys.length == 0) {
+          if (keys.length === 0) {
             hasKeys = false;
             break;
           }
@@ -141,7 +141,7 @@ export async function processAllStorage(
           processor(response[0].changes.map((pair) => ({ key: pair[0], value: pair[1] })));
           total += keys.length;
 
-          if (keys.length != maxKeys) {
+          if (keys.length !== maxKeys) {
             break;
           }
           startKey = keys[keys.length - 1];

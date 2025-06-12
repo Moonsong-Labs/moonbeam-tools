@@ -3,7 +3,7 @@ import Debug from "debug";
 
 import { Action, encodeStorageKey, StateManipulator } from "./genesis-parser";
 
-const debug = Debug("helper:authoring-manipulator");
+const _debug = Debug("helper:authoring-manipulator");
 
 export class AuthorFilteringManipulator implements StateManipulator {
   public readonly targetEligibilityRatio: number;

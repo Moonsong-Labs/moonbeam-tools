@@ -67,7 +67,7 @@ async function main() {
       await api.rpc.state.getKeysPaged(prefix, 1000, startKey || prefix, blockHash)
     ).map((d) => d.toHex());
 
-    if (keys.length == 0) {
+    if (keys.length === 0) {
       return [];
     }
     return keys.concat(await getAllKeys(api, prefix, blockHash, keys[keys.length - 1]));
@@ -147,7 +147,7 @@ async function main() {
           );
       }
 
-      if (argv["send-proposal-as"] == "democracy") {
+      if (argv["send-proposal-as"] === "democracy") {
         await api.tx.democracy
           .propose(encodedHash, proposalAmount)
           .signAndSend(
@@ -155,7 +155,7 @@ async function main() {
             { nonce: nonce++ },
             monitorSubmittedExtrinsic(api, { id: "proposal" }),
           );
-      } else if (argv["send-proposal-as"] == "council-external") {
+      } else if (argv["send-proposal-as"] === "council-external") {
         const external = api.tx.democracy.externalProposeMajority(encodedHash);
 
         await api.tx.councilCollective

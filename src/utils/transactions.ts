@@ -8,7 +8,7 @@ export const sendAllAndWaitLast = async (extrinsics: SubmittableExtrinsic[]) => 
   // Send all but the last extrinsic
   for (let i = 0; i < extrinsics.length - 1; i++) {
     await extrinsics[i].send();
-    if (i % 100 == 0) {
+    if (i % 100 === 0) {
       console.log(`Sending extrinsic: ${i}...`);
     }
   }
@@ -46,7 +46,7 @@ export const sendAllStreamAndWaitLast = async (
   },
 ) => {
   const promises = [];
-  const lastUpdateTime = Date.now();
+  const _lastUpdateTime = Date.now();
   while (extrinsics.length > 0) {
     const pending = await api.rpc.author.pendingExtrinsics();
     if (pending.length < threshold) {
@@ -82,7 +82,7 @@ export const sendAllStreamAndWaitLast = async (
                   clearTimeout(timer);
                   reject(error);
                 });
-            }).catch((e) => {});
+            }).catch((_e) => {});
           }),
         ),
       );
@@ -149,7 +149,7 @@ export async function callInterpreter(
   call: GenericCall,
 ): Promise<CallInterpretation> {
   const nested = NESTED_CALLS.find(
-    ({ section, method }) => section == call.section.toString() && method == call.method.toString(),
+    ({ section, method }) => section === call.section.toString() && method === call.method.toString(),
   );
   const text = `${call.section}.${call.method}`;
   if (nested) {

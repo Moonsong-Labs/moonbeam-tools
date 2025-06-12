@@ -7,7 +7,7 @@ import { ALITH_PRIVATE_KEY } from "../utils/constants";
 import { getApiFor, NETWORK_YARGS_OPTIONS } from "../utils/networks";
 
 import debugPkg from "debug";
-const debug = debugPkg("main");
+const _debug = debugPkg("main");
 
 const argv = yargs(process.argv.slice(2))
   .usage("Usage: $0")

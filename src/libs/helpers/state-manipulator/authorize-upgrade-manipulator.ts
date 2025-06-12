@@ -2,7 +2,7 @@ import Debug from "debug";
 
 import { Action, encodeStorageKey, StateManipulator } from "./genesis-parser";
 
-const debug = Debug("helper:authorize-upgrade-manipulator");
+const _debug = Debug("helper:authorize-upgrade-manipulator");
 
 export class AuthorizeUpgradeManipulator implements StateManipulator {
   private readonly runtimeHash: string;

@@ -29,7 +29,7 @@ import { promiseConcurrent } from "../utils/functions";
 import { monitorSubmittedExtrinsic, waitForAllMonitoredExtrinsics } from "../utils/monitoring";
 import { getApiFor, NETWORK_YARGS_OPTIONS } from "../utils/networks";
 
-const debug = Debug("hotfix:1900-at-stake");
+const _debug = Debug("hotfix:1900-at-stake");
 
 const argv = yargs(process.argv.slice(2))
   .usage("Usage: $0")
@@ -139,7 +139,7 @@ async function main() {
         startKey: lastKey,
       });
 
-      if (query.length == 0) {
+      if (query.length === 0) {
         hasMoreEntries = false;
         break;
       }
@@ -203,7 +203,7 @@ async function main() {
         query,
       );
       keysToRemove.push(...newKeysToRemove.filter((data) => !!data));
-      if (queryCount % limit == 0) {
+      if (queryCount % limit === 0) {
         console.log(`Queried ${queryCount}...`);
       }
     }
@@ -230,7 +230,7 @@ async function main() {
       }`,
     );
 
-    if (keysToRemove.length == 0) {
+    if (keysToRemove.length === 0) {
       return;
     }
 
@@ -254,10 +254,10 @@ async function main() {
           .killPrefix(api.query.parachainStaking.atStake.keyPrefix(roundNumber), 1000)
           .toU8a().length;
         if (
-          p.length == 0 ||
+          p.length === 0 ||
           p[p.length - 1].storageSize + round.storageSize > maxStorageSize ||
           p[p.length - 1].extrinsicSize + extrinsicSize > maxExtrinsicSize ||
-          p[p.length - 1].rounds.length == maxCall
+          p[p.length - 1].rounds.length === maxCall
         ) {
           p.push({ totalCandidates: 0, storageSize: 0, extrinsicSize: 0, rounds: [] });
         }
@@ -350,13 +350,13 @@ async function main() {
         );
       }
 
-      if (argv["send-proposal-as"] == "democracy") {
+      if (argv["send-proposal-as"] === "democracy") {
         await proxyTx(api.tx.democracy.propose(encodedHash, proposalAmount)).signAndSend(
           account,
           { nonce: nonce++ },
           monitorSubmittedExtrinsic(api, { id: "proposal" }),
         );
-      } else if (argv["send-proposal-as"] == "council-external") {
+      } else if (argv["send-proposal-as"] === "council-external") {
         const external = api.tx.democracy.externalProposeMajority(encodedHash);
 
         await proxyTx(

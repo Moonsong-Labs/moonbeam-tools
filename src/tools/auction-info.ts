@@ -72,7 +72,7 @@ const main = async () => {
 
         const extrinsic = api.createType("GenericExtrinsicV4", call).toHuman();
 
-        if (extrinsic.method.method == "newAuction" && extrinsic.method.section == "auctions") {
+        if (extrinsic.method.method === "newAuction" && extrinsic.method.section === "auctions") {
           const key = scheduled[i][0];
           const sliced = key.slice(-4);
 
@@ -104,7 +104,7 @@ const main = async () => {
     );
 
     const slotsLeasedlready =
-      argv.para == undefined ? undefined : await api.query.slots.leases(argv.para);
+      argv.para === undefined ? undefined : await api.query.slots.leases(argv.para);
 
     console.log(
       "Auction number %s will happen at block %s, timestamp %s, date %s",
@@ -145,7 +145,7 @@ const main = async () => {
     );
 
     const yourLeaseStartSlot =
-      slotsLeasedlready == undefined
+      slotsLeasedlready === undefined
         ? nextAuction.lease_period
         : currentLeasePeriod + (slotsLeasedlready as any).length;
     const leasePeriodPerSlot = await api.consts.auctions.leasePeriodsPerSlot;

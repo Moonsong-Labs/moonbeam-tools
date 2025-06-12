@@ -9,9 +9,9 @@ import {
   PalletRankedCollectiveTally,
   PalletReferendaCurve,
   PalletReferendaReferendumInfo,
-  PalletReferendaReferendumInfoConvictionVotingTally,
-  PalletReferendaReferendumInfoRankedCollectiveTally,
-  PalletReferendaReferendumStatusConvictionVotingTally,
+  PalletReferendaReferendumInfoConvictionVotingTally as _PalletReferendaReferendumInfoConvictionVotingTally,
+  PalletReferendaReferendumInfoRankedCollectiveTally as _PalletReferendaReferendumInfoRankedCollectiveTally,
+  PalletReferendaReferendumStatusConvictionVotingTally as _PalletReferendaReferendumStatusConvictionVotingTally,
   PalletReferendaTrackInfo,
 } from "@polkadot/types/lookup";
 import {
@@ -32,7 +32,7 @@ import { promiseConcurrent } from "./functions";
 import type { Bytes } from "@polkadot/types";
 import type { Call, Hash } from "@polkadot/types/interfaces";
 import { PalletReferendaReferendumStatus } from "@polkadot/types/lookup";
-const debug = Debug("tools:referenda");
+const _debug = Debug("tools:referenda");
 
 export interface Referendum {
   decidingEnd?: BN;
@@ -57,7 +57,7 @@ export interface TrackInfo {
   text?: string;
 }
 
-function getTrackName({ name }: PalletReferendaTrackInfo): string {
+function _getTrackName({ name: _name }: PalletReferendaTrackInfo): string {
   return;
 }
 

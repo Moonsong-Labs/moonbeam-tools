@@ -117,7 +117,7 @@ const main = async () => {
   if (argv["send-preimage-hash"]) {
     const collectiveThreshold = argv["collective-threshold"] || 1;
     const account = await keyring.addFromUri(argv["account-priv-key"], null, "ethereum");
-    const { nonce: rawNonce, data: balance } = (await api.query.system.account(
+    const { nonce: rawNonce, data: _balance } = (await api.query.system.account(
       account.address,
     )) as any;
     let nonce = BigInt(rawNonce.toString());
@@ -134,12 +134,12 @@ const main = async () => {
     console.log("Sending pre-image");
     await api.tx.democracy.notePreimage(encodedProposal).signAndSend(account, { nonce: nonce++ });
 
-    if (argv["send-proposal-as"] == "democracy") {
+    if (argv["send-proposal-as"] === "democracy") {
       console.log("Sending proposal");
       await api.tx.democracy
         .propose(encodedHash, PROPOSAL_AMOUNT)
         .signAndSend(account, { nonce: nonce++ });
-    } else if (argv["send-proposal-as"] == "council-external") {
+    } else if (argv["send-proposal-as"] === "council-external") {
       console.log("Sending external motion");
       const external = api.tx.democracy.externalProposeMajority(encodedHash);
       await api.tx.councilCollective

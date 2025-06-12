@@ -42,7 +42,7 @@ const main = async () => {
     if (!argv.para) {
       return true;
     }
-    return senderKey.toNumber() == argv.para || receiverKey.toNumber() == argv.para;
+    return senderKey.toNumber() === argv.para || receiverKey.toNumber() === argv.para;
   };
 
   const filteredChannels = channels.filter(filterPara);
@@ -75,10 +75,10 @@ const main = async () => {
   console.log(
     table(tableData, {
       drawHorizontalLine: (lineIndex: number) =>
-        lineIndex == 0 ||
-        lineIndex == 1 ||
-        lineIndex == tableData.length ||
-        lineIndex == filteredChannels.length + 1,
+        lineIndex === 0 ||
+        lineIndex === 1 ||
+        lineIndex === tableData.length ||
+        lineIndex === filteredChannels.length + 1,
     }),
   );
   await api.disconnect();

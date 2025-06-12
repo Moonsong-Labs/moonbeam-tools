@@ -51,7 +51,7 @@ function timeoutAfter(seconds) {
 
 export async function getParaApi(network: "kusama" | "polkadot", id: string) {
   const prodParas =
-    network == "kusama"
+    network === "kusama"
       ? [...prodParasKusama, ...prodParasKusamaCommon]
       : [...prodParasPolkadot, ...prodParasPolkadotCommon];
   const nodes = Object.values(
@@ -120,7 +120,7 @@ const main = async () => {
   for (const id of Object.keys(paras)) {
     console.log(
       `Parachain ${id} ${
-        paras[id].version[0] == ""
+        paras[id].version[0] === ""
           ? "[DOWN]"
           : `[XCMQueue: ${paras[id].version[0]}, XCMSafe: ${paras[id].version[1]}]`
       } has ${paras[id].connections.length} connections`,

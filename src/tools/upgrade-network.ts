@@ -89,7 +89,7 @@ async function main() {
   try {
     const atBlock =
       argv["at-block"] || (await api.rpc.chain.getBlock()).block.header.number.toNumber();
-    const blockHash = await api.rpc.chain.getBlockHash(atBlock);
+    const _blockHash = await api.rpc.chain.getBlockHash(atBlock);
 
     const collectiveThreshold =
       argv["collective-threshold"] ||
@@ -101,7 +101,7 @@ async function main() {
     const privKey = argv["alith"] ? ALITH_PRIVATE_KEY : argv["account-priv-key"];
     if (privKey) {
       account = keyring.addFromUri(privKey, null, "ethereum");
-      const { nonce: rawNonce, data: balance } = (await api.query.system.account(
+      const { nonce: rawNonce, data: _balance } = (await api.query.system.account(
         account.address,
       )) as any;
       nonce = BigInt(rawNonce.toString());
@@ -141,7 +141,7 @@ async function main() {
 
       const refCount = (await api.query.democracy.referendumCount()).toNumber();
 
-      if (argv["send-proposal-as"] == "democracy") {
+      if (argv["send-proposal-as"] === "democracy") {
         await tryProxy(
           api.tx.democracy.propose(
             {
@@ -154,7 +154,7 @@ async function main() {
           { nonce: nonce++ },
           monitorSubmittedExtrinsic(api, { id: "proposal" }),
         );
-      } else if (argv["send-proposal-as"] == "council-external") {
+      } else if (argv["send-proposal-as"] === "council-external") {
         const external = api.tx.democracy.externalProposeMajority({
           Inline: encodedProposal,
         });

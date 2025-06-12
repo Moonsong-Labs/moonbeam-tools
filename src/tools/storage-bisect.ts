@@ -78,7 +78,7 @@ async function main() {
   console.log("Warning, this will only work if a single change of value happened during the range");
   console.log("===============================================");
 
-  const result = await dichotomicSearch(api, startBlock, endBlock, storageKey);
+  const _result = await dichotomicSearch(api, startBlock, endBlock, storageKey);
 
   if (result !== null) {
     console.log(`Change detected at block: ${result}`);

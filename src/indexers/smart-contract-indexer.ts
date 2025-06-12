@@ -9,7 +9,7 @@ import yargs from "yargs";
 import { getApiFor, NETWORK_YARGS_OPTIONS } from "../index";
 
 import debugPkg from "debug";
-const debug = debugPkg("indexer:smart-contract");
+const _debug = debugPkg("indexer:smart-contract");
 
 const argv = yargs(process.argv.slice(2))
   .usage("Usage: $0")
@@ -53,7 +53,7 @@ setTimeout(() => {
 }, 1800000); // 30min
 
 const main = async () => {
-  if (argv.client == "pg" && !argv.connection) {
+  if (argv.client === "pg" && !argv.connection) {
     console.log(`Missing connection parameter for pg database`);
     process.exit(1);
   }
@@ -69,7 +69,7 @@ const main = async () => {
   const config: Knex.Config = {
     client: argv.client,
     connection:
-      argv.client == "sqlite3"
+      argv.client === "sqlite3"
         ? ({
             filename: `./db-smart-contract.${runtimeName}.${paraId}.at-${atBlockNumber}.db`,
             mode: sqlite3.OPEN_READWRITE | sqlite3.OPEN_CREATE,
@@ -118,13 +118,13 @@ const main = async () => {
       startKey: last_key,
     });
 
-    if (query.length == 0) {
+    if (query.length === 0) {
       return true;
     }
     count += query.length;
 
     for (const accountCode of query) {
-      const address = `0x${accountCode[0].toHex().slice(-40)}`;
+      const _address = `0x${accountCode[0].toHex().slice(-40)}`;
       const bytecode = accountCode[1].toHex();
       const key = accountCode[0].toString();
 
@@ -134,7 +134,7 @@ const main = async () => {
         )
         .then((res) => {
           const jsonResp = res.data;
-          if (res.status !== 200 || jsonResp.message != "OK") {
+          if (res.status !== 200 || jsonResp.message !== "OK") {
             throw new Error(`Error returned: ${jsonResp.message}`);
           }
 
@@ -185,7 +185,7 @@ const main = async () => {
     }
 
     // Debug logs to make sure it keeps progressing
-    if (count % (10 * limit) == 0) {
+    if (count % (10 * limit) === 0) {
       debug(`Retrieved ${count} accountCodes`);
     }
 

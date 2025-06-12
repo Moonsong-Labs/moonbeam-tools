@@ -2,7 +2,7 @@ import Debug from "debug";
 
 import { Action, encodeStorageKey, StateManipulator } from "./genesis-parser";
 
-const debug = Debug("helper:sudo-manipulator");
+const _debug = Debug("helper:sudo-manipulator");
 
 export class SudoManipulator implements StateManipulator {
   public storagePrefix: string;

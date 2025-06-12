@@ -57,9 +57,9 @@ const main = async () => {
     const accountId = key.toHex();
     if (
       accounts[accountId].nonce.toNumber() > 0 &&
-      accounts[accountId].consumers.toNumber() == 0 &&
-      accounts[accountId].providers.toNumber() == 0 &&
-      accounts[accountId].sufficients.toNumber() == 0
+      accounts[accountId].consumers.toNumber() === 0 &&
+      accounts[accountId].providers.toNumber() === 0 &&
+      accounts[accountId].sufficients.toNumber() === 0
     ) {
       accountsToFix.push(`0x${accountId.slice(-40)}`);
     }
@@ -76,7 +76,7 @@ const main = async () => {
   if (argv["account-priv-key"]) {
     const keyring = new Keyring({ type: "ethereum" });
     const account = await keyring.addFromUri(argv["account-priv-key"], null, "ethereum");
-    const { nonce: rawNonce, data: balance } = (await api.query.system.account(
+    const { nonce: rawNonce, data: _balance } = (await api.query.system.account(
       account.address,
     )) as any;
     let nonce = BigInt(rawNonce.toString());

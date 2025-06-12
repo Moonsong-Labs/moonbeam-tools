@@ -97,7 +97,7 @@ async function main() {
       // Process the results
       storageValues.forEach((storageValue, index) => {
         if (storageValue.isEmpty) {
-          const address = addresses[index];
+          const _address = addresses[index];
           db.contracts_without_metadata[address] = true;
         }
         db.contract_processed++;

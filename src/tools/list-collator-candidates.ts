@@ -76,8 +76,8 @@ const main = async () => {
       id,
       name: candidateNames[index].replace(/[\t\n]/g, "").slice(0, 42),
       totalDelegators: 0,
-      isActive: (candidate.state || candidate.status).toString() == "Active",
-      isSelected: selectedCandidates.find((c) => c.toHex() == id),
+      isActive: (candidate.state || candidate.status).toString() === "Active",
+      isSelected: selectedCandidates.find((c) => c.toHex() === id),
       totalDelegations: candidate.totalCounted.toBigInt(),
       totalRevokable: new Array(8).fill(0n),
       pendingRevoke: 0n,
@@ -226,12 +226,12 @@ const main = async () => {
   console.log(
     table(tableData, {
       drawHorizontalLine: (lineIndex: number) =>
-        lineIndex == 0 ||
-        lineIndex == 1 ||
-        lineIndex == tableData.length ||
-        lineIndex == tableData.length - 1 ||
-        lineIndex == tableData.length - candidateOffCount - 1 ||
-        lineIndex == totalSelected.toNumber() + 1,
+        lineIndex === 0 ||
+        lineIndex === 1 ||
+        lineIndex === tableData.length ||
+        lineIndex === tableData.length - 1 ||
+        lineIndex === tableData.length - candidateOffCount - 1 ||
+        lineIndex === totalSelected.toNumber() + 1,
       columns: [
         { alignment: "left" },
         { alignment: "left" },
