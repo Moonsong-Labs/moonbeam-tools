@@ -71,7 +71,7 @@ const main = async () => {
       .find(
         (ref) =>
           ref[1].unwrap().isFinished &&
-          api.registry.createType("u32", ref[0].toU8a().slice(-4)).toNumber() ==
+          api.registry.createType("u32", ref[0].toU8a().slice(-4)).toNumber() ===
             referendumNextIndex,
       )?.[1]
       .unwrap();

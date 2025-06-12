@@ -30,7 +30,7 @@ import isObject from "lodash.isobject";
 import mergeWith from "lodash.mergewith";
 import yargs from "yargs";
 
-const args = yargs
+const _args = yargs
   .showHelpOnFail(true)
   .command(
     "key",

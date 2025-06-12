@@ -36,7 +36,7 @@ const main = async () => {
     apiAt.query.hrmp.hrmpChannels.entries(),
   ]);
 
-  const filterPara = ([key, data]) => {
+  const filterPara = ([key, _data]) => {
     const senderKey = api.registry.createType("ParaId", key.toU8a().slice(-8, -4));
     const receiverKey = api.registry.createType("ParaId", key.toU8a().slice(-4));
     if (!argv.para) {
@@ -51,7 +51,7 @@ const main = async () => {
   const tableData = (
     [["Sender", "Receiver", "Status", "Messages", "Capacity", "Head"]] as any[]
   ).concat(
-    filteredChannels.filter(filterPara).map(([key, data], index) => {
+    filteredChannels.filter(filterPara).map(([key, data], _index) => {
       const channel = (data as any).unwrap();
       const senderKey = api.registry.createType("ParaId", key.toU8a().slice(-8, -4));
       const receiverKey = api.registry.createType("ParaId", key.toU8a().slice(-4));
@@ -64,7 +64,7 @@ const main = async () => {
         channel.mqcHead,
       ];
     }),
-    filteredChannelRequests.filter(filterPara).map(([key, data], index) => {
+    filteredChannelRequests.filter(filterPara).map(([key, data], _index) => {
       const request = (data as any).unwrap();
       const senderKey = api.registry.createType("ParaId", key.toU8a().slice(-8, -4));
       const receiverKey = api.registry.createType("ParaId", key.toU8a().slice(-4));

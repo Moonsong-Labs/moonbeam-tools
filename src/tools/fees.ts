@@ -228,7 +228,7 @@ async function runTest(
     console.log(
       `load: ${loadFactor} (${repsPerLoad} reps)  ${loadFactorIndex + 1}/${loadFactors.length}`,
     );
-    for await (const rep of new Array(repsPerLoad).keys()) {
+    for await (const _rep of new Array(repsPerLoad).keys()) {
       // uncomment the following code to reduce feeMultiplier by 10 each 100 blocks
       //   if (blockN % 100 === 0) {
       //     console.log(`feeMultiplier ${feeMultiplier.toString()}`);
@@ -396,7 +396,7 @@ async function runTest(
   };
 }
 
-function generateLoad(middle: number, inc: number = 1): number[] {
+function _generateLoad(middle: number, inc: number = 1): number[] {
   const load = [];
   for (let i = 0; i <= middle; i += inc) {
     load.push(i);

@@ -11,7 +11,7 @@ import "@polkadot/api-augment";
 import * as path from "path";
 
 import { ApiPromise, Keyring } from "@polkadot/api";
-import { KeyringPair } from "@polkadot/keyring/types";
+import { KeyringPair as _KeyringPair } from "@polkadot/keyring/types";
 // @ts-ignore - Raw type exists at runtime
 import type { Raw } from "@polkadot/types-codec";
 import { blake2AsHex, xxhashAsHex } from "@polkadot/util-crypto";
@@ -91,13 +91,12 @@ async function main() {
     }
     db.at_block ||= (await api.query.system.parentHash()).toHex();
 
-    let account: KeyringPair;
     let nonce: bigint;
     const privKey = argv["alith"] ? ALITH_PRIVATE_KEY : argv["account-priv-key"];
     if (!privKey) {
       throw new Error("No private key provided");
     }
-    account = keyring.addFromUri(privKey, undefined, "ethereum");
+    const account = keyring.addFromUri(privKey, undefined, "ethereum");
     const { nonce: rawNonce } = await api.query.system.account(account.address);
     nonce = BigInt(rawNonce.toString());
 

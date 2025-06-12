@@ -126,7 +126,7 @@ const main = async () => {
       );
       date = new Date(timestamp.toNumber());
 
-      const month = date.getMonth();
+      const _month = date.getMonth();
 
       const evmEvents = blockDetails.txWithEvents
         .map((e) => e.events.filter((e) => e.section === "ethereum" && e.method === "Executed"))

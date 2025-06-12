@@ -66,14 +66,13 @@ async function main() {
   const assetId = argv["asset-id"];
 
   try {
-    let account: KeyringPair;
     let nonce: bigint;
     let remainingBalances: number = 0;
     let remainingApprovals: number = 0;
 
     // Setup account
     const privKey = argv["alith"] ? ALITH_PRIVATE_KEY : argv["account-priv-key"];
-    account = keyring.addFromUri(privKey, undefined, "ethereum");
+    const account: KeyringPair = keyring.addFromUri(privKey, undefined, "ethereum");
     const { nonce: rawNonce } = await api.query.system.account(account.address);
     nonce = BigInt(rawNonce.toString());
 

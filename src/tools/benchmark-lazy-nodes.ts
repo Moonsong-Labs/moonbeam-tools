@@ -2,7 +2,7 @@ import yargs from "yargs";
 import chalk from "chalk";
 
 import { getApiFor, NETWORK_YARGS_OPTIONS } from "../utils/networks";
-import { mapExtrinsics } from "src/utils/types";
+import { mapExtrinsics as _mapExtrinsics } from "src/utils/types";
 import { getBlockDetails } from "src/utils/monitoring";
 
 const argv = yargs(process.argv.slice(2))

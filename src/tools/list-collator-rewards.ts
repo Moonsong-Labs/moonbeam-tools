@@ -44,10 +44,10 @@ const main = async () => {
   const fromBlockNumber = argv.from ? argv.from : argv.during ? toBlockNumber - argv.during : 0;
 
   const collators = {};
-  let blockCount = 0;
+  const _blockCount = 0;
   let initialTimestamp = 0;
   let lastTimestamp = 0;
-  const lastBlockRelayNumber = 0;
+  const _lastBlockRelayNumber = 0;
   const blocksPerRound = {};
   await exploreBlockRange(
     api,
@@ -85,7 +85,7 @@ const main = async () => {
         collators[blockDetails.authorName] = 0;
       }
       collators[blockDetails.authorName]++;
-      blockCount++;
+      // blockCount++;
     },
   );
 

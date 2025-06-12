@@ -106,7 +106,7 @@ const main = async () => {
   const hrmpChannels = await apiAt.query.hrmp.hrmpChannels.entries();
 
   const paras: { [id: string]: { connections: string[]; version: string[] } } = {};
-  for (const [hrmpChannel, hrmpChannelValue] of hrmpChannels) {
+  for (const [hrmpChannel, _hrmpChannelValue] of hrmpChannels) {
     const id = hrmpChannel.args[0].sender.toString();
     if (!paras[id]) {
       const paraApi: any = await getParaApi(network, id);

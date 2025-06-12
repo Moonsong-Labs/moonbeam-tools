@@ -93,7 +93,7 @@ const main = async () => {
 
   const fromAccount = await keyring.addFromUri(argv.from);
   const _deployer = web3.eth.accounts.privateKeyToAccount(argv.from);
-  const storageContractAddress =
+  const _storageContractAddress =
     "0x" + web3.utils.sha3(rlp.encode([_deployer.address, 0]) as any).substr(26);
   const computerContractAddress =
     "0x" + web3.utils.sha3(rlp.encode([_deployer.address, 1]) as any).substr(26);
@@ -129,7 +129,7 @@ const main = async () => {
             { ...compute, params: [compute.params[0], fromNonce] },
             _deployer,
             fromNonce++,
-          ).catch((e) => {});
+          ).catch((_e) => {});
         }),
       );
     }

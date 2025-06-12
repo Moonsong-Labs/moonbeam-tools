@@ -47,9 +47,8 @@ const main = async () => {
   }
 
   const batchCall = api.tx.utility.batchAll(Txs);
-  let account;
-  let nonce;
-  [account, nonce] = await accountWrapper(api, argv.privKey);
+  const result = await accountWrapper(api, argv.privKey);
+  const account = result[0];
   console.log(account);
   await api.tx(batchCall.toHex()).signAndSend(account);
 
@@ -65,7 +64,7 @@ async function start() {
   }
 }
 
-async function accountWrapper(api, privateKey) {
+async function accountWrapper(api: any, privateKey: string): Promise<[any, bigint]> {
   // Keyring
   const keyring = new Keyring({ type: "sr25519" });
 

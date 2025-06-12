@@ -25,7 +25,7 @@ const main = async () => {
   const blockHash = argv.at
     ? await api.rpc.chain.getBlockHash(argv.at)
     : await api.rpc.chain.getBlockHash();
-  const block = await api.rpc.chain.getBlock(blockHash);
+  const _block = await api.rpc.chain.getBlock(blockHash);
   const apiAt = await api.at(blockHash);
 
   const round = await apiAt.query.parachainStaking.round();

@@ -173,7 +173,7 @@ const main = async () => {
       ],
     ] as any[]
   ).concat(
-    candidateList.map((candidate, index) => {
+    candidateList.map((candidate, _index) => {
       return [
         !candidate.isActive
           ? chalk.yellow(candidate.id.toString())

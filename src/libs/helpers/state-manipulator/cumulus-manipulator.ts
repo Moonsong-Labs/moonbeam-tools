@@ -2,9 +2,9 @@ import Debug from "debug";
 
 import {
   Action,
-  encodeStorageBlake128MapKey,
+  encodeStorageBlake128MapKey as _encodeStorageBlake128MapKey,
   encodeStorageKey,
-  StateLine,
+  StateLine as _StateLine,
   StateManipulator,
 } from "./genesis-parser";
 import { nToHex } from "@polkadot/util";
@@ -21,7 +21,7 @@ export class CumulusManipulator implements StateManipulator {
     this.slotInfoKey = encodeStorageKey("AsyncBacking", "SlotInfo");
   }
 
-  processRead = (_) => {};
+  processRead = (_: any) => {};
 
   prepareWrite = () => {};
 

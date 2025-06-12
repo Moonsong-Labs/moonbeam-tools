@@ -37,7 +37,7 @@ const main = async () => {
   const affectedAccounts = [];
   systemAccounts.map(async ({ data: { free, reserved, frozen } }, idx) => {
     if (free.lt(frozen)) {
-      const transferableNew = free.add(reserved).sub(bnMax(reserved, frozen));
+      const _transferableNew = free.add(reserved).sub(bnMax(reserved, frozen));
       affectedAccounts.push([
         addressesToCheck[idx],
         identities[idx],

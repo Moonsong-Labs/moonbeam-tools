@@ -1,5 +1,5 @@
-import { ApiPromise, WsProvider } from "@polkadot/api";
-import fs from "fs";
+import { ApiPromise as _ApiPromise, WsProvider as _WsProvider } from "@polkadot/api";
+import * as _fs from "fs";
 import { getApiFor, NETWORK_YARGS_OPTIONS } from "src/utils/networks";
 import yargs from "yargs";
 
@@ -31,7 +31,13 @@ const main = async () => {
   const apiAt = await api.at(blockHash);
 
   block.block.extrinsics.forEach((ex, index) => {
-    const { method, signature, isSigned, signer, nonce } = ex;
+    const {
+      method,
+      signature: _signature,
+      isSigned: _isSigned,
+      signer: _signer,
+      nonce: _nonce,
+    } = ex;
     console.log(
       index,
       `${ex.method.section.toString()}.${ex.method.method.toString()} [${ex.hash.toHex()}]`,
