@@ -73,7 +73,7 @@ const sendTransfer = async (web3: Web3, from: any, nonce: number) => {
   // console.log(`Transaction for Loop count ${loopCount} sent: ${tx.transactionHash}`);
   const startTime = Date.now();
   while (Date.now() - startTime < 60000) {
-    let rcpt: TransactionReceipt = await web3.eth.getTransactionReceipt(tx.transactionHash);
+    const rcpt: TransactionReceipt = await web3.eth.getTransactionReceipt(tx.transactionHash);
     if (rcpt) {
       //console.log(`Loop count ${loopCount} - block #${rcpt.blockNumber} (${rcpt.blockHash})`);
       return;
@@ -99,6 +99,7 @@ const main = async () => {
   // 1000000 should be enough
 
   console.log(`Starting to send transactions...`);
+  // eslint-disable-next-line no-constant-condition
   while (true) {
     const pending = await polkadotApi.rpc.author.pendingExtrinsics();
     if (pending.length < argv.threshold) {

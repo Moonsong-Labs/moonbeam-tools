@@ -47,7 +47,7 @@ const main = async () => {
   let blockCount = 0;
   let initialTimestamp = 0;
   let lastTimestamp = 0;
-  let lastBlockRelayNumber = 0;
+  const lastBlockRelayNumber = 0;
   const blocksPerRound = {};
   await exploreBlockRange(
     api,

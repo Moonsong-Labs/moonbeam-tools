@@ -139,7 +139,7 @@ async function main() {
       const encodedProposal = proposal.method.toHex();
       const encodedHash = blake2AsHex(encodedProposal);
 
-      let refCount = (await api.query.democracy.referendumCount()).toNumber();
+      const refCount = (await api.query.democracy.referendumCount()).toNumber();
 
       if (argv["send-proposal-as"] == "democracy") {
         await tryProxy(
@@ -155,7 +155,7 @@ async function main() {
           monitorSubmittedExtrinsic(api, { id: "proposal" }),
         );
       } else if (argv["send-proposal-as"] == "council-external") {
-        let external = api.tx.democracy.externalProposeMajority({
+        const external = api.tx.democracy.externalProposeMajority({
           Inline: encodedProposal,
         });
 
@@ -168,7 +168,7 @@ async function main() {
         );
 
         if (argv["fast-track"]) {
-          let fastTrack = api.tx.democracy.fastTrack(encodedHash, 1, 0);
+          const fastTrack = api.tx.democracy.fastTrack(encodedHash, 1, 0);
 
           await tryProxy(
             api.tx.techCommitteeCollective.propose(

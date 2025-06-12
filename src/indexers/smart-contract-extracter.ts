@@ -131,7 +131,7 @@ const main = async () => {
 
   await new Promise<void>((resolve) => {
     const run = async () => {
-      let done = await queryNextPage();
+      const done = await queryNextPage();
       if (done) {
         resolve();
       } else {

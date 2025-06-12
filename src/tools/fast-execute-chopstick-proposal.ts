@@ -80,8 +80,9 @@ const generateProposal = async (api: ApiPromise, proposalIndex: number) => {
   });
 
   console.log("Generating proposal...'parachainStaking.setInflation' (GeneralAdmin)");
-  await new Promise<void>(async (resolve) => {
-    const unsub = await api.tx.utility
+  await new Promise<void>((resolve, reject) => {
+    let unsub: () => void;
+    api.tx.utility
       .batch([
         api.tx.preimage.notePreimage(preimage.method.toHex()),
         api.tx.referenda.submit(
@@ -95,10 +96,14 @@ const generateProposal = async (api: ApiPromise, proposalIndex: number) => {
       ])
       .signAndSend(alith, (status: any) => {
         if (status.blockNumber) {
-          unsub();
+          if (unsub) unsub();
           resolve();
         }
-      });
+      })
+      .then((unsubscribe) => {
+        unsub = unsubscribe;
+      })
+      .catch(reject);
   });
 };
 

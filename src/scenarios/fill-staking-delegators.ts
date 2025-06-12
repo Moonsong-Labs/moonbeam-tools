@@ -98,7 +98,7 @@ const main = async () => {
     );
 
     const batchSize = 200;
-    let batches = [];
+    const batches = [];
     let fromNonce = (await api.rpc.system.accountNextIndex(fromAccount.address)).toNumber();
     for (let i = 0; i < delegators.length; i += batchSize) {
       const chunk = delegators.slice(i, i + batchSize);
@@ -112,7 +112,7 @@ const main = async () => {
         await Promise.all(
           chunk.map(async (delegator) => {
             if (
-              (await api.query.system.account(delegator.address as string)).data.free.toBigInt() >
+              (await api.query.system.account(delegator.address)).data.free.toBigInt() >
               0n
             ) {
               return null;
@@ -143,9 +143,9 @@ const main = async () => {
   }
 
   function chunkArray<T>(myArray: T[], chunk_size: number): T[][] {
-    var index = 0;
-    var arrayLength = myArray.length;
-    var tempArray: T[][] = [];
+    let index = 0;
+    const arrayLength = myArray.length;
+    const tempArray: T[][] = [];
 
     for (index = 0; index < arrayLength; index += chunk_size) {
       const myChunk: T[] = myArray.slice(index, index + chunk_size);

@@ -92,7 +92,7 @@ async function main() {
       }
 
       // Batch query the storage for metadata keys
-      const storageValues = (await api.rpc.state.queryStorageAt(metadataKeys)) as unknown as Raw[];
+      const storageValues = (await api.rpc.state.queryStorageAt(metadataKeys)) as Raw[];
 
       // Process the results
       storageValues.forEach((storageValue, index) => {

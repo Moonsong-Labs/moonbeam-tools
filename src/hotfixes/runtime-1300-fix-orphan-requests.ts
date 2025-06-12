@@ -107,8 +107,8 @@ const main = async () => {
       console.log(`Preparing hotfix for ${delegatorChunk.length} delegators`);
       const hotFixTx = api.tx.parachainStaking.hotfixRemoveDelegationRequests(delegatorChunk);
 
-      let encodedProposal = hotFixTx?.method.toHex() || "";
-      let encodedHash = blake2AsHex(encodedProposal);
+      const encodedProposal = hotFixTx?.method.toHex() || "";
+      const encodedHash = blake2AsHex(encodedProposal);
       console.log("Encoded proposal hash for complete is %s", encodedHash);
       console.log("Encoded length %d", encodedProposal.length);
 
@@ -122,7 +122,7 @@ const main = async () => {
           .signAndSend(account, { nonce: nonce++ });
       } else if (argv["send-proposal-as"] == "council-external") {
         console.log("Sending external motion");
-        let external = api.tx.democracy.externalProposeMajority(encodedHash);
+        const external = api.tx.democracy.externalProposeMajority(encodedHash);
         await api.tx.councilCollective
           .propose(collectiveThreshold, external, external.length)
           .signAndSend(account, { nonce: nonce++ });

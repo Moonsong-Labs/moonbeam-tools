@@ -62,7 +62,7 @@ const main = async () => {
 
   const chainId = (await api.query.ethereumChainId.chainId()).toNumber();
   let nonce = await web3.eth.getTransactionCount(revoker.address);
-  let balance = await web3.eth.getBalance(revoker.address);
+  const balance = await web3.eth.getBalance(revoker.address);
   console.log(`Using ${revoker.address}: nonce ${nonce}, balance ${balance}`);
   console.log(`Listing revocations for ${formattedCollators.join(", ")}`);
 

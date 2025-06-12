@@ -106,7 +106,7 @@ async function main() {
       );
     }
 
-    const { nonce: rawNonce, data: balance } = await api.query.system.account(
+    const { nonce: rawNonce, data: _balance } = await api.query.system.account(
       account.address as string,
     );
     nonce = BigInt(rawNonce.toString());
@@ -131,14 +131,16 @@ async function main() {
     let lastKey = "";
     let queryCount = 0;
 
-    while (true) {
-      let query = await apiAt.query.parachainStaking.atStake.keysPaged({
+    let hasMoreEntries = true;
+    while (hasMoreEntries) {
+      const query = await apiAt.query.parachainStaking.atStake.keysPaged({
         args: [],
         pageSize: limit,
         startKey: lastKey,
       });
 
       if (query.length == 0) {
+        hasMoreEntries = false;
         break;
       }
       lastKey = query[query.length - 1].toString();
@@ -311,8 +313,8 @@ async function main() {
 
     const finalProposal = api.tx.utility.batchAll(allProposals);
 
-    let encodedProposal = finalProposal.method.toHex();
-    let encodedHash = blake2AsHex(encodedProposal);
+    const encodedProposal = finalProposal.method.toHex();
+    const encodedHash = blake2AsHex(encodedProposal);
 
     console.log(
       `propose all-in batch Extrinsic: ${chalk.red(
@@ -339,7 +341,7 @@ async function main() {
         monitorSubmittedExtrinsic(api, { id: "sudo" }),
       );
     } else {
-      let refCount = (await api.query.democracy.referendumCount()).toNumber();
+      const refCount = (await api.query.democracy.referendumCount()).toNumber();
       if (argv["send-preimage-hash"]) {
         await proxyTx(api.tx.democracy.notePreimage(encodedProposal)).signAndSend(
           account,
@@ -355,7 +357,7 @@ async function main() {
           monitorSubmittedExtrinsic(api, { id: "proposal" }),
         );
       } else if (argv["send-proposal-as"] == "council-external") {
-        let external = api.tx.democracy.externalProposeMajority(encodedHash);
+        const external = api.tx.democracy.externalProposeMajority(encodedHash);
 
         await proxyTx(
           api.tx.councilCollective.propose(collectiveThreshold, external, external.length),
@@ -366,7 +368,7 @@ async function main() {
         );
 
         if (argv["fast-track"]) {
-          let fastTrack = api.tx.democracy.fastTrack(encodedHash, 1, 0);
+          const fastTrack = api.tx.democracy.fastTrack(encodedHash, 1, 0);
 
           await proxyTx(
             api.tx.techCommitteeCollective.propose(

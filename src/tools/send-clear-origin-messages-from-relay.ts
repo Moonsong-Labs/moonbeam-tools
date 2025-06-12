@@ -33,13 +33,13 @@ const argv = yargs(process.argv.slice(2))
 const main = async () => {
   const api = await getApiFor(argv);
 
-  let sendExtrinsic = api.tx.xcmPallet.send(
+  const sendExtrinsic = api.tx.xcmPallet.send(
     { V5: { parents: new BN(0), interior: { X1: { Parachain: argv.para } } } },
     {
       V5: [{ ClearOrigin: null }],
     },
   );
-  let Txs = [];
+  const Txs = [];
 
   // If several calls, we just push alltogether to batch
   for (let i = 0; i < argv.numMessages; i++) {
@@ -70,10 +70,10 @@ async function accountWrapper(api, privateKey) {
   const keyring = new Keyring({ type: "sr25519" });
 
   // Create account and get nonce
-  let account = await keyring.addFromUri(privateKey, null, "sr25519");
+  const account = await keyring.addFromUri(privateKey, null, "sr25519");
   console.log(account.address);
-  const { nonce: rawNonce } = (await api.query.system.account(account.address)) as any;
-  let nonce = BigInt(rawNonce.toString());
+  const { nonce: rawNonce } = (await api.query.system.account(account.address));
+  const nonce = BigInt(rawNonce.toString());
 
   return [account, nonce];
 }

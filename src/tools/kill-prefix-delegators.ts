@@ -38,10 +38,10 @@ const main = async () => {
 
   await api.tx.democracy.notePreimage(encodedProposal).signAndSend(alith);
   let nonce = (await api.rpc.system.accountNextIndex(alith.address)).toNumber();
-  let referendumNextIndex = (await api.query.democracy.referendumCount()).toNumber();
+  const referendumNextIndex = (await api.query.democracy.referendumCount()).toNumber();
 
-  let external = api.tx.democracy.externalProposeMajority(encodedHash);
-  let fastTrack = api.tx.democracy.fastTrack(encodedHash, 1, 0);
+  const external = api.tx.democracy.externalProposeMajority(encodedHash);
+  const fastTrack = api.tx.democracy.fastTrack(encodedHash, 1, 0);
   const voteAmount = 1n * 10n ** BigInt(api.registry.chainDecimals[0]);
 
   process.stdout.write(`Sending motion + fast-track + vote for ${encodedHash}...`);

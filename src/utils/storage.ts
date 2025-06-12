@@ -6,7 +6,7 @@ const debug = debugPkg("utils:storage-query");
 
 // Timer must be wrapped to be passed
 const startReport = (total: () => number) => {
-  let t0 = performance.now();
+  const t0 = performance.now();
   let timer: NodeJS.Timeout = undefined;
 
   const report = () => {
@@ -43,16 +43,17 @@ export async function concurrentGetKeys(
   const maxKeys = 1000;
   let total = 0;
 
-  let prefixes = splitPrefix(keyPrefix, 1);
+  const prefixes = splitPrefix(keyPrefix, 1);
   const stopReport = startReport(() => total);
 
   try {
     const allKeys = await promiseConcurrent(
       10,
       async (prefix) => {
-        let keys = [];
+        const keys = [];
         let startKey = null;
-        while (true) {
+        let hasMore = true;
+        while (hasMore) {
           const result = await provider.send("state_getKeysPaged", [
             prefix,
             maxKeys,
@@ -62,9 +63,10 @@ export async function concurrentGetKeys(
           total += result.length;
           keys.push(...result);
           if (result.length != maxKeys) {
-            break;
+            hasMore = false;
+          } else {
+            startKey = result[result.length - 1];
           }
-          startKey = result[result.length - 1];
         }
         global.gc();
         return keys;
@@ -110,7 +112,7 @@ export async function processAllStorage(
 
   const maxKeys = 1000;
   let total = 0;
-  let prefixes = splitPrefix(prefix, splitDepth || 1);
+  const prefixes = splitPrefix(prefix, splitDepth || 1);
   const stopReport = startReport(() => total);
 
   try {
@@ -118,7 +120,8 @@ export async function processAllStorage(
       concurrency || 10,
       async (prefix) => {
         let startKey = null;
-        while (true) {
+        let hasKeys = true;
+        while (hasKeys) {
           const keys = await provider.send("state_getKeysPaged", [
             prefix,
             maxKeys,
@@ -126,6 +129,7 @@ export async function processAllStorage(
             blockHash,
           ]);
           if (keys.length == 0) {
+            hasKeys = false;
             break;
           }
           const response = await provider.send("state_queryStorageAt", [keys, blockHash]);

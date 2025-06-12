@@ -98,7 +98,7 @@ const main = async () => {
             announcement?.real,
             call.to,
             numberWithCommas(call.amount),
-            !!announcement ? chalk.green("true") : chalk.red("false"),
+            announcement ? chalk.green("true") : chalk.red("false"),
           ];
         });
       })

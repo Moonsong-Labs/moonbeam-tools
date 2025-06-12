@@ -216,21 +216,23 @@ const main = async () => {
   let count = 0;
 
   // loop over all system accounts
-  while (true) {
-    let query = await apiAt.query.system.account.entriesPaged({
+  let hasMoreAccounts = true;
+  while (hasMoreAccounts) {
+    const query = await apiAt.query.system.account.entriesPaged({
       args: [],
       pageSize: limit,
       startKey: last_key,
     });
 
     if (query.length == 0) {
+      hasMoreAccounts = false;
       break;
     }
     count += query.length;
 
     for (const user of query) {
-      let accountId = `0x${user[0].toHex().slice(-40)}`;
-      let reserved = user[1].data.reserved.toBigInt();
+      const accountId = `0x${user[0].toHex().slice(-40)}`;
+      const reserved = user[1].data.reserved.toBigInt();
       last_key = user[0].toString();
 
       const expectedReserve = expectedReserveByAccount[accountId]?.total || 0n;
@@ -292,8 +294,8 @@ const main = async () => {
         forceUnreserveCalls.push(api.tx.balances.forceUnreserve(accountId, reserve));
       });
       const batchCall = api.tx.utility.batchAll(forceUnreserveCalls);
-      let encodedProposal = batchCall?.method.toHex() || "";
-      let encodedHash = blake2AsHex(encodedProposal);
+      const encodedProposal = batchCall?.method.toHex() || "";
+      const encodedHash = blake2AsHex(encodedProposal);
       console.log("Encoded proposal hash for complete is %s", encodedHash);
       console.log("Encoded length %d", encodedProposal.length);
 
@@ -307,7 +309,7 @@ const main = async () => {
           .signAndSend(account, { nonce: nonce++ });
       } else if (argv["send-proposal-as"] == "council-external") {
         console.log("Sending external motion");
-        let external = api.tx.democracy.externalProposeMajority(encodedHash);
+        const external = api.tx.democracy.externalProposeMajority(encodedHash);
         await api.tx.councilCollective
           .propose(collectiveThreshold, external, external.length)
           .signAndSend(account, { nonce: nonce++ });

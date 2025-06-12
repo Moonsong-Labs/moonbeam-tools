@@ -112,7 +112,7 @@ const main = async () => {
   console.log(`Querying smart contract from ${last_key || "0"} [limit: ${limit}]`);
   let count = 0;
   const queryNextPage = async () => {
-    let query = await apiAt.query.evm.accountCodes.entriesPaged({
+    const query = await apiAt.query.evm.accountCodes.entriesPaged({
       args: [],
       pageSize: limit,
       startKey: last_key,
@@ -194,7 +194,7 @@ const main = async () => {
 
   await new Promise<void>((resolve) => {
     const run = async () => {
-      let done = await queryNextPage();
+      const done = await queryNextPage();
       if (done) {
         resolve();
       } else {

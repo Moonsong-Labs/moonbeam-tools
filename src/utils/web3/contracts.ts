@@ -51,7 +51,7 @@ export const deployContract = async (
   console.log(`Transaction sent: ${tx.transactionHash}`);
   const startTime = Date.now();
   while (Date.now() - startTime < 40000) {
-    let rcpt: TransactionReceipt = await web3.eth.getTransactionReceipt(tx.transactionHash);
+    const rcpt: TransactionReceipt = await web3.eth.getTransactionReceipt(tx.transactionHash);
     if (rcpt) {
       console.log(`Transaction done - block #${rcpt.blockNumber} (${rcpt.blockHash})`);
       return;
@@ -98,7 +98,7 @@ export const callContract = async (
   //   );
   const startTime = Date.now();
   while (Date.now() - startTime < 60000) {
-    let rcpt: TransactionReceipt = await web3.eth.getTransactionReceipt(tx.transactionHash);
+    const rcpt: TransactionReceipt = await web3.eth.getTransactionReceipt(tx.transactionHash);
     if (rcpt) {
       //   console.log(`- block #${rcpt.blockNumber} (${rcpt.blockHash})`);
       return;

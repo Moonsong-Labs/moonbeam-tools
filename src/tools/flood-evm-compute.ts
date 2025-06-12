@@ -116,6 +116,7 @@ const main = async () => {
   const testSuite = new Array(argv.count).fill(computeWeight["0.40"]);
 
   console.log(`Starting to send transactions...`);
+  // eslint-disable-next-line no-constant-condition
   while (true) {
     const pending = await polkadotApi.rpc.author.pendingExtrinsics();
     if (pending.length < argv.threshold) {

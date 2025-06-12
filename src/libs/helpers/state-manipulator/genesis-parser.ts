@@ -165,7 +165,7 @@ export async function processState(
   let lineSize = 0;
   await processLines(inputFile, (line, stateLine, lineMeta) => {
     let keepLine = true;
-    if (stateLine && stateLine.value) {
+    if (stateLine?.value) {
       manipulators.map((manipulator) => {
         const result = manipulator.processWrite(stateLine);
         if (!result) {
@@ -194,7 +194,7 @@ export async function processState(
             .map(
               (extraLine) =>
                 `${new Array(lineMeta.indentSpaces).fill(" ").join("")}"${extraLine.key}": ${
-                  typeof extraLine.value == "string" ? `"${extraLine.value}"` : `${extraLine.value}`
+                  typeof extraLine.value === "string" ? `"${extraLine.value}"` : `${extraLine.value}`
                 },\n`,
             )
             .join("");

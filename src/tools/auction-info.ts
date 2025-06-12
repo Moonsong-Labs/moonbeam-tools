@@ -22,11 +22,11 @@ const argv = yargs(process.argv.slice(2))
   }).argv;
 
 type AuctionInfo = {
-  duration: Number;
-  lease_period: Number;
+  duration: number;
+  lease_period: number;
 };
 
-let auctionMap = new Map<BN, AuctionInfo>();
+const auctionMap = new Map<BN, AuctionInfo>();
 
 function addSeconds(date, seconds) {
   date.setSeconds(date.getSeconds() + seconds);
@@ -34,19 +34,19 @@ function addSeconds(date, seconds) {
 }
 
 async function calculateTimestamp(api, futureblock: number) {
-  let currentBlock = (await api.rpc.chain.getHeader()).number.toNumber();
-  let timestamp = (await api.query.timestamp.now()).toNumber();
+  const currentBlock = (await api.rpc.chain.getHeader()).number.toNumber();
+  const timestamp = (await api.query.timestamp.now()).toNumber();
 
-  let currentDate = new Date(timestamp);
+  const currentDate = new Date(timestamp);
 
-  let blockDifference = futureblock - currentBlock;
+  const blockDifference = futureblock - currentBlock;
 
-  let futureDate = addSeconds(currentDate, blockDifference * 6);
+  const futureDate = addSeconds(currentDate, blockDifference * 6);
   return [futureDate.getTime(), futureDate];
 }
 
 async function calculateCurrentLeasePeriod(api, leasePeriod, leaseOffset) {
-  let currentBlock = (await api.rpc.chain.getHeader()).number.toNumber();
+  const currentBlock = (await api.rpc.chain.getHeader()).number.toNumber();
   return (currentBlock - leaseOffset) / leasePeriod;
 }
 
@@ -56,13 +56,13 @@ const main = async () => {
   const scheduled = await api.query.scheduler.agenda.entries();
 
   //scheduled.find()
-  for (var i in scheduled) {
-    for (var index in scheduled[i][1]) {
+  for (const i in scheduled) {
+    for (const index in scheduled[i][1]) {
       if (scheduled[i][1][index].isSome) {
         let call;
         if (scheduled[i][1][index].unwrap().call.isLookup) {
-          let lookup = scheduled[i][1][index].unwrap().call.asLookup;
-          let callOption = await api.query.preimage.preimageFor([lookup.hash_, lookup.len]);
+          const lookup = scheduled[i][1][index].unwrap().call.asLookup;
+          const callOption = await api.query.preimage.preimageFor([lookup.hash_, lookup.len]);
           if (callOption.isSome) {
             call = callOption.unwrap();
           }
@@ -70,11 +70,11 @@ const main = async () => {
           call = scheduled[i][1][index].unwrap().call.asInline;
         }
 
-        let extrinsic = (api.createType("GenericExtrinsicV4", call) as any).toHuman();
+        const extrinsic = (api.createType("GenericExtrinsicV4", call)).toHuman();
 
         if (extrinsic.method.method == "newAuction" && extrinsic.method.section == "auctions") {
-          let key = scheduled[i][0];
-          let sliced = key.slice(-4);
+          const key = scheduled[i][0];
+          const sliced = key.slice(-4);
 
           auctionMap.set(u8aToBn(sliced, { isLe: true }), {
             duration: extrinsic.method.args.duration.replace(/,/g, ""),
@@ -85,25 +85,25 @@ const main = async () => {
     }
   }
 
-  let sortedKeys = [...auctionMap.keys()].sort();
+  const sortedKeys = [...auctionMap.keys()].sort();
 
-  let currentAuctionIndex = await api.query.auctions.auctionCounter();
-  let leasePeriod = await api.consts.slots.leasePeriod;
-  let leaseOffset = await api.consts.slots.leaseOffset;
+  const currentAuctionIndex = await api.query.auctions.auctionCounter();
+  const leasePeriod = await api.consts.slots.leasePeriod;
+  const leaseOffset = await api.consts.slots.leaseOffset;
 
-  let endingPeriod = await api.consts.auctions.endingPeriod;
+  const endingPeriod = await api.consts.auctions.endingPeriod;
 
-  let currentLeasePeriod = await calculateCurrentLeasePeriod(api, leasePeriod, leaseOffset);
+  const currentLeasePeriod = await calculateCurrentLeasePeriod(api, leasePeriod, leaseOffset);
 
-  for (var index in sortedKeys) {
-    let nextAuction = auctionMap.get(sortedKeys[index]);
+  for (const index in sortedKeys) {
+    const nextAuction = auctionMap.get(sortedKeys[index]);
 
-    let [auctionStartTimestamp, auctionStartDate] = await calculateTimestamp(
+    const [auctionStartTimestamp, auctionStartDate] = await calculateTimestamp(
       api,
       Number(sortedKeys[index].toString()),
     );
 
-    let slotsLeasedlready =
+    const slotsLeasedlready =
       argv.para == undefined ? undefined : await api.query.slots.leases(argv.para);
 
     console.log(
@@ -119,9 +119,9 @@ const main = async () => {
       nextAuction.lease_period,
     );
 
-    let candleBeginBlock = Number(sortedKeys[index].toString()) + Number(nextAuction.duration);
+    const candleBeginBlock = Number(sortedKeys[index].toString()) + Number(nextAuction.duration);
 
-    let [candleStartTimestamp, candleStartDate] = await calculateTimestamp(api, candleBeginBlock);
+    const [candleStartTimestamp, candleStartDate] = await calculateTimestamp(api, candleBeginBlock);
 
     console.log(
       "Candle will happen at block %s, timestamp %s, date %s",
@@ -130,12 +130,12 @@ const main = async () => {
       candleStartDate,
     );
 
-    let biddingEndBlock =
+    const biddingEndBlock =
       Number(sortedKeys[index].toString()) +
       Number(nextAuction.duration) +
       Number(endingPeriod.toString());
 
-    let [biddingEndTimestamp, biddingDate] = await calculateTimestamp(api, biddingEndBlock);
+    const [biddingEndTimestamp, biddingDate] = await calculateTimestamp(api, biddingEndBlock);
 
     console.log(
       "Bidding end will happen at block %s, timestamp %s, date %s",
@@ -144,18 +144,18 @@ const main = async () => {
       biddingDate,
     );
 
-    let yourLeaseStartSlot =
+    const yourLeaseStartSlot =
       slotsLeasedlready == undefined
         ? nextAuction.lease_period
         : currentLeasePeriod + (slotsLeasedlready as any).length;
-    let leasePeriodPerSlot = await api.consts.auctions.leasePeriodsPerSlot;
-    let yourLeaseEndSlot =
+    const leasePeriodPerSlot = await api.consts.auctions.leasePeriodsPerSlot;
+    const yourLeaseEndSlot =
       Number(nextAuction.lease_period) + Number(leasePeriodPerSlot.toString()) - 1;
 
-    let lease_start_block = new BN(nextAuction.lease_period.toString())
+    const lease_start_block = new BN(nextAuction.lease_period.toString())
       .mul(u8aToBn(leasePeriod.toU8a()))
       .add(u8aToBn(leaseOffset.toU8a()));
-    let [leaseStartimestamp, leaseStartDate] = await calculateTimestamp(
+    const [leaseStartimestamp, leaseStartDate] = await calculateTimestamp(
       api,
       Number(lease_start_block.toString()),
     );
@@ -167,10 +167,10 @@ const main = async () => {
       leaseStartDate,
     );
 
-    let lease_end_block =
+    const lease_end_block =
       Number(lease_start_block.toString()) +
       Number(leasePeriodPerSlot.toString()) * Number(leasePeriod.toString());
-    let [leaseEndtimestamp, leaseEndDate] = await calculateTimestamp(
+    const [leaseEndtimestamp, leaseEndDate] = await calculateTimestamp(
       api,
       Number(lease_end_block.toString()),
     );

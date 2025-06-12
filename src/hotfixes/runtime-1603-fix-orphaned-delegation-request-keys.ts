@@ -86,7 +86,7 @@ async function waitTxDone(
   tx: SubmittableExtrinsic,
   timeoutMs = 120000,
 ): Promise<string> {
-  return new Promise(async (resolve, reject) => {
+  return new Promise((resolve, reject) => {
     let unsub = () => {};
 
     const timer = setTimeout(() => {
@@ -105,7 +105,7 @@ async function waitTxDone(
       reject(value);
     };
 
-    unsub = await tx.send(({ status, dispatchError, internalError }) => {
+    tx.send(({ status, dispatchError, internalError }) => {
       if (internalError) {
         return rejectUnsub(internalError);
       }
@@ -120,6 +120,10 @@ async function waitTxDone(
 
         resolveUnsub(status.asInBlock.toString());
       }
+    }).then((unsubscribe) => {
+      unsub = unsubscribe;
+    }).catch((error) => {
+      rejectUnsub(error);
     });
   });
 }

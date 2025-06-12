@@ -62,6 +62,17 @@ async function main() {
   const api = await getApiFor(argv);
   const keyring = new Keyring({ type: "ethereum" });
 
+  async function getAllKeys(api: ApiPromise, prefix: string, blockHash: any, startKey?: string) {
+    const keys = (
+      await api.rpc.state.getKeysPaged(prefix, 1000, startKey || prefix, blockHash)
+    ).map((d) => d.toHex());
+
+    if (keys.length == 0) {
+      return [];
+    }
+    return keys.concat(await getAllKeys(api, prefix, blockHash, keys[keys.length - 1]));
+  }
+
   try {
     const atBlock =
       argv["at-block"] || (await api.rpc.chain.getBlock()).block.header.number.toNumber();
@@ -76,21 +87,10 @@ async function main() {
     let nonce;
     if (argv["account-priv-key"]) {
       account = keyring.addFromUri(argv["account-priv-key"], null, "ethereum");
-      const { nonce: rawNonce, data: balance } = (await api.query.system.account(
+      const { nonce: rawNonce, data: _balance } = (await api.query.system.account(
         account.address,
       )) as any;
       nonce = BigInt(rawNonce.toString());
-    }
-
-    async function getAllKeys(api: ApiPromise, prefix: string, startKey?: string) {
-      const keys = (
-        await api.rpc.state.getKeysPaged(prefix, 1000, startKey || prefix, blockHash)
-      ).map((d) => d.toHex());
-
-      if (keys.length == 0) {
-        return [];
-      }
-      return keys.concat(await getAllKeys(api, prefix, keys[keys.length - 1]));
     }
 
     const delegatorPrefix =
@@ -100,8 +100,8 @@ async function main() {
       xxhashAsHex("ParachainStaking", 128) +
       xxhashAsHex("CollatorReserveToLockMigrations", 128).slice(2);
 
-    const delegatorKeys = await getAllKeys(api, delegatorPrefix);
-    const collatorKeys = await getAllKeys(api, collatorPrefix);
+    const delegatorKeys = await getAllKeys(api, delegatorPrefix, blockHash);
+    const collatorKeys = await getAllKeys(api, collatorPrefix, blockHash);
 
     console.log(
       `DelegatorReserveToLockMigrations: ${delegatorKeys.length
@@ -125,8 +125,8 @@ async function main() {
       api.tx.system.killPrefix(delegatorPrefix, delegatorKeys.length),
     ]);
 
-    let encodedProposal = proposal.method.toHex();
-    let encodedHash = blake2AsHex(encodedProposal);
+    const encodedProposal = proposal.method.toHex();
+    const encodedHash = blake2AsHex(encodedProposal);
     console.log("Encoded proposal after schedule is", encodedProposal);
     console.log("Encoded proposal hash after schedule is", encodedHash);
     console.log("Encoded length", encodedProposal.length);
@@ -136,7 +136,7 @@ async function main() {
         .sudo(proposal)
         .signAndSend(account, { nonce: nonce++ }, monitorSubmittedExtrinsic(api, { id: "sudo" }));
     } else {
-      let refCount = (await api.query.democracy.referendumCount()).toNumber();
+      const refCount = (await api.query.democracy.referendumCount()).toNumber();
       if (argv["send-preimage-hash"]) {
         await api.tx.democracy
           .notePreimage(encodedProposal)
@@ -156,7 +156,7 @@ async function main() {
             monitorSubmittedExtrinsic(api, { id: "proposal" }),
           );
       } else if (argv["send-proposal-as"] == "council-external") {
-        let external = api.tx.democracy.externalProposeMajority(encodedHash);
+        const external = api.tx.democracy.externalProposeMajority(encodedHash);
 
         await api.tx.councilCollective
           .propose(collectiveThreshold, external, external.length)
@@ -167,7 +167,7 @@ async function main() {
           );
 
         if (argv["fast-track"]) {
-          let fastTrack = api.tx.democracy.fastTrack(encodedHash, 1, 0);
+          const fastTrack = api.tx.democracy.fastTrack(encodedHash, 1, 0);
 
           await api.tx.techCommitteeCollective
             .propose(collectiveThreshold, fastTrack, fastTrack.length)

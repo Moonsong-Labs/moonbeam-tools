@@ -121,8 +121,8 @@ async function main() {
       db.cursor = keys.length > 0 ? keys[keys.length - 1].toHex() : undefined;
       console.log(db.cursor, keys.length);
 
-      let contract_suicided_keys = {};
-      for (let key of keys) {
+      const contract_suicided_keys = {};
+      for (const key of keys) {
         const SKIP_BYTES =
           16 /* pallet prefix */ + 16 /* storage prefix */ + 16; /* address prefix */
         const address = key
@@ -139,7 +139,7 @@ async function main() {
       const is_suicided_result = (await api.rpc.state.queryStorageAt(
         keys_vec,
         db.at_block,
-      )) as unknown as Raw[];
+      )) as Raw[];
 
       const not_suicided_contracts = is_suicided_result.reduce((s, v, idx) => {
         if (v.isEmpty) {
@@ -148,8 +148,8 @@ async function main() {
         return s;
       }, []);
 
-      let contract_code_keys = {};
-      for (let address of not_suicided_contracts) {
+      const contract_code_keys = {};
+      for (const address of not_suicided_contracts) {
         const address_blake2_hash = blake2AsHex("0x" + address, 128).slice(2);
 
         const contract_code_key = evmHasCodePrefix + address_blake2_hash + address;
@@ -160,7 +160,7 @@ async function main() {
       const has_code_result = (await api.rpc.state.queryStorageAt(
         keys_vec,
         db.at_block,
-      )) as unknown as Raw[];
+      )) as Raw[];
 
       const codeless_contracts = has_code_result.reduce((s, v, idx) => {
         if (v.isEmpty) {
@@ -169,7 +169,7 @@ async function main() {
         return s;
       }, []);
 
-      for (let address of codeless_contracts) {
+      for (const address of codeless_contracts) {
         const address_blake2_hash = blake2AsHex("0x" + address, 128).slice(2);
 
         const contract_storage_key = evmHasStoragesPrefix + address_blake2_hash + address;

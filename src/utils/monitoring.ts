@@ -117,7 +117,7 @@ export const getAccountIdentities = async (
               : [];
           let index = 0;
           return superOfs.map((superOf) => {
-            if (!!superOf) {
+            if (superOf) {
               const superIdentityOpt = superIdentityOpts[index++];
               return {
                 identity:
@@ -538,14 +538,14 @@ export function generateBlockDetailsLog(
     .reduce((p, { dispatchInfo, extrinsic, events, fees }) => {
       if (extrinsic.method.section == "ethereum") {
         const payload = extrinsic.method.args[0] as any;
-        let gasPrice = payload.isLegacy
+        const gasPrice = payload.isLegacy
           ? payload.asLegacy?.gasPrice.toBigInt()
           : payload.isEip2930
             ? payload.asEip2930?.gasPrice.toBigInt()
             : payload.isEip1559
               ? // If gasPrice is not indicated, we should use the base fee defined in that block
                 payload.asEip1559?.maxFeePerGas.toBigInt() || 0n
-              : (payload as any as LegacyTransaction).gasPrice?.toBigInt();
+              : (payload as LegacyTransaction).gasPrice?.toBigInt();
 
         const refTime = (dispatchInfo.weight as any).toBn
           ? (dispatchInfo.weight as any).toBigInt()
@@ -569,14 +569,14 @@ export function generateBlockDetailsLog(
     .map((tx) => {
       if (tx.extrinsic.method.section == "ethereum" && tx.extrinsic.method.method == "transact") {
         const payload = tx.extrinsic.method.args[0] as any;
-        let gasPrice = payload.isLegacy
+        const gasPrice = payload.isLegacy
           ? payload.asLegacy?.gasPrice.toBigInt()
           : payload.isEip2930
             ? payload.asEip2930?.gasPrice.toBigInt()
             : payload.isEip1559
               ? // If gasPrice is not indicated, we should use the base fee defined in that block
                 payload.asEip1559?.maxFeePerGas.toBigInt() || 0n
-              : (payload as any as LegacyTransaction).gasPrice?.toBigInt();
+              : (payload as LegacyTransaction).gasPrice?.toBigInt();
       }
       return tx.events.reduce((total, event) => {
         if (event.section == "balances" && event.method == "Transfer") {

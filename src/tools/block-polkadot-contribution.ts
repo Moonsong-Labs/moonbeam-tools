@@ -44,8 +44,8 @@ const main = async () => {
   const fromBlockNumber = argv.from;
 
   console.log(`========= Checking block ${fromBlockNumber}...${toBlockNumber}`);
-  let contributors = {};
-  let blockNumbers = [];
+  const contributors = {};
+  const blockNumbers = [];
   for (let i = argv.from; i <= argv.to; i++) {
     blockNumbers.push(i);
   }

@@ -27,7 +27,7 @@ const main = async () => {
   const endNumber = (await api.rpc.chain.getHeader(endHash)).number.toNumber();
 
   const batchSize = 20000;
-  let i = argv.start;
+  const i = argv.start;
   debug(`Checking from ${i} to ${endNumber}...`);
   for (let i = argv.start; i < endNumber; i += batchSize) {
     await promiseConcurrent(

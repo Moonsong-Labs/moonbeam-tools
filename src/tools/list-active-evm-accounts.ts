@@ -32,8 +32,8 @@ async function binaryHighSearch(max: number, compare_fn: (v: number) => Promise<
   let m = 0;
   let n = max;
   while (m <= n) {
-    let k = (n + m) >> 1;
-    let cmp = await compare_fn(k);
+    const k = (n + m) >> 1;
+    const cmp = await compare_fn(k);
     if (cmp >= 0) {
       m = k + 1;
     } else if (cmp < 0) {
@@ -47,8 +47,8 @@ async function binaryLowSearch(max: number, compare_fn: (v: number) => Promise<n
   let m = 0;
   let n = max;
   while (m <= n) {
-    let k = (n + m) >> 1;
-    let cmp = await compare_fn(k);
+    const k = (n + m) >> 1;
+    const cmp = await compare_fn(k);
     if (cmp > 0) {
       m = k + 1;
     } else if (cmp <= 0) {

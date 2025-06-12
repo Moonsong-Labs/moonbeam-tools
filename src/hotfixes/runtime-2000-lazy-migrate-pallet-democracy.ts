@@ -53,7 +53,7 @@ const main = async () => {
     if (keys.length == 0) {
       return [];
     }
-    return keys.concat(await getAllKeys(api, prefix, keys[keys.length - 1])) as string[];
+    return keys.concat(await getAllKeys(api, prefix, keys[keys.length - 1]));
   }
 
   // We retrieve all keys starting with this keys
@@ -72,11 +72,11 @@ const main = async () => {
 
     for (const key of preimageKeys) {
       // We slice and take only the proposal hash part.
-      let proposal = "0x" + key.slice(preimagePrefix.length);
+      const proposal = "0x" + key.slice(preimagePrefix.length);
       console.log("Found proposal %s to migrate", proposal);
       // We take the storage size to bound it. This will probably be more than
       // what we need, but never less
-      let storageSize = await api.rpc.state.getStorageSize(key, atBlockHash);
+      const storageSize = await api.rpc.state.getStorageSize(key, atBlockHash);
 
       // We do a batch remarking migrated proposals and migrating all
       // proposals

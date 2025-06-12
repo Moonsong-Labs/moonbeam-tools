@@ -89,8 +89,9 @@ const main = async () => {
 
     // Putting all the transactions in a batchAll
     // await api.tx.utility.batchAll(txs).send();
-    await new Promise(async (resolve) => {
-      const unsub = await api.tx.utility
+    await new Promise((resolve, reject) => {
+      let unsub: () => void;
+      api.tx.utility
         .batchAll(txs)
         .signAndSend(account, {}, ({ events = [], status }) => {
           console.log(
@@ -103,10 +104,14 @@ const main = async () => {
             console.log(`Included at block hash ${chalk.green(status.asInBlock.toHex())}`);
           } else if (status.isFinalized) {
             console.log(`Finalized block hash ${status.asFinalized.toHex()}`);
-            unsub();
+            if (unsub) unsub();
             resolve(null);
           }
-        });
+        })
+        .then((unsubscribe) => {
+          unsub = unsubscribe;
+        })
+        .catch(reject);
     });
   }
   await api.disconnect();

@@ -327,6 +327,7 @@ async function runTest(
         }
       }
       if (!transactions.substrate || transactions.evm) {
+        // TODO: Handle case when substrate is missing or evm exists
       }
       for (const i of Object.keys(weights)) {
         const key = parseInt(i);
@@ -492,7 +493,7 @@ async function createBlock<
   const txs =
     transactions == undefined ? [] : Array.isArray(transactions) ? transactions : [transactions];
   for await (const call of txs) {
-    if (typeof call == "string") {
+    if (typeof call === "string") {
       // Ethereum
       results.push({
         type: "eth",

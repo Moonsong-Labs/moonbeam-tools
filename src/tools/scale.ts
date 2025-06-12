@@ -132,7 +132,7 @@ async function cmdEncode(argv: any) {
 
   try {
     const type = argv["type"] || resolveType(api, argv["storage"]);
-    const obj = api.createType(type as any, JSON.parse(argv["value"]));
+    const obj = api.createType(type, JSON.parse(argv["value"]));
     const encodingExplained = explainEncoding(obj.inspect());
     if (argv["explain"]) {
       console.log(JSON.stringify(recursiveMerge(obj.toHuman(), encodingExplained), null, 2));
@@ -155,7 +155,7 @@ async function cmdDecode(argv: any) {
 
   try {
     const type = argv["type"] || resolveType(api, argv["storage"]);
-    const obj = api.createType(type as any, hexToU8a(argv["value"]));
+    const obj = api.createType(type, hexToU8a(argv["value"]));
     const encodingExplained = explainEncoding(obj.inspect());
     if (argv["explain"]) {
       console.log(JSON.stringify(recursiveMerge(obj.toHuman(), encodingExplained), null, 2));

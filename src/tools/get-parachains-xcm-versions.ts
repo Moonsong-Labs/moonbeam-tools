@@ -34,11 +34,11 @@ const argv = yargs(process.argv.slice(2))
 
 export async function getXCMVersion(provider: any): Promise<[string, string]> {
   // Get XCM Version - Not great but there is no chain state approach
-  let xcmpQueueVersion =
-    (provider.query.xcmpQueue && ((await provider.query.xcmpQueue.palletVersion()) as any)) ||
+  const xcmpQueueVersion =
+    (provider.query.xcmpQueue && ((await provider.query.xcmpQueue.palletVersion()))) ||
     "N/A";
-  let xcmSafeVersion =
-    (provider.query.polkadotXcm && ((await provider.query.polkadotXcm.safeXcmVersion()) as any)) ||
+  const xcmSafeVersion =
+    (provider.query.polkadotXcm && ((await provider.query.polkadotXcm.safeXcmVersion()))) ||
     "N/A";
   return [xcmpQueueVersion, xcmSafeVersion];
 }
@@ -114,7 +114,7 @@ const main = async () => {
       const paraApi: any = await getParaApi(network, id);
       const xcmVersion = paraApi ? await getXCMVersion(paraApi) : ["", ""];
       paras[id] = { connections: [], version: xcmVersion };
-      paraApi && paraApi.disconnect();
+      paraApi?.disconnect();
     }
     paras[id].connections.push(hrmpChannel.args[0].recipient.toString());
   }

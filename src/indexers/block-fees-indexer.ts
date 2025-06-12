@@ -275,7 +275,7 @@ const main = async () => {
               (dispatchInfo.weight.refTime || (dispatchInfo.weight as any)).toBigInt() /
               WEIGHT_PER_GAS;
 
-            let gasPriceParam = payload.isLegacy
+            const gasPriceParam = payload.isLegacy
               ? payload.asLegacy?.gasPrice.toBigInt()
               : payload.isEip2930
                 ? payload.asEip2930?.gasPrice.toBigInt()
@@ -284,7 +284,7 @@ const main = async () => {
                     payload.asEip1559?.maxFeePerGas.toBigInt() || baseFeePerGas
                   : (payload as any as LegacyTransaction).gasPrice.toBigInt();
 
-            let gasLimitParam =
+            const gasLimitParam =
               (payload.isLegacy
                 ? payload.asLegacy?.gasLimit.toBigInt()
                 : payload.isEip2930
@@ -293,7 +293,7 @@ const main = async () => {
                     ? payload.asEip1559?.gasLimit.toBigInt()
                     : (payload as any as LegacyTransaction)?.gasLimit.toBigInt()) || 15000000n;
 
-            let gasBaseFee = payload.isEip1559 ? baseFeePerGas : gasPriceParam;
+            const gasBaseFee = payload.isEip1559 ? baseFeePerGas : gasPriceParam;
             let gasTips = payload.isEip1559
               ? payload.asEip1559.maxPriorityFeePerGas.toBigInt() <
                 payload.asEip1559.maxFeePerGas.toBigInt() - gasBaseFee
@@ -321,7 +321,7 @@ const main = async () => {
               // Is removed in runtime 1400
               gasTips = payload.asEip1559.maxPriorityFeePerGas.toBigInt();
             }
-            let gasFee = gasBaseFee + gasTips;
+            const gasFee = gasBaseFee + gasTips;
 
             // Bug where a collator receives unexpected fees ("minted")
             const collatorDepositEvent = events.find(

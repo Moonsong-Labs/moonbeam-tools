@@ -3,28 +3,33 @@ import { SubmittableExtrinsic } from "@polkadot/api/promise/types";
 import { GenericCall } from "@polkadot/types/generic";
 
 export const sendAllAndWaitLast = async (extrinsics: SubmittableExtrinsic[]) => {
-  return new Promise(async (resolve, reject) => {
-    console.log(`Preparing to send ${extrinsics.length} extrinsics`);
-    for (let i = 0; i < extrinsics.length; i++) {
-      if (i == extrinsics.length - 1) {
-        const unsub = await extrinsics[i].send((result) => {
-          if (result.isError) {
-            reject(result.toHuman());
-          }
-          if (result.isInBlock) {
-            console.log(`Last extrinsic submitted`);
-            unsub();
-            resolve(null);
-          }
-        });
-      } else {
-        await extrinsics[i].send();
-      }
-      if (i % 100 == 0) {
-        console.log(`Sending extrinsic: ${i}...`);
-      }
+  console.log(`Preparing to send ${extrinsics.length} extrinsics`);
+  
+  // Send all but the last extrinsic
+  for (let i = 0; i < extrinsics.length - 1; i++) {
+    await extrinsics[i].send();
+    if (i % 100 == 0) {
+      console.log(`Sending extrinsic: ${i}...`);
     }
-    console.log(`Waiting for last extrinsic...`);
+  }
+  
+  console.log(`Waiting for last extrinsic...`);
+  
+  // Send the last extrinsic and wait for it
+  return new Promise((resolve, reject) => {
+    let unsub: () => void;
+    extrinsics[extrinsics.length - 1].send((result) => {
+      if (result.isError) {
+        reject(result.toHuman());
+      }
+      if (result.isInBlock) {
+        console.log(`Last extrinsic submitted`);
+        if (unsub) unsub();
+        resolve(null);
+      }
+    }).then((unsubscribe) => {
+      unsub = unsubscribe;
+    }).catch(reject);
   });
 };
 
@@ -37,8 +42,8 @@ export const sendAllStreamAndWaitLast = async (
     timeout: 120000,
   },
 ) => {
-  let promises = [];
-  let lastUpdateTime = Date.now();
+  const promises = [];
+  const lastUpdateTime = Date.now();
   while (extrinsics.length > 0) {
     const pending = await api.rpc.author.pendingExtrinsics();
     if (pending.length < threshold) {
@@ -47,13 +52,14 @@ export const sendAllStreamAndWaitLast = async (
       promises.push(
         Promise.all(
           chunk.map((tx) => {
-            return new Promise(async (resolve, reject) => {
-              let unsub;
+            return new Promise((resolve, reject) => {
+              let unsub: () => void;
               const timer = setTimeout(() => {
                 reject(`timed out`);
-                unsub();
+                if (unsub) unsub();
               }, timeout);
-              unsub = await tx.send((result) => {
+              
+              tx.send((result) => {
                 // reset the timer
                 if (result.isError) {
                   console.log(result.toHuman());
@@ -61,10 +67,15 @@ export const sendAllStreamAndWaitLast = async (
                   reject(result.toHuman());
                 }
                 if (result.isInBlock) {
-                  unsub();
+                  if (unsub) unsub();
                   clearTimeout(timer);
                   resolve(null);
                 }
+              }).then((unsubscribe) => {
+                unsub = unsubscribe;
+              }).catch((error) => {
+                clearTimeout(timer);
+                reject(error);
               });
             }).catch((e) => {});
           }),
