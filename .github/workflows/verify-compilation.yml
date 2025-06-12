@@ -19,24 +19,16 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: "24"
+          cache: 'npm'
 
       - name: Install dependencies
         timeout-minutes: 10
         run: |
           echo "Node version: $(node --version)"
           echo "NPM version: $(npm --version)"
-          echo "NPM registry: $(npm config get registry)"
-          echo "Current directory: $(pwd)"
-          echo "Package.json exists: $(test -f package.json && echo 'yes' || echo 'no')"
-          echo "Starting npm install with verbose logging..."
-          npm install --no-audit --verbose --loglevel verbose --timing
-        env:
-          NPM_CONFIG_LOGLEVEL: verbose
-          NPM_CONFIG_PROGRESS: true
-          NPM_CONFIG_FETCH_RETRIES: 3
-          NPM_CONFIG_FETCH_RETRY_MINTIMEOUT: 10000
-          NPM_CONFIG_FETCH_RETRY_MAXTIMEOUT: 60000
-          NPM_CONFIG_TIMING: true
+          echo "NPM cache directory: $(npm config get cache)"
+          echo "Starting npm ci (clean install)..."
+          npm ci --no-audit
 
       - name: Setup bun
         uses: oven-sh/setup-bun@v2

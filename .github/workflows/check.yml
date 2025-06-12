@@ -17,5 +17,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 24.x
+          cache: 'npm'
       - name: Check with Prettier
         run: npx prettier --check --ignore-path .prettierignore '**/*.(yml|js|ts)'
