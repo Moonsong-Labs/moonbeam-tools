@@ -31,10 +31,7 @@ async function main() {
   const api = await getApiFor(argv);
 
   try {
-    const chain = (await api.rpc.system.chain())
-      .toString()
-      .toLowerCase()
-      .replace(/\s/g, "-");
+    const chain = (await api.rpc.system.chain()).toString().toLowerCase().replace(/\s/g, "-");
 
     const TEMPORARY_DB_FILE = path.resolve(
       __dirname,
@@ -51,17 +48,14 @@ async function main() {
     if (fs.existsSync(TEMPORARY_DB_FILE)) {
       db = {
         ...db,
-        ...JSON.parse(
-          fs.readFileSync(TEMPORARY_DB_FILE, { encoding: "utf-8" }),
-        ),
+        ...JSON.parse(fs.readFileSync(TEMPORARY_DB_FILE, { encoding: "utf-8" })),
       };
     }
 
     const evmAccountCodePrefix =
       xxhashAsHex("EVM", 128) + xxhashAsHex("AccountCodes", 128).slice(2);
     const evmAccountCodeMetadataPrefix =
-      xxhashAsHex("EVM", 128) +
-      xxhashAsHex("AccountCodesMetadata", 128).slice(2);
+      xxhashAsHex("EVM", 128) + xxhashAsHex("AccountCodesMetadata", 128).slice(2);
 
     const ITEMS_PER_PAGE = argv.limit;
 
@@ -100,9 +94,7 @@ async function main() {
       }
 
       // Batch query the storage for metadata keys
-      const storageValues = (await api.rpc.state.queryStorageAt(
-        metadataKeys,
-      )) as unknown as Raw[];
+      const storageValues = (await api.rpc.state.queryStorageAt(metadataKeys)) as unknown as Raw[];
 
       // Process the results
       storageValues.forEach((storageValue, index) => {

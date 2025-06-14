@@ -16,10 +16,7 @@ import "@moonbeam-network/api-augment";
 import { Keyring } from "@polkadot/api";
 import { KeyringPair } from "@polkadot/keyring/types";
 import { getApiFor, NETWORK_YARGS_OPTIONS } from "../utils/networks.ts";
-import {
-  monitorSubmittedExtrinsic,
-  waitForAllMonitoredExtrinsics,
-} from "../utils/monitoring.ts";
+import { monitorSubmittedExtrinsic, waitForAllMonitoredExtrinsics } from "../utils/monitoring.ts";
 import { ALITH_PRIVATE_KEY } from "../utils/constants.ts";
 import fs from "fs";
 
@@ -36,8 +33,7 @@ const argv = yargs(process.argv.slice(2))
     limit: {
       type: "number",
       default: 100,
-      describe:
-        "The maximum number of storage entries to be removed by this call",
+      describe: "The maximum number of storage entries to be removed by this call",
     },
     alith: {
       type: "boolean",
@@ -62,10 +58,7 @@ async function main() {
   const api = await getApiFor(argv);
   const keyring = new Keyring({ type: "ethereum" });
 
-  const chain = (await api.rpc.system.chain())
-    .toString()
-    .toLowerCase()
-    .replace(/\s/g, "-");
+  const chain = (await api.rpc.system.chain()).toString().toLowerCase().replace(/\s/g, "-");
   const INPUT_FILE = path.resolve(
     __dirname,
     `contracts-without-metadata-addresses-${chain}-db.json`,
@@ -101,22 +94,16 @@ async function main() {
     let nonce;
 
     // Setup account
-    const privKey = argv["alith"]
-      ? ALITH_PRIVATE_KEY
-      : argv["account-priv-key"];
+    const privKey = argv["alith"] ? ALITH_PRIVATE_KEY : argv["account-priv-key"];
     if (privKey) {
       account = keyring.addFromUri(privKey, null, "ethereum");
-      const { nonce: rawNonce } = await api.query.system.account(
-        account.address,
-      );
+      const { nonce: rawNonce } = await api.query.system.account(account.address);
       nonce = BigInt(rawNonce.toString());
     }
 
     // Get contracts to process in this run
     const contractsToProcess = db.pending_contracts.slice(0, limit);
-    console.log(
-      `Submitting transactions for ${contractsToProcess.length} contracts...`,
-    );
+    console.log(`Submitting transactions for ${contractsToProcess.length} contracts...`);
 
     // Submit all transactions first
     for (const contract of contractsToProcess) {
@@ -124,15 +111,12 @@ async function main() {
       const has_metadata = await api.query.evm.accountCodesMetadata(contract);
       if (!has_metadata.isEmpty) {
         db.migrated_contracts.push(contract);
-        db.pending_contracts = db.pending_contracts.filter(
-          (addr) => addr !== contract,
-        );
+        db.pending_contracts = db.pending_contracts.filter((addr) => addr !== contract);
         continue;
       }
 
       try {
-        const tx =
-          api.tx["moonbeamLazyMigrations"].createContractMetadata(contract);
+        const tx = api.tx["moonbeamLazyMigrations"].createContractMetadata(contract);
         await tx.signAndSend(
           account,
           { nonce: nonce++ },
@@ -141,11 +125,8 @@ async function main() {
         console.log(`Submitted transaction for ${contract}`);
       } catch (error) {
         console.error(`Failed to submit transaction for ${contract}:`, error);
-        db.failed_contracts[contract] =
-          error.message || "Transaction submission failed";
-        db.pending_contracts = db.pending_contracts.filter(
-          (addr) => addr !== contract,
-        );
+        db.failed_contracts[contract] = error.message || "Transaction submission failed";
+        db.pending_contracts = db.pending_contracts.filter((addr) => addr !== contract);
       }
     }
 
@@ -164,16 +145,12 @@ async function main() {
       const has_metadata = await api.query.evm.accountCodesMetadata(contract);
       if (!has_metadata.isEmpty) {
         db.migrated_contracts.push(contract);
-        db.pending_contracts = db.pending_contracts.filter(
-          (addr) => addr !== contract,
-        );
+        db.pending_contracts = db.pending_contracts.filter((addr) => addr !== contract);
         console.log(`✅ Verified metadata for ${contract}`);
       } else {
         console.log(`❌ Metadata verification failed for ${contract}`);
         db.failed_contracts[contract] = "Metadata verification failed";
-        db.pending_contracts = db.pending_contracts.filter(
-          (addr) => addr !== contract,
-        );
+        db.pending_contracts = db.pending_contracts.filter((addr) => addr !== contract);
       }
     }
 
@@ -182,12 +159,8 @@ async function main() {
 
     // Print summary
     console.log("\nMigration Summary:");
-    console.log(
-      `✅ Successfully processed: ${db.migrated_contracts.length} contracts`,
-    );
-    console.log(
-      `❌ Failed: ${Object.keys(db.failed_contracts).length} contracts`,
-    );
+    console.log(`✅ Successfully processed: ${db.migrated_contracts.length} contracts`);
+    console.log(`❌ Failed: ${Object.keys(db.failed_contracts).length} contracts`);
     console.log(`⏳ Remaining: ${db.pending_contracts.length} contracts`);
   } catch (error) {
     console.error("Migration error:", error);
