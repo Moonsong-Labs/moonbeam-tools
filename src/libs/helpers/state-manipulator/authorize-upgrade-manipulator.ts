@@ -1,8 +1,8 @@
 import Debug from "debug";
 
-import { Action, encodeStorageKey, StateManipulator } from "./genesis-parser.ts";
+import { Action, encodeStorageKey, StateManipulator } from "./genesis-parser";
 
-const debug = Debug("helper:authorize-upgrade-manipulator");
+const _debug = Debug("helper:authorize-upgrade-manipulator");
 
 export class AuthorizeUpgradeManipulator implements StateManipulator {
   private readonly runtimeHash: string;
@@ -16,8 +16,8 @@ export class AuthorizeUpgradeManipulator implements StateManipulator {
       "ParachainSystem",
       "LastRelayChainBlockNumber",
     );
-    debug(`Using key ${this.storageKey} for System.AuthorizedUpgrade`);
-    debug(
+    _debug(`Using key ${this.storageKey} for System.AuthorizedUpgrade`);
+    _debug(
       `Using key ${this.lastRelayChainBlockNumberKey} for ParachainSystem.LastRelayChainBlockNumber`,
     );
   }
@@ -28,7 +28,7 @@ export class AuthorizeUpgradeManipulator implements StateManipulator {
 
   processWrite = ({ key, value }) => {
     if (key.startsWith(this.lastRelayChainBlockNumberKey)) {
-      debug(`Adding Authorized Upgrade Hash: ${this.runtimeHash}`);
+      _debug(`Adding Authorized Upgrade Hash: ${this.runtimeHash}`);
       return {
         action: "remove" as Action,
         extraLines: [
@@ -40,7 +40,7 @@ export class AuthorizeUpgradeManipulator implements StateManipulator {
       };
     }
     if (key.startsWith(this.storageKey)) {
-      debug(`Removing Authorized Upgrade Hash: ${value}`);
+      _debug(`Removing Authorized Upgrade Hash: ${value}`);
       return {
         action: "remove" as Action,
         extraLines: [],

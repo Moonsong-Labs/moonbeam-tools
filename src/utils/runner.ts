@@ -3,7 +3,7 @@ import Debug from "debug";
 import { ChildProcessWithoutNullStreams } from "node:child_process";
 import { promisify } from "node:util";
 
-const debug = Debug("actions:runner");
+const _debug = Debug("actions:runner");
 const execAsync = promisify(child_process.exec);
 
 // Execute process and return the output
@@ -12,13 +12,13 @@ export async function runTask(
   { cwd, env }: { cwd: string; env?: NodeJS.ProcessEnv } = { cwd: process.cwd() },
   title?: string,
 ): Promise<string> {
-  debug(`${title ? `Title: ${title}\n` : ""}Running task on directory ${cwd}: ${cmd}\n`);
+  _debug(`${title ? `Title: ${title}\n` : ""}Running task on directory ${cwd}: ${cmd}\n`);
   try {
-    const result = await execAsync(cmd, { cwd, env });
-    return result.stdout;
+    const _result = await execAsync(cmd, { cwd, env });
+    return _result.stdout;
   } catch (error: any) {
     console.log(error);
-    debug(`Caught exception in command execution. Error[${error.status}] ${error.message}\n`);
+    _debug(`Caught exception in command execution. Error[${error.status}] ${error.message}\n`);
     throw error;
   }
 }
@@ -29,7 +29,7 @@ export async function spawnTask(
   { cwd, env }: { cwd: string; env?: NodeJS.ProcessEnv } = { cwd: process.cwd() },
   title?: string,
 ): Promise<ChildProcessWithoutNullStreams> {
-  debug(`${title ? `Title: ${title}\n` : ""}Running task on directory ${process.cwd()}: ${cmd}\n`);
+  _debug(`${title ? `Title: ${title}\n` : ""}Running task on directory ${process.cwd()}: ${cmd}\n`);
   try {
     const process = child_process.spawn(
       cmd.split(" ")[0],
@@ -45,7 +45,7 @@ export async function spawnTask(
     return process;
   } catch (error) {
     console.log(error);
-    debug(`Caught exception in command execution. Error[${error.status}] ${error.message}\n`);
+    _debug(`Caught exception in command execution. Error[${error.status}] ${error.message}\n`);
     throw error;
   }
 }

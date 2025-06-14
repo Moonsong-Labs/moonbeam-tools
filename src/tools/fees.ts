@@ -27,7 +27,7 @@ import {
   CHARLETH_ADDRESS,
   CHARLETH_PRIVATE_KEY,
   DOROTHY_PRIVATE_KEY,
-} from "../utils/constants.ts";
+} from "../utils/constants";
 
 const httpUrl = "http://127.0.0.1:9933";
 const wssUrl = "ws://127.0.0.1:9944";
@@ -71,7 +71,7 @@ web3.eth.accounts.wallet.add(ALITH_PRIVATE_KEY);
  *  + frontier
  *    - Baltathar pays no EVM fees and full substrate fees, while Charleth pays the opposite.
  *        let baltathar_addr = H160::from_str("0x3cd0a705a2dc65e5b1e1205896baa2be8a07c6e0").unwrap();
- *        let (validate, payable) = if source == baltathar_addr {
+ *        let (validate, payable) = if source === baltathar_addr {
  *                (false, Pays::Yes)
  *        } else {
  *                (true, Pays::No)
@@ -143,7 +143,7 @@ async function runTest(
   api: ApiPromise,
   options: { callType: "compute" | "length-small" | "length-big"; multiplier: BN | null },
 ) {
-  const result = [];
+  const _result = [];
   console.log(`options: ${JSON.stringify(options)}`);
   let contractAddr = "0xc01Ee7f10EA4aF4673cFff62710E1D7792aBa8f3";
 
@@ -223,11 +223,12 @@ async function runTest(
   const loadFactors = [...Array(183).fill(55)];
   // const loadFactors = [...Array(1).fill(0)];
   const repsPerLoad = 30;
+  const result = [];
   for await (const [loadFactorIndex, loadFactor] of loadFactors.entries()) {
     console.log(
       `load: ${loadFactor} (${repsPerLoad} reps)  ${loadFactorIndex + 1}/${loadFactors.length}`,
     );
-    for await (const rep of new Array(repsPerLoad).keys()) {
+    for await (const _rep of new Array(repsPerLoad).keys()) {
       // uncomment the following code to reduce feeMultiplier by 10 each 100 blocks
       //   if (blockN % 100 === 0) {
       //     console.log(`feeMultiplier ${feeMultiplier.toString()}`);
@@ -327,6 +328,7 @@ async function runTest(
         }
       }
       if (!transactions.substrate || transactions.evm) {
+        // TODO: Handle case when substrate is missing or evm exists
       }
       for (const i of Object.keys(weights)) {
         const key = parseInt(i);
@@ -394,7 +396,7 @@ async function runTest(
   };
 }
 
-function generateLoad(middle: number, inc: number = 1): number[] {
+function _generateLoad(middle: number, inc: number = 1): number[] {
   const load = [];
   for (let i = 0; i <= middle; i += inc) {
     load.push(i);
@@ -431,7 +433,7 @@ async function txObserveFeeDiff(
 async function expectEVMSuccess(api: ApiPromise) {
   const events = await api.query.system.events();
   const ethereumResult = events.find(
-    ({ event: { section, method } }) => section == "ethereum" && method == "Executed",
+    ({ event: { section, method } }) => section === "ethereum" && method === "Executed",
   ).event.data[3] as EvmCoreErrorExitReason;
   assert.equal(ethereumResult.isSucceed, true, "EVM operation failed");
 }
@@ -490,9 +492,9 @@ async function createBlock<
 >(api: ApiPromise, transactions?: Calls, options: BlockCreation = {}) {
   const results: ({ type: "eth"; hash: string } | { type: "sub"; hash: string })[] = [];
   const txs =
-    transactions == undefined ? [] : Array.isArray(transactions) ? transactions : [transactions];
+    transactions === undefined ? [] : Array.isArray(transactions) ? transactions : [transactions];
   for await (const call of txs) {
-    if (typeof call == "string") {
+    if (typeof call === "string") {
       // Ethereum
       results.push({
         type: "eth",
@@ -518,7 +520,7 @@ async function createBlock<
   const blockHash = block.get("hash").toString();
 
   // No need to extract events if no transactions
-  if (results.length == 0) {
+  if (results.length === 0) {
     return {
       block,
       result: null,
@@ -532,17 +534,17 @@ async function createBlock<
 
   const result: ExtrinsicCreation[] = results.map((result) => {
     const extrinsicIndex =
-      result.type == "eth"
+      result.type === "eth"
         ? allRecords
             .find(
               ({ phase, event: { section, method, data } }) =>
                 phase.isApplyExtrinsic &&
-                section == "ethereum" &&
-                method == "Executed" &&
-                data[2].toString() == result.hash,
+                section === "ethereum" &&
+                method === "Executed" &&
+                data[2].toString() === result.hash,
             )
             ?.phase?.asApplyExtrinsic?.toNumber()
-        : blockData.block.extrinsics.findIndex((ext) => ext.hash.toHex() == result.hash);
+        : blockData.block.extrinsics.findIndex((ext) => ext.hash.toHex() === result.hash);
     // We retrieve the events associated with the extrinsic
     const events = allRecords.filter(
       ({ phase }) => phase.isApplyExtrinsic && phase.asApplyExtrinsic.toNumber() === extrinsicIndex,
@@ -553,7 +555,7 @@ async function createBlock<
   });
 
   // Adds extra time to avoid empty transaction when querying it
-  if (results.find((r) => r.type == "eth")) {
+  if (results.find((r) => r.type === "eth")) {
     await setTimeout(2);
   }
 
@@ -608,7 +610,7 @@ async function createTransaction(
   const maxFeePerGas = options.maxFeePerGas || 1_000_000_000;
   const accessList = options.accessList || [];
   const nonce =
-    options.nonce != null ? options.nonce : await web3.eth.getTransactionCount(from, "pending");
+    options.nonce !== null ? options.nonce : await web3.eth.getTransactionCount(from, "pending");
 
   let data, rawTransaction;
   if (isLegacy) {
@@ -701,7 +703,7 @@ export interface Compiled {
 }
 function compileSolidity(fileContents: string): Compiled {
   // const fileContents = fs.readFileSync(filepath).toString();
-  const result = JSON.parse(
+  const _result = JSON.parse(
     solc.compile(
       JSON.stringify({
         language: "Solidity",
@@ -725,14 +727,14 @@ function compileSolidity(fileContents: string): Compiled {
       },
     ),
   );
-  if (!result.contracts) {
-    throw result;
+  if (!_result.contracts) {
+    throw _result;
   }
-  const allContractNames = Object.keys(result.contracts["main.sol"]);
+  const allContractNames = Object.keys(_result.contracts["main.sol"]);
   const reduced = allContractNames.reduce((p, contractName) => {
     p[contractName] = {
-      byteCode: "0x" + result.contracts["main.sol"][contractName].evm.bytecode.object,
-      contract: result.contracts["main.sol"][contractName],
+      byteCode: "0x" + _result.contracts["main.sol"][contractName].evm.bytecode.object,
+      contract: _result.contracts["main.sol"][contractName],
       sourceCode: fileContents,
     };
     return p;
@@ -765,7 +767,7 @@ async function view(input: string, output: string, open: boolean) {
     output,
     `<html>
     <head>
-      <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.1/chart.min.js" integrity="sha512-QSkVNOCYLtj73J4hbmVoOV6KVZuMluZlioC+trLpewV8qMjsWqlIQvkn1KGX2StWvPMdWGBqim1xlC8krl1EKQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.1/chart.min.js" integrity="sha512-QSkVNOCYLtj73J4hbmVoOV6KVZuMluZlioC+trLpewV8qMjsWqlIQvkn1KGX2StWvPMdWGBqim1xlC8krl1EKQ===" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
       <script src="https://cdn.jsdelivr.net/combine/npm/hammerjs@2.0.8"></script>
       <script src="https://cdn.jsdelivr.net/combine/npm/chartjs-plugin-zoom@1.2.1"></script>
       <style>

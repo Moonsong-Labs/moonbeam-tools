@@ -5,10 +5,10 @@ import { blake2AsHex } from "@polkadot/util-crypto";
 import chalk from "chalk";
 import yargs from "yargs";
 
-import { ALITH_PRIVATE_KEY, getApiFor, NETWORK_YARGS_OPTIONS } from "../index.ts";
+import { ALITH_PRIVATE_KEY, getApiFor, NETWORK_YARGS_OPTIONS } from "../index";
 
 import debugPkg from "debug";
-const debug = debugPkg("fast-executor");
+const _debug = debugPkg("fast-executor");
 const argv = yargs(process.argv.slice(2))
   .usage("Usage: $0")
   .version("1.0.0")
@@ -38,25 +38,25 @@ async function moveScheduledCallTo(
       if (scheduledEntry.isSome && verifier(scheduledEntry.unwrap().call)) {
         found = true;
         console.log(`${chalk.blue("SetStorage")} scheduler.agenda`);
-        const result = await api.rpc("dev_setStorage", [
+        const _result = await api.rpc("dev_setStorage", [
           [agendaEntry[0]], // require to ensure unique id
           [await api.query.scheduler.agenda.key(blockNumber + blockCounts), agendaEntry[1].toHex()],
         ]);
         if (scheduledEntry.unwrap().maybeId.isSome) {
           const id = scheduledEntry.unwrap().maybeId.unwrap().toHex();
           const lookup = await api.query.scheduler.lookup(id);
-          debug(
+          _debug(
             `Checking lookup ${scheduledEntry.unwrap().maybeId.unwrap().toHex()}: ${lookup.isSome}`,
           );
           if (lookup.isSome) {
             const lookupKey = await api.query.scheduler.lookup.key(id);
-            const lookupJson = lookup.unwrap().toJSON();
+            const _lookupJson = lookup.unwrap().toJSON();
             const fastLookup = api.registry.createType("Option<(u32,u32)>", [
               blockNumber + blockCounts,
               0,
             ]);
-            const result = await api.rpc("dev_setStorage", [[lookupKey, fastLookup.toHex()]]);
-            debug(`Updated lookup to ${fastLookup.toJSON()}`);
+            const _result = await api.rpc("dev_setStorage", [[lookupKey, fastLookup.toHex()]]);
+            _debug(`Updated lookup to ${fastLookup.toJSON()}`);
           }
         }
       }
@@ -80,8 +80,9 @@ const generateProposal = async (api: ApiPromise, proposalIndex: number) => {
   });
 
   console.log("Generating proposal...'parachainStaking.setInflation' (GeneralAdmin)");
-  await new Promise<void>(async (resolve) => {
-    const unsub = await api.tx.utility
+  await new Promise<void>((resolve, reject) => {
+    let unsub: () => void;
+    api.tx.utility
       .batch([
         api.tx.preimage.notePreimage(preimage.method.toHex()),
         api.tx.referenda.submit(
@@ -95,10 +96,14 @@ const generateProposal = async (api: ApiPromise, proposalIndex: number) => {
       ])
       .signAndSend(alith, (status: any) => {
         if (status.blockNumber) {
-          unsub();
+          if (unsub) unsub();
           resolve();
         }
-      });
+      })
+      .then((unsubscribe) => {
+        unsub = unsubscribe;
+      })
+      .catch(reject);
   });
 };
 
@@ -184,7 +189,7 @@ const main = async () => {
       proposalIndex.toString(),
     )} referendumKey ${referendumKey}`,
   );
-  const result = await api.rpc("dev_setStorage", [[referendumKey, fastProposal.toHex()]]);
+  const _result = await api.rpc("dev_setStorage", [[referendumKey, fastProposal.toHex()]]);
 
   // Fast forward the nudge referendum to the next block to get the refendum to be scheduled
   console.log(
@@ -198,7 +203,8 @@ const main = async () => {
     }
     const callData = api.createType("Call", call.asInline.toHex());
     return (
-      callData.method == "nudgeReferendum" && (callData.args[0] as any).toNumber() == proposalIndex
+      callData.method === "nudgeReferendum" &&
+      (callData.args[0] as any).toNumber() === proposalIndex
     );
   });
 
@@ -217,10 +223,10 @@ const main = async () => {
   );
   await moveScheduledCallTo(api, 1, (call) =>
     call.isLookup
-      ? call.asLookup.toHex() == callHash
+      ? call.asLookup.toHex() === callHash
       : call.isInline
-        ? blake2AsHex(call.asInline.toHex()) == callHash
-        : call.asLegacy.toHex() == callHash,
+        ? blake2AsHex(call.asInline.toHex()) === callHash
+        : call.asLegacy.toHex() === callHash,
   );
 
   console.log(

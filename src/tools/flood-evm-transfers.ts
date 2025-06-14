@@ -3,9 +3,9 @@ import { Keyring } from "@polkadot/api";
 import { TransactionReceipt, Web3 } from "web3";
 import yargs from "yargs";
 
-import { ALITH_PRIVATE_KEY } from "../utils/constants.ts";
-import { getMonitoredApiFor, NETWORK_YARGS_OPTIONS } from "../utils/networks.ts";
-import { customWeb3Request } from "../utils/web3/transactions.ts";
+import { ALITH_PRIVATE_KEY } from "../utils/constants";
+import { getMonitoredApiFor, NETWORK_YARGS_OPTIONS } from "../utils/networks";
+import { customWeb3Request } from "../utils/web3/transactions";
 
 const argv = yargs(process.argv.slice(2))
   .usage("Usage: $0")
@@ -41,7 +41,7 @@ const argv = yargs(process.argv.slice(2))
   }).argv;
 
 const hashes = {};
-const sendTransfer = async (web3: Web3, from: any, nonce: number) => {
+const _sendTransfer = async (web3: Web3, from: any, nonce: number) => {
   // console.log(`Sending ${nonce}`)
   const tx = await web3.eth.accounts.signTransaction(
     {
@@ -55,9 +55,9 @@ const sendTransfer = async (web3: Web3, from: any, nonce: number) => {
     from.privateKey,
   );
 
-  const result = await customWeb3Request(web3, "eth_sendRawTransaction", [tx.rawTransaction]);
-  if (result.error) {
-    console.error(result.error);
+  const _result = await customWeb3Request(web3, "eth_sendRawTransaction", [tx.rawTransaction]);
+  if (_result.error) {
+    console.error(_result.error);
     throw new Error(`Error sending transaction!`);
   }
 
@@ -73,7 +73,7 @@ const sendTransfer = async (web3: Web3, from: any, nonce: number) => {
   // console.log(`Transaction for Loop count ${loopCount} sent: ${tx.transactionHash}`);
   const startTime = Date.now();
   while (Date.now() - startTime < 60000) {
-    let rcpt: TransactionReceipt = await web3.eth.getTransactionReceipt(tx.transactionHash);
+    const rcpt: TransactionReceipt = await web3.eth.getTransactionReceipt(tx.transactionHash);
     if (rcpt) {
       //console.log(`Loop count ${loopCount} - block #${rcpt.blockNumber} (${rcpt.blockHash})`);
       return;
@@ -91,7 +91,7 @@ const main = async () => {
   const keyring = new Keyring({ type: "ethereum" });
 
   const fromAccount = await keyring.addFromUri(argv.from);
-  const deployer = web3.eth.accounts.privateKeyToAccount(argv.from);
+  const _deployer = web3.eth.accounts.privateKeyToAccount(argv.from);
 
   let fromNonce = (await polkadotApi.rpc.system.accountNextIndex(fromAccount.address)).toNumber();
   console.log(`Sending from nonce ${fromNonce}`);
@@ -99,11 +99,12 @@ const main = async () => {
   // 1000000 should be enough
 
   console.log(`Starting to send transactions...`);
+  // eslint-disable-next-line no-constant-condition
   while (true) {
     const pending = await polkadotApi.rpc.author.pendingExtrinsics();
     if (pending.length < argv.threshold) {
       new Array(argv.count).fill(0).map(() => {
-        return sendTransfer(web3, deployer, fromNonce++).catch((e) => {
+        return _sendTransfer(web3, _deployer, fromNonce++).catch((e) => {
           console.log(e);
         });
       });

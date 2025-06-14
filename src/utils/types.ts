@@ -1,6 +1,6 @@
 import { ApiPromise } from "@polkadot/api";
 
-import { EXTRINSIC_BASE_WEIGHT } from "./constants.ts";
+import { EXTRINSIC_BASE_WEIGHT } from "./constants";
 
 import type {
   DispatchError,
@@ -25,8 +25,8 @@ export const mapExtrinsics = async (
   api: ApiPromise,
   extrinsics: Extrinsic[],
   records: EventRecord[],
-  fees: InclusionFee[],
-  feeMultiplier: u128,
+  _fees: InclusionFee[],
+  _feeMultiplier: u128,
 ) => {
   return Promise.all(
     extrinsics.map(async (extrinsic, index) => {
@@ -48,9 +48,11 @@ export const mapExtrinsics = async (
           return event;
         });
 
-      const unadjustedWeightFee = dispatchInfo ? (
-        (await api.call.transactionPaymentApi.queryWeightToFee(dispatchInfo.weight)) as any
-      ).toBigInt() : 0n;
+      const unadjustedWeightFee = dispatchInfo
+        ? (
+            (await api.call.transactionPaymentApi.queryWeightToFee(dispatchInfo.weight)) as any
+          ).toBigInt()
+        : 0n;
       const lengthFee = (
         (await api.call.transactionPaymentApi.queryLengthToFee(extrinsic.encodedLength)) as any
       ).toBigInt();

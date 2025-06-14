@@ -3,7 +3,7 @@ import { xxhashAsU8a } from "@polkadot/util-crypto";
 import yargs from "yargs";
 
 import debugPkg from "debug";
-const debug = debugPkg("main");
+const _debug = debugPkg("main");
 
 const argv = yargs(process.argv.slice(2))
   .usage("Usage: $0")

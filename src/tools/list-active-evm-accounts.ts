@@ -1,7 +1,7 @@
 import { ApiPromise } from "@polkadot/api";
 import yargs from "yargs";
 
-import { exploreBlockRange, getApiFor, NETWORK_YARGS_OPTIONS } from "../index.ts";
+import { exploreBlockRange, getApiFor, NETWORK_YARGS_OPTIONS } from "../index";
 
 const XEN_ADDRESS = "0xb564A5767A00Ee9075cAC561c427643286F8F4E1".toLowerCase();
 
@@ -32,8 +32,8 @@ async function binaryHighSearch(max: number, compare_fn: (v: number) => Promise<
   let m = 0;
   let n = max;
   while (m <= n) {
-    let k = (n + m) >> 1;
-    let cmp = await compare_fn(k);
+    const k = (n + m) >> 1;
+    const cmp = await compare_fn(k);
     if (cmp >= 0) {
       m = k + 1;
     } else if (cmp < 0) {
@@ -47,8 +47,8 @@ async function binaryLowSearch(max: number, compare_fn: (v: number) => Promise<n
   let m = 0;
   let n = max;
   while (m <= n) {
-    let k = (n + m) >> 1;
-    let cmp = await compare_fn(k);
+    const k = (n + m) >> 1;
+    const cmp = await compare_fn(k);
     if (cmp > 0) {
       m = k + 1;
     } else if (cmp <= 0) {
@@ -62,7 +62,8 @@ const compareDate = (api: ApiPromise, targetDate: string) => async (n) => {
   const { block } = await api.rpc.chain.getBlock(await api.rpc.chain.getBlockHash(n));
   const timestamp = api.registry.createType(
     "Compact<u64>",
-    block.extrinsics.find((e) => e.method.section == "timestamp" && e.method.method == "set").data,
+    block.extrinsics.find((e) => e.method.section === "timestamp" && e.method.method === "set")
+      .data,
   );
   const date = new Date(timestamp.toNumber()).toISOString().slice(0, targetDate.length);
   return date === targetDate ? 0 : date > targetDate ? -1 : 1;
@@ -120,12 +121,12 @@ const main = async () => {
       const timestamp = api.registry.createType(
         "Compact<u64>",
         blockDetails.block.extrinsics.find(
-          (e) => e.method.section == "timestamp" && e.method.method == "set",
+          (e) => e.method.section === "timestamp" && e.method.method === "set",
         ).data,
       );
       date = new Date(timestamp.toNumber());
 
-      const month = date.getMonth();
+      const _month = date.getMonth();
 
       const evmEvents = blockDetails.txWithEvents
         .map((e) => e.events.filter((e) => e.section === "ethereum" && e.method === "Executed"))

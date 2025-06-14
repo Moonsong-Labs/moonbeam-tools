@@ -6,7 +6,7 @@ import Debug from "debug";
 import { Options } from "yargs";
 
 import type { MoonbeamRuntimeProxyType } from "@polkadot/types/lookup";
-const debug = Debug("proxy-chain");
+const _debug = Debug("proxy-chain");
 
 // Library providing easy support for multiple proxy signing for CLI
 // Proxied accounts can be combined by using comma separator and colon for types.
@@ -62,7 +62,7 @@ export class ProxyChain {
       .slice()
       .reverse()
       .reduce((call, proxy, index) => {
-        debug(
+        _debug(
           `chain [${index}]: ${proxy.address}${proxy.type ? `:${proxy.type}` : ""} - ${
             call.method.section
           }.${call.method.method}`,

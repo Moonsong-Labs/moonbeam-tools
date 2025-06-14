@@ -3,9 +3,9 @@ import { Keyring } from "@polkadot/api";
 import yargs from "yargs";
 import { SubmittableExtrinsic } from "@polkadot/api/promise/types";
 
-import { ALITH_PRIVATE_KEY, BALTATHAR_PRIVATE_KEY } from "../index.ts";
-import { getMonitoredApiFor, NETWORK_YARGS_OPTIONS } from "../utils/networks.ts";
-import { sendAllStreamAndWaitLast } from "../utils/transactions.ts";
+import { ALITH_PRIVATE_KEY, BALTATHAR_PRIVATE_KEY } from "../index";
+import { getMonitoredApiFor, NETWORK_YARGS_OPTIONS } from "../utils/networks";
+import { sendAllStreamAndWaitLast } from "../utils/transactions";
 
 const argv = yargs(process.argv.slice(2))
   .usage("Usage: $0")

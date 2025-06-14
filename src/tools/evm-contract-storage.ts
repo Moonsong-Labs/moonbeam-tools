@@ -1,7 +1,7 @@
 // This script is expected to run against a parachain network (using launch.ts script)
 import yargs from "yargs";
 
-import { getApiFor, NETWORK_YARGS_OPTIONS } from "../index.ts";
+import { getApiFor, NETWORK_YARGS_OPTIONS } from "../index";
 
 const argv = yargs(process.argv.slice(2))
   .usage("Usage: $0")
@@ -31,7 +31,7 @@ const main = async () => {
   console.log(`key,value`);
   for (const storage of contractStorages) {
     const key = storage[0].toHex().slice(2);
-    const address = `0x${key.slice(64 + 32, 64 + 32 + 40)}`;
+    const _address = `0x${key.slice(64 + 32, 64 + 32 + 40)}`;
     const h1 = `0x${key.slice(64 + 32 + 40 + 32, 64 + 32 + 40 + 32 + 64)}`;
     const storageData = storage[1].toHex();
     console.log(`${h1},${storageData}`);

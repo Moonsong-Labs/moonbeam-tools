@@ -9,8 +9,8 @@ import { Keyring } from "@polkadot/api";
 import { blake2AsHex } from "@polkadot/util-crypto";
 import yargs from "yargs";
 
-import { getApiFor, NETWORK_YARGS_OPTIONS } from "../index.ts";
-import { printTokens } from "../utils/monitoring.ts";
+import { getApiFor, NETWORK_YARGS_OPTIONS } from "../index";
+import { printTokens } from "../utils/monitoring";
 
 const argv = yargs(process.argv.slice(2))
   .usage("Usage: $0")
@@ -179,7 +179,7 @@ const main = async () => {
     })),
     assetsMetadata.map((metadata) => ({
       accountId: `0x${assets
-        .find((asset) => asset[0].toHex().slice(-64) == metadata[0].toHex().slice(-64))[1]
+        .find((asset) => asset[0].toHex().slice(-64) === metadata[0].toHex().slice(-64))[1]
         .unwrap()
         .owner.toHex()
         .slice(-40)}`,
@@ -216,26 +216,28 @@ const main = async () => {
   let count = 0;
 
   // loop over all system accounts
-  while (true) {
-    let query = await apiAt.query.system.account.entriesPaged({
+  let hasMoreAccounts = true;
+  while (hasMoreAccounts) {
+    const query = await apiAt.query.system.account.entriesPaged({
       args: [],
       pageSize: limit,
       startKey: last_key,
     });
 
-    if (query.length == 0) {
+    if (query.length === 0) {
+      hasMoreAccounts = false;
       break;
     }
     count += query.length;
 
     for (const user of query) {
-      let accountId = `0x${user[0].toHex().slice(-40)}`;
-      let reserved = user[1].data.reserved.toBigInt();
+      const accountId = `0x${user[0].toHex().slice(-40)}`;
+      const reserved = user[1].data.reserved.toBigInt();
       last_key = user[0].toString();
 
       const expectedReserve = expectedReserveByAccount[accountId]?.total || 0n;
 
-      if (expectedReserve != reserved) {
+      if (expectedReserve !== reserved) {
         console.log(
           `${accountId}: reserved ${reserved} vs expected ${expectedReserve} (${Object.keys(
             expectedReserveByAccount[accountId]?.reserved || {},
@@ -279,7 +281,7 @@ const main = async () => {
   if (argv["send-preimage-hash"]) {
     const collectiveThreshold = argv["collective-threshold"] || 1;
     const account = await keyring.addFromUri(argv["account-priv-key"], null, "ethereum");
-    const { nonce: rawNonce, data: balance } = (await api.query.system.account(
+    const { nonce: rawNonce, data: _balance } = (await api.query.system.account(
       account.address,
     )) as any;
     let nonce = BigInt(rawNonce.toString());
@@ -292,22 +294,22 @@ const main = async () => {
         forceUnreserveCalls.push(api.tx.balances.forceUnreserve(accountId, reserve));
       });
       const batchCall = api.tx.utility.batchAll(forceUnreserveCalls);
-      let encodedProposal = batchCall?.method.toHex() || "";
-      let encodedHash = blake2AsHex(encodedProposal);
+      const encodedProposal = batchCall?.method.toHex() || "";
+      const encodedHash = blake2AsHex(encodedProposal);
       console.log("Encoded proposal hash for complete is %s", encodedHash);
       console.log("Encoded length %d", encodedProposal.length);
 
       console.log("Sending pre-image");
       await api.tx.democracy.notePreimage(encodedProposal).signAndSend(account, { nonce: nonce++ });
 
-      if (argv["send-proposal-as"] == "democracy") {
+      if (argv["send-proposal-as"] === "democracy") {
         console.log("Sending proposal");
         await api.tx.democracy
           .propose(encodedHash, await api.consts.democracy.minimumDeposit)
           .signAndSend(account, { nonce: nonce++ });
-      } else if (argv["send-proposal-as"] == "council-external") {
+      } else if (argv["send-proposal-as"] === "council-external") {
         console.log("Sending external motion");
-        let external = api.tx.democracy.externalProposeMajority(encodedHash);
+        const external = api.tx.democracy.externalProposeMajority(encodedHash);
         await api.tx.councilCollective
           .propose(collectiveThreshold, external, external.length)
           .signAndSend(account, { nonce: nonce++ });

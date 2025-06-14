@@ -20,7 +20,7 @@ import { ApiPromise, Keyring } from "@polkadot/api";
 import { SubmittableExtrinsic } from "@polkadot/api/promise/types";
 import yargs from "yargs";
 
-import { getApiFor, NETWORK_YARGS_OPTIONS } from "../index.ts";
+import { getApiFor, NETWORK_YARGS_OPTIONS } from "../index";
 
 const argv = yargs(process.argv.slice(2))
   .usage("Usage: $0")
@@ -86,7 +86,7 @@ async function waitTxDone(
   tx: SubmittableExtrinsic,
   timeoutMs = 120000,
 ): Promise<string> {
-  return new Promise(async (resolve, reject) => {
+  return new Promise((resolve, reject) => {
     let unsub = () => {};
 
     const timer = setTimeout(() => {
@@ -105,7 +105,7 @@ async function waitTxDone(
       reject(value);
     };
 
-    unsub = await tx.send(({ status, dispatchError, internalError }) => {
+    tx.send(({ status, dispatchError, internalError }) => {
       if (internalError) {
         return rejectUnsub(internalError);
       }
@@ -120,7 +120,13 @@ async function waitTxDone(
 
         resolveUnsub(status.asInBlock.toString());
       }
-    });
+    })
+      .then((unsubscribe) => {
+        unsub = unsubscribe;
+      })
+      .catch((error) => {
+        rejectUnsub(error);
+      });
   });
 }
 

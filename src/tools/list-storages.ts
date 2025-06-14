@@ -1,7 +1,7 @@
 import yargs from "yargs";
 import chalk from "chalk";
 
-import { getApiFor, NETWORK_YARGS_OPTIONS } from "../utils/networks.ts";
+import { getApiFor, NETWORK_YARGS_OPTIONS } from "../utils/networks";
 import { xxhashAsHex } from "@polkadot/util-crypto";
 
 const argv = yargs(process.argv.slice(2))
@@ -13,12 +13,12 @@ const argv = yargs(process.argv.slice(2))
 
 const capitalize = (s) => {
   return String(s[0]).toUpperCase() + String(s).slice(1);
-}
+};
 const main = async () => {
   const api = await getApiFor(argv);
 
   for (const section of Object.keys(api.query)) {
-    const palletName = section == "evm" ? "EVM" : capitalize(section);
+    const palletName = section === "evm" ? "EVM" : capitalize(section);
     const sectionKey = xxhashAsHex(palletName, 128);
     console.log(`${chalk.yellow(palletName)}`);
     for (const method of Object.keys(api.query[section])) {

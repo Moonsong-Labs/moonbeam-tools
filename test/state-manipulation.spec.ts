@@ -2,26 +2,26 @@ import { hexToBigInt, nToHex } from "@polkadot/util";
 import fs from "node:fs/promises";
 import path from "node:path";
 
-import { AuthorFilteringManipulator } from "../src/libs/helpers/state-manipulator/author-filtering-manipulator.ts";
-import { AuthorizeUpgradeManipulator } from "../src/libs/helpers/state-manipulator/authorize-upgrade-manipulator.ts";
-import { BalancesManipulator } from "../src/libs/helpers/state-manipulator/balances-manipulator.ts";
-import { CollatorManipulator } from "../src/libs/helpers/state-manipulator/collator-manipulator.ts";
-import { CollectiveManipulator } from "../src/libs/helpers/state-manipulator/collective-manipulator.ts";
-import { processState } from "../src/libs/helpers/state-manipulator/genesis-parser.ts";
-import { HRMPManipulator } from "../src/libs/helpers/state-manipulator/hrmp-manipulator.ts";
-import { RoundManipulator } from "../src/libs/helpers/state-manipulator/round-manipulator.ts";
-import { SpecManipulator } from "../src/libs/helpers/state-manipulator/spec-manipulator.ts";
-import { SudoManipulator } from "../src/libs/helpers/state-manipulator/sudo-manipulator.ts";
-import { ValidationManipulator } from "../src/libs/helpers/state-manipulator/validation-manipulator.ts";
-import { XCMPManipulator } from "../src/libs/helpers/state-manipulator/xcmp-manipulator.ts";
+import { AuthorFilteringManipulator } from "../src/libs/helpers/state-manipulator/author-filtering-manipulator";
+import { AuthorizeUpgradeManipulator } from "../src/libs/helpers/state-manipulator/authorize-upgrade-manipulator";
+import { BalancesManipulator } from "../src/libs/helpers/state-manipulator/balances-manipulator";
+import { CollatorManipulator } from "../src/libs/helpers/state-manipulator/collator-manipulator";
+import { CollectiveManipulator } from "../src/libs/helpers/state-manipulator/collective-manipulator";
+import { processState } from "../src/libs/helpers/state-manipulator/genesis-parser";
+import { HRMPManipulator } from "../src/libs/helpers/state-manipulator/hrmp-manipulator";
+import { RoundManipulator } from "../src/libs/helpers/state-manipulator/round-manipulator";
+import { SpecManipulator } from "../src/libs/helpers/state-manipulator/spec-manipulator";
+import { SudoManipulator } from "../src/libs/helpers/state-manipulator/sudo-manipulator";
+import { ValidationManipulator } from "../src/libs/helpers/state-manipulator/validation-manipulator";
+import { XCMPManipulator } from "../src/libs/helpers/state-manipulator/xcmp-manipulator";
 import {
   BALTATHAR_ADDRESS,
   CHARLETH_ADDRESS,
   CHARLETH_SESSION_ADDRESS,
   HEATH_ADDRESS,
   JUDITH_ADDRESS,
-} from "../src/utils/constants.ts";
-import { CumulusManipulator } from "src/libs/helpers/state-manipulator/cumulus-manipulator.ts";
+} from "../src/utils/constants";
+import { CumulusManipulator } from "src/libs/helpers/state-manipulator/cumulus-manipulator";
 
 describe("State Manipulation", () => {
   const inFile = path.join(__dirname, "sample-state.json");
@@ -31,7 +31,7 @@ describe("State Manipulation", () => {
 
   beforeAll(async () => {
     await processState(inFile, outFile, [
-      new RoundManipulator((current, first, length) => {
+      new RoundManipulator((current, _first, _length) => {
         return { current, first: 0, length: 100 };
       }),
       new SudoManipulator(JUDITH_ADDRESS),

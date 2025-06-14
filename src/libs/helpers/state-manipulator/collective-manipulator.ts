@@ -1,9 +1,9 @@
 import { nToHex } from "@polkadot/util";
 import Debug from "debug";
 
-import { Action, encodeStorageKey, StateManipulator } from "./genesis-parser.ts";
+import { Action, encodeStorageKey, StateManipulator } from "./genesis-parser";
 
-const debug = Debug("helper:collective-manipulator");
+const _debug = Debug("helper:collective-manipulator");
 
 export class CollectiveManipulator implements StateManipulator {
   private readonly collectiveName: string;
@@ -14,7 +14,7 @@ export class CollectiveManipulator implements StateManipulator {
     this.collectiveName = collectiveName;
     this.newMembers = newMembers;
     this.collectiveMembersKey = encodeStorageKey(collectiveName, "Members");
-    debug(`Using key ${this.collectiveMembersKey} for ${this.collectiveName} members`);
+    _debug(`Using key ${this.collectiveMembersKey} for ${this.collectiveName} members`);
   }
 
   processRead = (_) => {};
@@ -23,7 +23,7 @@ export class CollectiveManipulator implements StateManipulator {
 
   processWrite = ({ key, value }) => {
     if (key.startsWith(this.collectiveMembersKey)) {
-      debug(`Replacing ${this.collectiveName} members: ${value}`);
+      _debug(`Replacing ${this.collectiveName} members: ${value}`);
       return {
         action: "remove" as Action,
         extraLines: [

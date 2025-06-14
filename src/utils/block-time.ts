@@ -12,7 +12,7 @@ async function getFutureBlockDate(api: ApiPromise, blockNumber: number, currentB
   const currentTimestamp = api.registry.createType(
     "Compact<u64>",
     currentBlock.block.extrinsics.find(
-      (e) => e.method.section == "timestamp" && e.method.method == "set",
+      (e) => e.method.section === "timestamp" && e.method.method === "set",
     ).data,
   );
 
@@ -27,7 +27,7 @@ async function getFutureBlockDate(api: ApiPromise, blockNumber: number, currentB
     const firstTimestamp = api.registry.createType(
       "Compact<u64>",
       firstBlock.block.extrinsics.find(
-        (e) => e.method.section == "timestamp" && e.method.method == "set",
+        (e) => e.method.section === "timestamp" && e.method.method === "set",
       ).data,
     );
 
@@ -48,7 +48,7 @@ async function getFutureBlockDate(api: ApiPromise, blockNumber: number, currentB
   const previousTimestamp = api.registry.createType(
     "Compact<u64>",
     previousBlock.block.extrinsics.find(
-      (e) => e.method.section == "timestamp" && e.method.method == "set",
+      (e) => e.method.section === "timestamp" && e.method.method === "set",
     ).data,
   );
 
@@ -70,7 +70,7 @@ async function getPastBlockDate(api: ApiPromise, blockNumber: number, currentBlo
     (await api.rpc.chain.getBlockHash(blockNumber)).toString(),
   );
   const timestampExt = pastBlock.block.extrinsics.find(
-    (e) => e.method.section == "timestamp" && e.method.method == "set",
+    (e) => e.method.section === "timestamp" && e.method.method === "set",
   );
 
   const timestamp = api.registry.createType("Compact<u64>", timestampExt.data);

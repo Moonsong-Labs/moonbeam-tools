@@ -4,11 +4,11 @@ import humanizeNumber from "humanize-number";
 import { moment } from "moment-parseplus";
 import yargs from "yargs";
 
-import { getBlockDate } from "../utils/block-time.ts";
-import { promiseConcurrent } from "../utils/functions.ts";
-import { getApiFor, NETWORK_YARGS_OPTIONS } from "../utils/networks.ts";
-import { getReferendumByGroups } from "../utils/referenda.ts";
-import { callInterpreter, renderCallInterpretation } from "../utils/transactions.ts";
+import { getBlockDate } from "../utils/block-time";
+import { promiseConcurrent } from "../utils/functions";
+import { getApiFor, NETWORK_YARGS_OPTIONS } from "../utils/networks";
+import { getReferendumByGroups } from "../utils/referenda";
+import { callInterpreter, renderCallInterpretation } from "../utils/transactions";
 
 const argv = yargs(process.argv.slice(2))
   .usage("Usage: $0")
@@ -41,7 +41,7 @@ const main = async () => {
       const callData = await callInterpreter(api, referendum.image.proposal);
       imageText = callData.text;
       subText =
-        callData.depth == 0 || argv["single-line"]
+        callData.depth === 0 || argv["single-line"]
           ? null
           : callData.subCalls
               .map((c) => renderCallInterpretation(c, 1, "                 "))
@@ -105,7 +105,7 @@ const main = async () => {
             (ref.ongoing.enactment.isAt && ref.ongoing.enactment.asAt.toNumber() < currentBlock));
 
         const networkIcon =
-          polkadotPrefix == "moonbeam" ? "🌒" : polkadotPrefix == "moonriver" ? "⛵" : "?";
+          polkadotPrefix === "moonbeam" ? "🌒" : polkadotPrefix === "moonriver" ? "⛵" : "?";
         const statusIcon = ref.info.isApproved
           ? isExecuted
             ? "⚡"
@@ -144,7 +144,7 @@ const main = async () => {
             : "";
         const subText =
           !callData ||
-          callData.depth == 0 ||
+          callData.depth === 0 ||
           callData.text.startsWith("whitelist.dispatch") ||
           argv["single-line"]
             ? null

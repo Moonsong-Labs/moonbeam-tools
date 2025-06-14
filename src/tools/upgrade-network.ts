@@ -15,14 +15,14 @@ import { blake2AsHex } from "@polkadot/util-crypto";
 import fs from "fs";
 import yargs from "yargs";
 
-import { ALITH_PRIVATE_KEY } from "../utils/constants.ts";
+import { ALITH_PRIVATE_KEY } from "../utils/constants";
 import {
   monitorSubmittedExtrinsic,
   waitBlocks,
   waitForAllMonitoredExtrinsics,
-} from "../utils/monitoring.ts";
-import { getApiFor, NETWORK_YARGS_OPTIONS } from "../utils/networks.ts";
-import { maybeProxyCall } from "../utils/transactions.ts";
+} from "../utils/monitoring";
+import { getApiFor, NETWORK_YARGS_OPTIONS } from "../utils/networks";
+import { maybeProxyCall } from "../utils/transactions";
 
 const argv = yargs(process.argv.slice(2))
   .usage("Usage: $0")
@@ -89,7 +89,7 @@ async function main() {
   try {
     const atBlock =
       argv["at-block"] || (await api.rpc.chain.getBlock()).block.header.number.toNumber();
-    const blockHash = await api.rpc.chain.getBlockHash(atBlock);
+    const _blockHash = await api.rpc.chain.getBlockHash(atBlock);
 
     const collectiveThreshold =
       argv["collective-threshold"] ||
@@ -101,7 +101,7 @@ async function main() {
     const privKey = argv["alith"] ? ALITH_PRIVATE_KEY : argv["account-priv-key"];
     if (privKey) {
       account = keyring.addFromUri(privKey, null, "ethereum");
-      const { nonce: rawNonce, data: balance } = (await api.query.system.account(
+      const { nonce: rawNonce, data: _balance } = (await api.query.system.account(
         account.address,
       )) as any;
       nonce = BigInt(rawNonce.toString());
@@ -139,9 +139,9 @@ async function main() {
       const encodedProposal = proposal.method.toHex();
       const encodedHash = blake2AsHex(encodedProposal);
 
-      let refCount = (await api.query.democracy.referendumCount()).toNumber();
+      const refCount = (await api.query.democracy.referendumCount()).toNumber();
 
-      if (argv["send-proposal-as"] == "democracy") {
+      if (argv["send-proposal-as"] === "democracy") {
         await tryProxy(
           api.tx.democracy.propose(
             {
@@ -154,8 +154,8 @@ async function main() {
           { nonce: nonce++ },
           monitorSubmittedExtrinsic(api, { id: "proposal" }),
         );
-      } else if (argv["send-proposal-as"] == "council-external") {
-        let external = api.tx.democracy.externalProposeMajority({
+      } else if (argv["send-proposal-as"] === "council-external") {
+        const external = api.tx.democracy.externalProposeMajority({
           Inline: encodedProposal,
         });
 
@@ -168,7 +168,7 @@ async function main() {
         );
 
         if (argv["fast-track"]) {
-          let fastTrack = api.tx.democracy.fastTrack(encodedHash, 1, 0);
+          const fastTrack = api.tx.democracy.fastTrack(encodedHash, 1, 0);
 
           await tryProxy(
             api.tx.techCommitteeCollective.propose(

@@ -2,7 +2,7 @@
 import { ApiPromise, WsProvider } from "@polkadot/api";
 import yargs from "yargs";
 
-import { promiseConcurrent } from "../index.ts";
+import { promiseConcurrent } from "../index";
 
 const argv = yargs(process.argv.slice(2))
   .usage("Usage: $0")
@@ -44,8 +44,8 @@ const main = async () => {
   const fromBlockNumber = argv.from;
 
   console.log(`========= Checking block ${fromBlockNumber}...${toBlockNumber}`);
-  let contributors = {};
-  let blockNumbers = [];
+  const contributors = {};
+  const blockNumbers = [];
   for (let i = argv.from; i <= argv.to; i++) {
     blockNumbers.push(i);
   }
@@ -57,7 +57,7 @@ const main = async () => {
       const records = await api.query.system.events.at(blockHash);
 
       const contrib = records.find(
-        ({ event }) => event.section == "crowdloan" && event.method == "Contributed",
+        ({ event }) => event.section === "crowdloan" && event.method === "Contributed",
       );
       if (contrib) {
         const [account, paraId, amount] = contrib.event.data as any;

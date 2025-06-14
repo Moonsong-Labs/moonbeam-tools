@@ -1,8 +1,8 @@
 import Debug from "debug";
 
-import { Action, encodeStorageKey, StateManipulator } from "./genesis-parser.ts";
+import { Action, encodeStorageKey, StateManipulator } from "./genesis-parser";
 
-const debug = Debug("helper:sudo-manipulator");
+const _debug = Debug("helper:sudo-manipulator");
 
 export class SudoManipulator implements StateManipulator {
   public storagePrefix: string;
@@ -19,7 +19,7 @@ export class SudoManipulator implements StateManipulator {
     if (!key.startsWith(this.storagePrefix)) {
       return;
     }
-    debug(`Found sudo key: ${value}`);
+    _debug(`Found sudo key: ${value}`);
     return {
       action: "remove" as Action,
       extraLines: [{ key, value: this.sudoAccount }],

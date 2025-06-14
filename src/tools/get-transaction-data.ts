@@ -1,6 +1,6 @@
-import { ApiPromise, WsProvider } from "@polkadot/api";
-import fs from "fs";
-import { getApiFor, NETWORK_YARGS_OPTIONS } from "src/utils/networks.ts";
+import { ApiPromise as _ApiPromise, WsProvider as _WsProvider } from "@polkadot/api";
+import * as _fs from "fs";
+import { getApiFor, NETWORK_YARGS_OPTIONS } from "src/utils/networks";
 import yargs from "yargs";
 
 export const NETWORK_WS_URLS: { [name: string]: string } = {
@@ -18,7 +18,7 @@ const argv = yargs(process.argv.slice(2))
     at: {
       type: "number",
       description: "Block number",
-    }
+    },
   }).argv;
 
 const main = async () => {
@@ -31,24 +31,35 @@ const main = async () => {
   const apiAt = await api.at(blockHash);
 
   block.block.extrinsics.forEach((ex, index) => {
-    const { method, signature, isSigned, signer, nonce } = ex;
-    console.log(index, `${ex.method.section.toString()}.${ex.method.method.toString()} [${ex.hash.toHex()}]`);
+    const {
+      method,
+      signature: _signature,
+      isSigned: _isSigned,
+      signer: _signer,
+      nonce: _nonce,
+    } = ex;
+    console.log(
+      index,
+      `${ex.method.section.toString()}.${ex.method.method.toString()} [${ex.hash.toHex()}]`,
+    );
     // if (method.args.length > 0) {
     //   console.log(`  Args: ${method.args.map((arg) => arg.toHex()).join(', ')}`);
     // }
 
-    if (method.section === 'sudo' && method.method.startsWith('sudo')) {
+    if (method.section === "sudo" && method.method.startsWith("sudo")) {
       // Handle sudo extrinsics
       const nestedCall = method.args[0]; // The "call" is the first argument in sudo methods
-      const { section, method: nestedMethod, args: nestedArgs } = apiAt.registry.createType('Call', nestedCall);
+      const {
+        section,
+        method: nestedMethod,
+        args: nestedArgs,
+      } = apiAt.registry.createType("Call", nestedCall);
 
       console.log(`  Nested Call: ${section}.${nestedMethod}`);
       const nestedDecodedArgs = nestedArgs.map((arg: any) => arg.toHuman());
       console.log(`  Nested Args: ${JSON.stringify(nestedDecodedArgs, null, 2)}`);
     }
-    console.log(`${ex.method.method.toString() == "setValidationData" ? "..." : ex.toHex()}`);
-      
-
+    console.log(`${ex.method.method.toString() === "setValidationData" ? "..." : ex.toHex()}`);
   });
 
   await api.disconnect();

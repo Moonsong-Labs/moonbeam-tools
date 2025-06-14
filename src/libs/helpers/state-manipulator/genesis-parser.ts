@@ -5,7 +5,7 @@ import Debug from "debug";
 import fs from "node:fs/promises";
 import readline from "readline";
 
-const debug = Debug("helper:state-manipulator");
+const _debug = Debug("helper:state-manipulator");
 
 // Buffer size in lines used to write to the file
 const BUFFER_LINE_SIZE = 200;
@@ -85,7 +85,7 @@ export async function processState(
   if (!inputFile || !destFile) {
     throw new Error("Missing input and destination file");
   }
-  if (inputFile == destFile) {
+  if (inputFile === destFile) {
     throw new Error("Input and output files are the same");
   }
   // Read each line and callback with the line and extracted key/value if available
@@ -103,38 +103,38 @@ export async function processState(
     for await (const line of lineReaderPass) {
       const keyValue = line.split('": ');
       let value: string = null;
-      if (keyValue.length == 1) {
+      if (keyValue.length === 1) {
         // line is not a traditional key:value (but can be an array value)
         let i = 0;
         for (; i < line.length; i += 2) {
-          if (line[i] != " ") {
+          if (line[i] !== " ") {
             break;
           }
         }
-        if (line[i] == "]" || line[i] == "}" || line[i] == "{" || line[i] == "[") {
+        if (line[i] === "]" || line[i] === "}" || line[i] === "{" || line[i] === "[") {
           callback(line, null);
           continue;
         }
-        if (line[i] == '"') {
+        if (line[i] === '"') {
           // string value
           value = line.split('"')[1];
         } else {
-          value = line[line.length - 1] == "," ? line.slice(-1).trim() : line.trim();
+          value = line[line.length - 1] === "," ? line.slice(-1).trim() : line.trim();
         }
       } else {
         // Where we have key:value line
         lastKnownKey = keyValue[0].split('"')[1];
         value =
-          keyValue[1][0] == '"'
+          keyValue[1][0] === '"'
             ? keyValue[1].split('"')[1]
-            : keyValue[1][0] == "{" || keyValue[1][0] == "["
+            : keyValue[1][0] === "{" || keyValue[1][0] === "["
               ? null
               : keyValue[1].split(",")[0];
       }
-      const endWithComma = line[line.length - 1] == ",";
+      const endWithComma = line[line.length - 1] === ",";
       let indentSpaces;
       for (indentSpaces = 0; indentSpaces < line.length; indentSpaces += 2) {
-        if (line[indentSpaces] != " ") {
+        if (line[indentSpaces] !== " ") {
           break;
         }
       }
@@ -165,25 +165,25 @@ export async function processState(
   let lineSize = 0;
   await processLines(inputFile, (line, stateLine, lineMeta) => {
     let keepLine = true;
-    if (stateLine && stateLine.value) {
+    if (stateLine?.value) {
       manipulators.map((manipulator) => {
-        const result = manipulator.processWrite(stateLine);
-        if (!result) {
+        const _result = manipulator.processWrite(stateLine);
+        if (!_result) {
           return;
         }
-        const { action, extraLines } = result;
-        debug(
+        const { action, extraLines } = _result;
+        _debug(
           `      - ${chalk.red(action.padStart(6, " "))} ${stateLine.key}: ${stateLine.value.slice(
             0,
             100,
           )}`,
         );
-        if (action == "remove") {
+        if (action === "remove") {
           keepLine = false;
         }
         if (extraLines && extraLines.length > 0) {
           for (const line of extraLines) {
-            debug(
+            _debug(
               `      - ${chalk.green("add".padStart(6, " "))} ${line.key}: ${line.value
                 .toString()
                 .slice(0, 100)}`,
@@ -192,10 +192,12 @@ export async function processState(
 
           lineBuffer[lineSize++] = extraLines
             .map(
-              (extraLine) =>
+              (extraLine, index) =>
                 `${new Array(lineMeta.indentSpaces).fill(" ").join("")}"${extraLine.key}": ${
-                  typeof extraLine.value == "string" ? `"${extraLine.value}"` : `${extraLine.value}`
-                },\n`,
+                  typeof extraLine.value === "string"
+                    ? `"${extraLine.value}"`
+                    : `${extraLine.value}`
+                }${index < extraLines.length - 1 || lineMeta.endWithComma ? "," : ""}\n`,
             )
             .join("");
         }

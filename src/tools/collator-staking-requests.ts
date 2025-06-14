@@ -2,7 +2,7 @@
 import chalk from "chalk";
 import yargs from "yargs";
 
-import { DelegatorRequest, getApiFor, NETWORK_YARGS_OPTIONS } from "../index.ts";
+import { DelegatorRequest, getApiFor, NETWORK_YARGS_OPTIONS } from "../index";
 
 const argv = yargs(process.argv.slice(2))
   .usage("Usage: $0")
@@ -81,7 +81,7 @@ const main = async () => {
   let totalRevoked = 0n;
 
   for (const req of requests.sort((a, b) => a.when - b.when)) {
-    totalRevoked += req.action == "Revoke" ? BigInt(req.amount) : 0n;
+    totalRevoked += req.action === "Revoke" ? BigInt(req.amount) : 0n;
     const tokens = BigInt(req.amount) / 10n ** 18n;
     const tokenString =
       tokens > 20000n
