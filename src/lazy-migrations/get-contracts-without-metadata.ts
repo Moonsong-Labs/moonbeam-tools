@@ -92,13 +92,13 @@ async function main() {
       }
 
       // Batch query the storage for metadata keys
-      const storageValues = (await api.rpc.state.queryStorageAt(metadataKeys)) as Raw[];
+      const storageValues = (await api.rpc.state.queryStorageAt(metadataKeys)) as unknown as Raw[];
 
       // Process the results
       storageValues.forEach((storageValue, index) => {
         if (storageValue.isEmpty) {
-          const _address = addresses[index];
-          db.contracts_without_metadata[_address] = true;
+          const address = addresses[index];
+          db.contracts_without_metadata[address] = true;
         }
         db.contract_processed++;
       });

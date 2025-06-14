@@ -1,6 +1,6 @@
 import yargs from "yargs";
 import { ApiPromise } from "@polkadot/api";
-import { getApiFor, NETWORK_YARGS_OPTIONS } from "../utils/networks";
+import { getApiFor, NETWORK_YARGS_OPTIONS } from "../utils/networks.ts";
 
 const argv = yargs(process.argv.slice(2))
   .usage("Usage: $0")
@@ -78,10 +78,11 @@ async function main() {
   console.log("Warning, this will only work if a single change of value happened during the range");
   console.log("===============================================");
 
-  const _result = await dichotomicSearch(api, startBlock, endBlock, storageKey);
+  const result = await dichotomicSearch(api, startBlock, endBlock, storageKey);
 
-  if (_result !== null) {
-    console.log(`Change detected at block: ${_result}`);
+  if (result !== null) {
+    console.log(`Change detected at block: ${result}`);
+
   } else {
     console.log("No change detected in the specified range.");
   }

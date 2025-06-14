@@ -18,7 +18,7 @@ import type { ApiPromise } from "@polkadot/api";
 import type { Extrinsic, BlockHash, EventRecord } from "@polkadot/types/interfaces";
 import type { Block } from "@polkadot/types/interfaces/runtime/types";
 import type { LegacyTransaction } from "@polkadot/types/interfaces/eth";
-const _debug = Debug("monitoring");
+const debug = Debug("monitoring");
 
 export const printTokens = (api: ApiPromise, tokens: bigint, decimals = 2, pad = 9) => {
   return `${(
@@ -258,7 +258,7 @@ export const getFeeMultiplier = async (api: ApiPromise, blockHash: string): Prom
 };
 
 export const getBlockDetails = async (api: ApiPromise, blockHash: BlockHash | string) => {
-  _debug(`Querying ${blockHash}`);
+  debug(`Querying ${blockHash}`);
   const maxBlockWeight = (api.consts.system.blockWeights.maxBlock as any).toBigInt
     ? (api.consts.system.blockWeights.maxBlock as any).toBigInt()
     : api.consts.system.blockWeights.maxBlock.refTime?.toBigInt();
@@ -301,7 +301,7 @@ export const getBlockDetails = async (api: ApiPromise, blockHash: BlockHash | st
   );
 
   const [blockWeight, ethWeight] = txWithEvents.reduce(
-    (stats, tx, _index) => {
+    (stats, tx) => {
       // TODO: support weight v1/2
       if (!tx.dispatchInfo) {
         return stats;
@@ -535,7 +535,7 @@ export function generateBlockDetailsLog(
 
   const fees = blockDetails.txWithEvents
     .filter(({ dispatchInfo }) => !dispatchInfo.class.isMandatory)
-    .reduce((p, { dispatchInfo, extrinsic, events: _events, fees }) => {
+    .reduce((p, { dispatchInfo, extrinsic, fees }) => {
       if (extrinsic.method.section === "ethereum") {
         const payload = extrinsic.method.args[0] as any;
         const gasPrice = payload.isLegacy
