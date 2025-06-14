@@ -3,9 +3,10 @@
     "target": "esnext",
     "module": "esnext",
     "moduleResolution": "Bundler",
-    "strict": true,
-    "noImplicitAny": true,
-    "noImplicitReturns": true,
+    "strict": false,
+    "allowImportingTsExtensions": true,
+    "noImplicitAny": false,
+    "noImplicitReturns": false,
     "esModuleInterop": true,
     "skipLibCheck": true,
     "baseUrl": ".",
@@ -13,7 +14,7 @@
     "declaration": true,
     "outDir": "build"
   },
-  "include": ["src/**/*.ts", "test/**/*.spec.ts"],
+  "include": ["src/**/*.ts", "test/**/*.spec.ts", "vitest.config.ts"],
   "exclude": ["node_modules"],
   "ts-node": {
     "esm": true

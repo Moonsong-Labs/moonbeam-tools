@@ -7,7 +7,7 @@ import {
   getAccountIdentity,
   getApiFor,
   NETWORK_YARGS_OPTIONS,
-} from "../index.ts";
+} from "../index";
 
 const argv = yargs(process.argv.slice(2))
   .usage("Usage: $0")
@@ -89,7 +89,7 @@ const main = async () => {
     ]);
     for (const request of delegatorRequests[delegatorId] || []) {
       // Checking because of bug allowing pending request even if no collator
-      const datum = data.find((d) => d[1] == request.collatorId);
+      const datum = data.find((d) => d[1] === request.collatorId);
       datum[4] += request.amount / 10n ** 18n;
     }
     delegatorsData = delegatorsData.concat(data);
@@ -103,7 +103,7 @@ const main = async () => {
   console.log(
     table(tableData, {
       drawHorizontalLine: (lineIndex: number) =>
-        lineIndex == 0 || lineIndex == 1 || lineIndex == tableData.length,
+        lineIndex === 0 || lineIndex === 1 || lineIndex === tableData.length,
       columns: [
         { alignment: "left" },
         { alignment: "left" },

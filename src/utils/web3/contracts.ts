@@ -1,7 +1,7 @@
 import * as rlp from "rlp";
 import { TransactionReceipt, Web3, Web3BaseWalletAccount } from "web3";
 
-import { customWeb3Request } from "./transactions.ts";
+import { customWeb3Request } from "./transactions";
 
 export interface SolidityContractBundle {
   abi: any;
@@ -26,7 +26,7 @@ export const deployContract = async (
     "0x" + web3.utils.sha3(rlp.encode([deployer.address, nonce]) as any).substr(26);
 
   const code = await customWeb3Request(web3, "eth_getCode", [contractAddress]);
-  if (code && code.result && code.result != "0x") {
+  if (code && code.result && code.result !== "0x") {
     console.log(`Contract already deployed: ${code.result?.["length"]} bytes`);
     return;
   }
@@ -42,16 +42,16 @@ export const deployContract = async (
     },
     deployer.privateKey,
   );
-  const result = await customWeb3Request(web3, "eth_sendRawTransaction", [tx.rawTransaction]);
-  if (result.error) {
+  const _result = await customWeb3Request(web3, "eth_sendRawTransaction", [tx.rawTransaction]);
+  if (_result.error) {
     console.error(`Error deploying contract!`);
-    console.error(result.error);
+    console.error(_result.error);
     return;
   }
   console.log(`Transaction sent: ${tx.transactionHash}`);
   const startTime = Date.now();
   while (Date.now() - startTime < 40000) {
-    let rcpt: TransactionReceipt = await web3.eth.getTransactionReceipt(tx.transactionHash);
+    const rcpt: TransactionReceipt = await web3.eth.getTransactionReceipt(tx.transactionHash);
     if (rcpt) {
       console.log(`Transaction done - block #${rcpt.blockNumber} (${rcpt.blockHash})`);
       return;
@@ -87,9 +87,9 @@ export const callContract = async (
     caller.privateKey,
   );
 
-  const result = await customWeb3Request(web3, "eth_sendRawTransaction", [tx.rawTransaction]);
-  if (result.error) {
-    console.error(result.error);
+  const _result = await customWeb3Request(web3, "eth_sendRawTransaction", [tx.rawTransaction]);
+  if (_result.error) {
+    console.error(_result.error);
     throw new Error(`Error calling contract!`);
   }
 
@@ -98,7 +98,7 @@ export const callContract = async (
   //   );
   const startTime = Date.now();
   while (Date.now() - startTime < 60000) {
-    let rcpt: TransactionReceipt = await web3.eth.getTransactionReceipt(tx.transactionHash);
+    const rcpt: TransactionReceipt = await web3.eth.getTransactionReceipt(tx.transactionHash);
     if (rcpt) {
       //   console.log(`- block #${rcpt.blockNumber} (${rcpt.blockHash})`);
       return;

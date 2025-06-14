@@ -15,8 +15,8 @@ import { Keyring } from "@polkadot/api";
 import { blake2AsHex } from "@polkadot/util-crypto";
 import yargs from "yargs";
 
-import { getApiFor, NETWORK_YARGS_OPTIONS } from "../index.ts";
-import { printTokens } from "../utils/monitoring.ts";
+import { getApiFor, NETWORK_YARGS_OPTIONS } from "../index";
+import { printTokens } from "../utils/monitoring";
 
 const argv = yargs(process.argv.slice(2))
   .usage("Usage: $0")
@@ -72,11 +72,11 @@ const main = async () => {
     requestData.forEach((request, collator) => {
       totalRequests++;
       const delegation = stateData.delegations.find(
-        ({ owner }) => owner.toString() == collator.toString(),
+        ({ owner }) => owner.toString() === collator.toString(),
       );
       if (
         !delegation ||
-        (request.action.isRevoke && delegation.amount.toBigInt() != request.amount.toBigInt())
+        (request.action.isRevoke && delegation.amount.toBigInt() !== request.amount.toBigInt())
       ) {
         console.log(
           `${stateData.id}: ${request.whenExecutable} - ${printTokens(
@@ -96,7 +96,7 @@ const main = async () => {
   if (argv["send-preimage-hash"]) {
     const collectiveThreshold = argv["collective-threshold"] || 1;
     const account = await keyring.addFromUri(argv["account-priv-key"], null, "ethereum");
-    const { nonce: rawNonce, data: balance } = (await api.query.system.account(
+    const { nonce: rawNonce, data: _balance } = (await api.query.system.account(
       account.address,
     )) as any;
     let nonce = BigInt(rawNonce.toString());
@@ -107,22 +107,22 @@ const main = async () => {
       console.log(`Preparing hotfix for ${delegatorChunk.length} delegators`);
       const hotFixTx = api.tx.parachainStaking.hotfixRemoveDelegationRequests(delegatorChunk);
 
-      let encodedProposal = hotFixTx?.method.toHex() || "";
-      let encodedHash = blake2AsHex(encodedProposal);
+      const encodedProposal = hotFixTx?.method.toHex() || "";
+      const encodedHash = blake2AsHex(encodedProposal);
       console.log("Encoded proposal hash for complete is %s", encodedHash);
       console.log("Encoded length %d", encodedProposal.length);
 
       console.log("Sending pre-image");
       await api.tx.democracy.notePreimage(encodedProposal).signAndSend(account, { nonce: nonce++ });
 
-      if (argv["send-proposal-as"] == "democracy") {
+      if (argv["send-proposal-as"] === "democracy") {
         console.log("Sending proposal");
         await api.tx.democracy
           .propose(encodedHash, await api.consts.democracy.minimumDeposit)
           .signAndSend(account, { nonce: nonce++ });
-      } else if (argv["send-proposal-as"] == "council-external") {
+      } else if (argv["send-proposal-as"] === "council-external") {
         console.log("Sending external motion");
-        let external = api.tx.democracy.externalProposeMajority(encodedHash);
+        const external = api.tx.democracy.externalProposeMajority(encodedHash);
         await api.tx.councilCollective
           .propose(collectiveThreshold, external, external.length)
           .signAndSend(account, { nonce: nonce++ });

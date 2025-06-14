@@ -9,7 +9,7 @@ import chalk from "chalk";
 import fs from "fs";
 import yargs from "yargs";
 
-import { getApiFor, NETWORK_YARGS_OPTIONS } from "../utils/networks.ts";
+import { getApiFor, NETWORK_YARGS_OPTIONS } from "../utils/networks";
 
 const argv = yargs(process.argv.slice(2))
   .usage("Usage: $0")
@@ -39,7 +39,7 @@ const main = async () => {
   const lines = csvData.toString().split(/\r?\n/);
   const transfers = lines.map((l, index) => {
     const data = l.split(",");
-    if (data.length != 2) {
+    if (data.length !== 2) {
       throw new Error(`Invalid data line ${index + 1}`);
     }
     const account = data[0];
@@ -89,13 +89,14 @@ const main = async () => {
 
     // Putting all the transactions in a batchAll
     // await api.tx.utility.batchAll(txs).send();
-    await new Promise(async (resolve) => {
-      const unsub = await api.tx.utility
+    await new Promise((resolve, reject) => {
+      let unsub: () => void;
+      api.tx.utility
         .batchAll(txs)
-        .signAndSend(account, {}, ({ events = [], status }) => {
+        .signAndSend(account, {}, ({ events: _events = [], status }) => {
           console.log(
             `Transaction status: ${
-              status.type == "Ready" ? chalk.yellow(status.type) : chalk.green(status.type)
+              status.type === "Ready" ? chalk.yellow(status.type) : chalk.green(status.type)
             }`,
           );
 
@@ -103,10 +104,14 @@ const main = async () => {
             console.log(`Included at block hash ${chalk.green(status.asInBlock.toHex())}`);
           } else if (status.isFinalized) {
             console.log(`Finalized block hash ${status.asFinalized.toHex()}`);
-            unsub();
+            if (unsub) unsub();
             resolve(null);
           }
-        });
+        })
+        .then((unsubscribe) => {
+          unsub = unsubscribe;
+        })
+        .catch(reject);
     });
   }
   await api.disconnect();

@@ -10,23 +10,23 @@ import {
   CHARLETH_ADDRESS,
   RELAY_ASSET_ID,
   USDT_ASSET_ID,
-} from "../../../utils/constants.ts";
-import { AssetManipulator } from "./asset-manipulator.ts";
-import { AuthorFilteringManipulator } from "./author-filtering-manipulator.ts";
-import { AuthorizeUpgradeManipulator } from "./authorize-upgrade-manipulator.ts";
-import { BalancesManipulator } from "./balances-manipulator.ts";
-import { CollatorManipulator } from "./collator-manipulator.ts";
-import { CollectiveManipulator } from "./collective-manipulator.ts";
-import { processState, StateManipulator } from "./genesis-parser.ts";
-import { HRMPManipulator } from "./hrmp-manipulator.ts";
-import { RoundManipulator } from "./round-manipulator.ts";
-import { SpecManipulator } from "./spec-manipulator.ts";
-import { SudoManipulator } from "./sudo-manipulator.ts";
-import { ValidationManipulator } from "./validation-manipulator.ts";
-import { XCMPManipulator } from "./xcmp-manipulator.ts";
-import { CumulusManipulator } from "./cumulus-manipulator.ts";
+} from "../../../utils/constants";
+import { AssetManipulator } from "./asset-manipulator";
+import { AuthorFilteringManipulator } from "./author-filtering-manipulator";
+import { AuthorizeUpgradeManipulator } from "./authorize-upgrade-manipulator";
+import { BalancesManipulator } from "./balances-manipulator";
+import { CollatorManipulator } from "./collator-manipulator";
+import { CollectiveManipulator } from "./collective-manipulator";
+import { processState, StateManipulator } from "./genesis-parser";
+import { HRMPManipulator } from "./hrmp-manipulator";
+import { RoundManipulator } from "./round-manipulator";
+import { SpecManipulator } from "./spec-manipulator";
+import { SudoManipulator } from "./sudo-manipulator";
+import { ValidationManipulator } from "./validation-manipulator";
+import { XCMPManipulator } from "./xcmp-manipulator";
+import { CumulusManipulator } from "./cumulus-manipulator";
 
-const debug = Debug("helper:state-manager");
+const _debug = Debug("helper:state-manager");
 
 export type NetworkName = "moonbeam" | "moonriver" | "alphanet" | "stagenet";
 
@@ -87,7 +87,7 @@ export async function downloadExportedState(
   const stateInfoFileName = `${network}-state.info.json`;
   const stateInfoFile = path.join(outPath, stateInfoFileName);
 
-  debug(`Checking ${STORAGE_NAMES[network]} in ${stateInfoFile}`);
+  _debug(`Checking ${STORAGE_NAMES[network]} in ${stateInfoFile}`);
 
   await fs.mkdir(outPath, { recursive: true });
 
@@ -125,7 +125,7 @@ export async function downloadExportedState(
   ).body.json()) as StateInfo;
 
   // Already latest version
-  if (stateInfo && stateInfo.blockHash == downloadedStateInfo.blockHash) {
+  if (stateInfo && stateInfo.blockHash === downloadedStateInfo.blockHash) {
     const stateFileName =
       useCleanState && stateInfo.cleanFile ? stateInfo.cleanFile : stateInfo.file;
     const stateFile = path.join(outPath, stateFileName);
@@ -149,7 +149,7 @@ export async function downloadExportedState(
 
   const fileStream = (await fs.open(stateFile, "w")).createWriteStream();
 
-  debug(
+  _debug(
     `Preparing to download ${stateFileName} (best-hash: ${downloadedStateInfo.blockHash}) to ${stateFile}`,
   );
 
@@ -169,7 +169,7 @@ export async function downloadExportedState(
           const headerStrings = headers.map((h) => h.toString());
           onStart &&
             onStart(
-              parseInt(headerStrings[headerStrings.findIndex((h) => h == "Content-Length") + 1]),
+              parseInt(headerStrings[headerStrings.findIndex((h) => h === "Content-Length") + 1]),
               stateFileName,
             );
           return true;
@@ -193,7 +193,7 @@ export async function downloadExportedState(
   // Writing the chain-info after the full state to ensure it is not updated
   // in case of state download failure
   await fs.writeFile(stateInfoFile, JSON.stringify(downloadedStateInfo));
-  debug(`Downloaded ${stateFileName} to ${stateFile}`);
+  _debug(`Downloaded ${stateFileName} to ${stateFile}`);
 
   return { stateFile, stateInfo: downloadedStateInfo };
 }
@@ -212,7 +212,7 @@ export async function neutralizeExportedState(
   };
 
   const manipulators: StateManipulator[] = [
-    new RoundManipulator((current, first, length) => {
+    new RoundManipulator((current, _first, _length) => {
       return { current, first: 0, length: 100 };
     }),
     new AuthorFilteringManipulator(100),
@@ -255,7 +255,7 @@ export async function neutralizeExportedState(
 // It makes Alith the main collator and restore XCMP/HRMP data.
 export async function insertParachainCodeIntoRelay(inFile: string, outFile: string) {
   await processState(inFile, outFile, [
-    new RoundManipulator((current, first, length) => {
+    new RoundManipulator((current, _first, _length) => {
       return { current, first: 0, length: 100 };
     }),
     new AuthorFilteringManipulator(100),

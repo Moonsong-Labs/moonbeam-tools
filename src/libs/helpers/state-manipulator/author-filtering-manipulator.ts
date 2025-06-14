@@ -1,9 +1,9 @@
 import { hexToBn, hexToNumber, nToHex } from "@polkadot/util";
 import Debug from "debug";
 
-import { Action, encodeStorageKey, StateManipulator } from "./genesis-parser.ts";
+import { Action, encodeStorageKey, StateManipulator } from "./genesis-parser";
 
-const debug = Debug("helper:authoring-manipulator");
+const _debug = Debug("helper:authoring-manipulator");
 
 export class AuthorFilteringManipulator implements StateManipulator {
   public readonly targetEligibilityRatio: number;
@@ -33,7 +33,7 @@ export class AuthorFilteringManipulator implements StateManipulator {
   prepareWrite = () => {};
   processWrite = ({ key, value }) => {
     if (key.startsWith(this.eligibleRatioKey)) {
-      debug(`Found eligibility ratio: ${hexToNumber(value)}`);
+      _debug(`Found eligibility ratio: ${hexToNumber(value)}`);
       return {
         action: "remove" as Action,
         extraLines: [
@@ -48,7 +48,7 @@ export class AuthorFilteringManipulator implements StateManipulator {
       };
     }
     if (key.startsWith(this.eligibleCountKey)) {
-      debug(`Found eligibility count: ${value}`);
+      _debug(`Found eligibility count: ${value}`);
       return {
         action: "remove" as Action,
         extraLines: [
@@ -63,7 +63,7 @@ export class AuthorFilteringManipulator implements StateManipulator {
       };
     }
     if (key.startsWith(this.highestSlotSeenKey)) {
-      debug(`Found highest slot seen: ${hexToNumber(value)}`);
+      _debug(`Found highest slot seen: ${hexToNumber(value)}`);
       return {
         action: "remove" as Action,
         extraLines: [

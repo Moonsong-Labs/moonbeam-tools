@@ -34,12 +34,10 @@ const argv = yargs(process.argv.slice(2))
 
 export async function getXCMVersion(provider: any): Promise<[string, string]> {
   // Get XCM Version - Not great but there is no chain state approach
-  let xcmpQueueVersion =
-    (provider.query.xcmpQueue && ((await provider.query.xcmpQueue.palletVersion()) as any)) ||
-    "N/A";
-  let xcmSafeVersion =
-    (provider.query.polkadotXcm && ((await provider.query.polkadotXcm.safeXcmVersion()) as any)) ||
-    "N/A";
+  const xcmpQueueVersion =
+    (provider.query.xcmpQueue && (await provider.query.xcmpQueue.palletVersion())) || "N/A";
+  const xcmSafeVersion =
+    (provider.query.polkadotXcm && (await provider.query.polkadotXcm.safeXcmVersion())) || "N/A";
   return [xcmpQueueVersion, xcmSafeVersion];
 }
 
@@ -53,7 +51,7 @@ function timeoutAfter(seconds) {
 
 export async function getParaApi(network: "kusama" | "polkadot", id: string) {
   const prodParas =
-    network == "kusama"
+    network === "kusama"
       ? [...prodParasKusama, ...prodParasKusamaCommon]
       : [...prodParasPolkadot, ...prodParasPolkadotCommon];
   const nodes = Object.values(
@@ -108,13 +106,13 @@ const main = async () => {
   const hrmpChannels = await apiAt.query.hrmp.hrmpChannels.entries();
 
   const paras: { [id: string]: { connections: string[]; version: string[] } } = {};
-  for (const [hrmpChannel, hrmpChannelValue] of hrmpChannels) {
+  for (const [hrmpChannel, _hrmpChannelValue] of hrmpChannels) {
     const id = hrmpChannel.args[0].sender.toString();
     if (!paras[id]) {
       const paraApi: any = await getParaApi(network, id);
       const xcmVersion = paraApi ? await getXCMVersion(paraApi) : ["", ""];
       paras[id] = { connections: [], version: xcmVersion };
-      paraApi && paraApi.disconnect();
+      paraApi?.disconnect();
     }
     paras[id].connections.push(hrmpChannel.args[0].recipient.toString());
   }
@@ -122,7 +120,7 @@ const main = async () => {
   for (const id of Object.keys(paras)) {
     console.log(
       `Parachain ${id} ${
-        paras[id].version[0] == ""
+        paras[id].version[0] === ""
           ? "[DOWN]"
           : `[XCMQueue: ${paras[id].version[0]}, XCMSafe: ${paras[id].version[1]}]`
       } has ${paras[id].connections.length} connections`,

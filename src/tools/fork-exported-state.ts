@@ -5,7 +5,7 @@ import {
   downloadExportedState,
   NetworkName,
   neutralizeExportedState,
-} from "../libs/helpers/state-manipulator/index.ts";
+} from "../libs/helpers/state-manipulator/index";
 
 const argv = yargs(process.argv.slice(2))
   .usage("Usage: $0")

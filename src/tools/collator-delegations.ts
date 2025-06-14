@@ -3,7 +3,8 @@ import chalk from "chalk";
 import { table } from "table";
 import yargs from "yargs";
 
-import { combineRequestsPerDelegators, getApiFor, NETWORK_YARGS_OPTIONS } from "../index.ts";
+import { combineRequestsPerDelegators, getApiFor, NETWORK_YARGS_OPTIONS } from "../index";
+import { ApiPromise } from "@polkadot/api";
 
 const argv = yargs(process.argv.slice(2))
   .usage("Usage: $0")
@@ -23,7 +24,7 @@ const argv = yargs(process.argv.slice(2))
 
 const main = async () => {
   // Instantiate Api
-  const api = await getApiFor(argv);
+  const api: ApiPromise = await getApiFor(argv);
 
   const blockHash = argv.at
     ? await api.rpc.chain.getBlockHash(argv.at)
@@ -67,7 +68,7 @@ const main = async () => {
 
   for (const state of delegatorState) {
     const stateData = (state[1] as any).unwrap();
-    const delegation = stateData.delegations.find((d) => d.owner.toString() == formattedCollator);
+    const delegation = stateData.delegations.find((d) => d.owner.toString() === formattedCollator);
     if (!delegation) {
       continue;
     }
@@ -115,10 +116,10 @@ const main = async () => {
   console.log(
     table(tableData, {
       drawHorizontalLine: (lineIndex: number) =>
-        lineIndex == 0 ||
-        lineIndex == 1 ||
-        lineIndex == tableData.length ||
-        lineIndex == tableData.length - 1,
+        lineIndex === 0 ||
+        lineIndex === 1 ||
+        lineIndex === tableData.length ||
+        lineIndex === tableData.length - 1,
       columns: [{ alignment: "left" }, { alignment: "right" }, { alignment: "right" }],
     }),
   );

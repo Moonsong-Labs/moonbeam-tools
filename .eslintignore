@@ -1,0 +1,8 @@
+node_modules/
+dist/
+build/
+coverage/
+*.js
+*.d.ts
+test/*.json
+src/lazy-migrations/*.json

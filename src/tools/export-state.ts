@@ -7,8 +7,8 @@ import moment from "moment";
 import path from "path";
 import yargs from "yargs";
 
-import { getApiFor, getWsProviderFor, NETWORK_YARGS_OPTIONS } from "../utils/networks.ts";
-import { processAllStorage } from "../utils/storage.ts";
+import { getApiFor, getWsProviderFor, NETWORK_YARGS_OPTIONS } from "../utils/networks";
+import { processAllStorage } from "../utils/storage";
 
 const argv = yargs(process.argv.slice(2))
   .usage("Usage: $0")
@@ -59,15 +59,15 @@ async function main() {
   rawSpec["protocolId"] = (rawSpec["protocolId"] || "unk") + "fork";
 
   try {
-    let t0 = performance.now();
+    const t0 = performance.now();
     const rawSpecLines = JSON.stringify(rawSpec, null, 2).split(/\r?\n/);
-    while (true) {
+    while (rawSpecLines.length > 0) {
       const line = rawSpecLines.shift();
       if (line === undefined) {
         throw new Error("No spec line found");
       }
       file.write(line + "\n");
-      if (/\ +"top"/.test(line)) {
+      if (/\s+"top"/.test(line)) {
         break;
       }
     }
@@ -109,7 +109,7 @@ async function main() {
       },
     );
     file.write(`  \n`);
-    while (true) {
+    while (rawSpecLines.length > 0) {
       const line = rawSpecLines.shift();
       if (line === undefined) {
         break;

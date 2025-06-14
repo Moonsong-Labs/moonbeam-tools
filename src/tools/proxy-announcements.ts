@@ -5,7 +5,7 @@ import fs from "fs";
 import { table } from "table";
 import yargs from "yargs";
 
-import { getApiFor, NETWORK_YARGS_OPTIONS, numberWithCommas } from "../index.ts";
+import { getApiFor, NETWORK_YARGS_OPTIONS, numberWithCommas } from "../index";
 
 const argv = yargs(process.argv.slice(2))
   .usage("Usage: $0")
@@ -62,7 +62,7 @@ const main = async () => {
   for (let index = 1; index < lines.length; index++) {
     const line = lines[index];
     const data = line.split(",");
-    if (data.length != 5) {
+    if (data.length !== 5) {
       throw new Error(`Invalid data line ${index}`);
     }
     const to = data[2].toLowerCase().replace(/"/g, "");
@@ -98,7 +98,7 @@ const main = async () => {
             announcement?.real,
             call.to,
             numberWithCommas(call.amount),
-            !!announcement ? chalk.green("true") : chalk.red("false"),
+            announcement ? chalk.green("true") : chalk.red("false"),
           ];
         });
       })
@@ -111,10 +111,10 @@ const main = async () => {
   console.log(
     table(tableData, {
       drawHorizontalLine: (lineIndex: number) =>
-        lineIndex == 0 ||
-        lineIndex == 1 ||
-        lineIndex == tableData.length - Object.keys(sumByAddress).length ||
-        lineIndex == tableData.length,
+        lineIndex === 0 ||
+        lineIndex === 1 ||
+        lineIndex === tableData.length - Object.keys(sumByAddress).length ||
+        lineIndex === tableData.length,
       columns: [
         { alignment: "left" },
         { alignment: "left" },

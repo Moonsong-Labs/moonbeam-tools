@@ -6,9 +6,9 @@ import {
   encodeStorageBlake128MapKey,
   encodeStorageKey,
   StateManipulator,
-} from "./genesis-parser.ts";
+} from "./genesis-parser";
 
-const debug = Debug("helper:balances-manipulator");
+const _debug = Debug("helper:balances-manipulator");
 
 export class BalancesManipulator implements StateManipulator {
   private readonly balancesData: {
@@ -52,7 +52,7 @@ export class BalancesManipulator implements StateManipulator {
         (p, { currentAmount, targetAmount }) => p + targetAmount - currentAmount,
         0n,
       );
-      debug(
+      _debug(
         `Found total issuance from ${this.totalIssuance} to ${this.totalIssuance + diff} [${
           diff > 0 ? "+" : ""
         }${diff}]`,
@@ -80,7 +80,7 @@ export class BalancesManipulator implements StateManipulator {
               const reserved = nToHex(0, { bitLength: 128, isLe: true }).slice(2);
               const miscFrozen = nToHex(0, { bitLength: 128, isLe: true }).slice(2);
               const feeFrozen = nToHex(0, { bitLength: 128, isLe: true }).slice(2);
-              debug(`Adding account ${account}`);
+              _debug(`Adding account ${account}`);
               return {
                 key,
                 value: `0x${nonce}${consumers}${providers}${sufficients}${free}${reserved}${miscFrozen}${feeFrozen}`,
@@ -91,7 +91,7 @@ export class BalancesManipulator implements StateManipulator {
     }
     const balance = this.balancesData.find((balance) => key.startsWith(balance.key));
     if (balance) {
-      debug(
+      _debug(
         `Found balance account ${balance.account}, from ${balance.currentAmount} to ${balance.targetAmount}`,
       );
       return {

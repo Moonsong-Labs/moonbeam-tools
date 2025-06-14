@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import yargs from "yargs";
 
-import { getMonitoredApiFor, NETWORK_NAMES } from "../index.ts";
+import { getMonitoredApiFor, NETWORK_NAMES } from "../index";
 
 // This script is expected to run against a moonbeam blockchain
 const argv = yargs(process.argv.slice(2))

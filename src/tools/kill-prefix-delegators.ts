@@ -3,11 +3,11 @@ import { PalletDemocracyReferendumInfo } from "@polkadot/types/lookup";
 import { blake2AsHex } from "@polkadot/util-crypto";
 import yargs from "yargs";
 
-import { ALITH_PRIVATE_KEY } from "../utils/constants.ts";
-import { getApiFor, NETWORK_YARGS_OPTIONS } from "../utils/networks.ts";
+import { ALITH_PRIVATE_KEY } from "../utils/constants";
+import { getApiFor, NETWORK_YARGS_OPTIONS } from "../utils/networks";
 
 import debugPkg from "debug";
-const debug = debugPkg("main");
+const _debug = debugPkg("main");
 
 const argv = yargs(process.argv.slice(2))
   .usage("Usage: $0")
@@ -38,10 +38,10 @@ const main = async () => {
 
   await api.tx.democracy.notePreimage(encodedProposal).signAndSend(alith);
   let nonce = (await api.rpc.system.accountNextIndex(alith.address)).toNumber();
-  let referendumNextIndex = (await api.query.democracy.referendumCount()).toNumber();
+  const referendumNextIndex = (await api.query.democracy.referendumCount()).toNumber();
 
-  let external = api.tx.democracy.externalProposeMajority(encodedHash);
-  let fastTrack = api.tx.democracy.fastTrack(encodedHash, 1, 0);
+  const external = api.tx.democracy.externalProposeMajority(encodedHash);
+  const fastTrack = api.tx.democracy.fastTrack(encodedHash, 1, 0);
   const voteAmount = 1n * 10n ** BigInt(api.registry.chainDecimals[0]);
 
   process.stdout.write(`Sending motion + fast-track + vote for ${encodedHash}...`);
@@ -71,7 +71,7 @@ const main = async () => {
       .find(
         (ref) =>
           ref[1].unwrap().isFinished &&
-          api.registry.createType("u32", ref[0].toU8a().slice(-4)).toNumber() ==
+          api.registry.createType("u32", ref[0].toU8a().slice(-4)).toNumber() ===
             referendumNextIndex,
       )?.[1]
       .unwrap();

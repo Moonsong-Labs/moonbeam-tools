@@ -1,4 +1,4 @@
-import { getApiFor, NETWORK_YARGS_OPTIONS } from "src/utils/networks.ts";
+import { getApiFor, NETWORK_YARGS_OPTIONS } from "src/utils/networks";
 import yargs from "yargs";
 
 export const NETWORK_WS_URLS: { [name: string]: string } = {
@@ -25,7 +25,7 @@ const main = async () => {
   const blockHash = argv.at
     ? await api.rpc.chain.getBlockHash(argv.at)
     : await api.rpc.chain.getBlockHash();
-  const block = await api.rpc.chain.getBlock(blockHash);
+  const _block = await api.rpc.chain.getBlock(blockHash);
   const apiAt = await api.at(blockHash);
 
   const round = await apiAt.query.parachainStaking.round();

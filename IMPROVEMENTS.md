@@ -3,6 +3,7 @@
 This document tracks suggested improvements for the moonbeam-tools repository to modernize the codebase and improve maintainability.
 
 ## 1. Dependency Management
+
 - [ ] Standardize on single package manager (bun)
 - [ ] Update deprecated dependencies:
   - [ ] node-fetch v2 → native fetch or v3
@@ -15,6 +16,7 @@ This document tracks suggested improvements for the moonbeam-tools repository to
 - [ ] Audit and update all dependencies to latest stable versions
 
 ## 2. Build System
+
 - [ ] Remove rollup references (using bun build)
 - [ ] Fix ESM configuration issues
 - [ ] Consider migrating to vite for better DX
@@ -22,6 +24,7 @@ This document tracks suggested improvements for the moonbeam-tools repository to
 - [ ] Add source maps for production builds
 
 ## 3. Code Quality
+
 - [x] Add ESLint configuration
 - [x] Enable TypeScript strict mode in tsconfig.json
 - [ ] Set up pre-commit hooks (husky + lint-staged)
@@ -32,6 +35,11 @@ This document tracks suggested improvements for the moonbeam-tools repository to
   // Create base error handler
   export class ToolError extends Error {
     constructor(message: string, public code: number = 1) {
+    constructor(
+      message: string,
+      public code: number = 1,
+    ) {
+>>>>>>> main
       super(message);
     }
   }
@@ -39,6 +47,10 @@ This document tracks suggested improvements for the moonbeam-tools repository to
 - [ ] Add consistent API cleanup on exit
 
 ## 4. Project Structure
+<<<<<<< HEAD
+=======
+
+>>>>>>> main
 - [ ] Reorganize tools by category:
   ```
   src/tools/
@@ -56,6 +68,10 @@ This document tracks suggested improvements for the moonbeam-tools repository to
 - [ ] Move types to dedicated directory
 
 ## 5. Testing
+<<<<<<< HEAD
+=======
+
+>>>>>>> main
 - [ ] Add test coverage reporting
 - [ ] Create unit tests for all utilities
 - [ ] Add integration tests for critical tools
@@ -63,6 +79,10 @@ This document tracks suggested improvements for the moonbeam-tools repository to
 - [ ] Add example test files as templates
 
 ## 6. Developer Experience
+<<<<<<< HEAD
+=======
+
+>>>>>>> main
 - [ ] Implement proper CLI framework (e.g., commander.js)
 - [ ] Add tool discovery/registry system
 - [ ] Generate help documentation automatically
@@ -71,6 +91,7 @@ This document tracks suggested improvements for the moonbeam-tools repository to
 - [ ] Improve error messages with actionable solutions
 
 ## 7. Modernization
+<<<<<<< HEAD
 - [x] Use top-level await in tools
 - [x] Convert to full ES modules
 - [x] Implement proper async error boundaries
@@ -79,6 +100,18 @@ This document tracks suggested improvements for the moonbeam-tools repository to
 - [x] Remove synchronous file operations
 
 ## 8. Documentation
+=======
+
+- [ ] Use top-level await in tools
+- [ ] Convert to full ES modules
+- [ ] Implement proper async error boundaries
+- [ ] Add structured logging (winston/pino)
+- [ ] Use native Node.js features where possible
+- [ ] Remove synchronous file operations
+
+## 8. Documentation
+
+>>>>>>> main
 - [ ] Add JSDoc comments to all exported functions
 - [ ] Create API documentation (typedoc)
 - [ ] Add examples for each tool
@@ -87,6 +120,10 @@ This document tracks suggested improvements for the moonbeam-tools repository to
 - [ ] Add inline help for all CLI tools
 
 ## 9. Additional Improvements
+<<<<<<< HEAD
+=======
+
+>>>>>>> main
 - [ ] Add GitHub Actions for automated testing
 - [ ] Set up semantic versioning
 - [ ] Create changelog automation
@@ -95,11 +132,19 @@ This document tracks suggested improvements for the moonbeam-tools repository to
 - [ ] Add Docker support for tools
 
 ## Priority Order
+<<<<<<< HEAD
+=======
+
+>>>>>>> main
 1. **High Priority**: Code quality (ESLint, TypeScript strict, error handling)
 2. **Medium Priority**: Project structure, testing, modernization
 3. **Low Priority**: Documentation, additional improvements
 
 ## Getting Started
+<<<<<<< HEAD
+=======
+
+>>>>>>> main
 To begin implementing these improvements:
 
 1. Start with ESLint setup and fixing linting issues
@@ -109,4 +154,9 @@ To begin implementing these improvements:
 5. Gradually migrate other tools
 
 ## Progress Tracking
+<<<<<<< HEAD
 Track progress by checking off completed items. Consider creating GitHub issues for major items to enable collaboration and detailed discussion.
+=======
+
+Track progress by checking off completed items. Consider creating GitHub issues for major items to enable collaboration and detailed discussion.
+>>>>>>> main
