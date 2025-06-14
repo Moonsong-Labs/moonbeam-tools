@@ -21,7 +21,7 @@ export class CumulusManipulator implements StateManipulator {
   constructor(newTimestamp: bigint) {
     this.newTimestamp = newTimestamp;
     this.slotInfoKey = encodeStorageKey("AsyncBacking", "SlotInfo");
-    this.totalIssuanceKey = "0xc2261276cc9d1f8598ea4b6a74b15c2f57c875e4cff74148e4628f264b974c80";
+    this.totalIssuanceKey = encodeStorageKey("Balances", "TotalIssuance");
   }
 
   processRead = (_) => {};
