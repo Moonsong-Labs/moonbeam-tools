@@ -82,7 +82,6 @@ async function main() {
 
   if (result !== null) {
     console.log(`Change detected at block: ${result}`);
-
   } else {
     console.log("No change detected in the specified range.");
   }
