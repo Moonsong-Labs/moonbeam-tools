@@ -2,7 +2,7 @@ import { vi, describe, it, expect, beforeEach, afterEach } from "vitest";
 import { ApiPromise } from "@polkadot/api";
 import { getMonitoredApiFor } from "../src/utils/networks";
 import { printBlockDetails, listenBlocks } from "../src/utils/monitoring";
-import type { RealtimeBlockDetails } from "../src/utils/types";
+import type { RealtimeBlockDetails } from "../src/utils/monitoring";
 
 // Mock dependencies
 vi.mock("@polkadot/api");
@@ -55,9 +55,11 @@ describe("Monitor Script", () => {
         blockTime: 12000,
         weightPercentage: 45.5,
         txWithEvents: [],
-        txPoolSize: 0,
-        poolIncrease: 0,
-        lastBlockTime: null,
+        records: [],
+        elapsedMilliSecs: 12000,
+        pendingTxs: [],
+        isAuthorOrbiter: false,
+        storageUsed: 0,
       };
 
       // Call the callback with mock block details after a delay
