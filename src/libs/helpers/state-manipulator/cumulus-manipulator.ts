@@ -15,10 +15,13 @@ export class CumulusManipulator implements StateManipulator {
   private readonly newTimestamp: bigint;
 
   private readonly slotInfoKey: string;
+  private readonly totalIssuanceKey: string;
+  private slotInfoProcessed = false;
 
   constructor(newTimestamp: bigint) {
     this.newTimestamp = newTimestamp;
     this.slotInfoKey = encodeStorageKey("AsyncBacking", "SlotInfo");
+    this.totalIssuanceKey = "0xc2261276cc9d1f8598ea4b6a74b15c2f57c875e4cff74148e4628f264b974c80";
   }
 
   processRead = (_) => {};
@@ -28,12 +31,28 @@ export class CumulusManipulator implements StateManipulator {
 
   processWrite = ({ key, value }) => {
     if (key.startsWith(this.slotInfoKey)) {
+      this.slotInfoProcessed = true;
       debug(`Found async backing SlotInfo: ${value}. Resetting to ${this.newTimestamp}`);
       return {
         action: "remove" as Action,
         extraLines: [
           {
             key: key,
+            value: `0x${nToHex(this.newTimestamp, { isLe: true, bitLength: 64 }).slice(2)}01000000`,
+          },
+        ],
+      };
+    }
+    
+    // Add the SlotInfo key when we encounter totalIssuance
+    if (key === this.totalIssuanceKey && !this.slotInfoProcessed) {
+      this.slotInfoProcessed = true;
+      debug(`Adding async backing SlotInfo with timestamp ${this.newTimestamp}`);
+      return {
+        action: "keep" as Action,
+        extraLines: [
+          {
+            key: this.slotInfoKey,
             value: `0x${nToHex(this.newTimestamp, { isLe: true, bitLength: 64 }).slice(2)}01000000`,
           },
         ],
