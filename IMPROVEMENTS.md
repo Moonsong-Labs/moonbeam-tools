@@ -26,7 +26,7 @@ This document tracks suggested improvements for the moonbeam-tools repository to
 ## 3. Code Quality
 
 - [x] Add ESLint configuration
-- [x] Enable TypeScript strict mode in tsconfig.json
+- [ ] Enable TypeScript strict mode in tsconfig.json
 - [ ] Set up pre-commit hooks (husky + lint-staged)
 - [ ] Fix all `any` types with proper interfaces
 - [ ] Remove all `process.exit()` calls
@@ -34,12 +34,10 @@ This document tracks suggested improvements for the moonbeam-tools repository to
   ```typescript
   // Create base error handler
   export class ToolError extends Error {
-    constructor(message: string, public code: number = 1) {
     constructor(
       message: string,
       public code: number = 1,
     ) {
->>>>>>> main
       super(message);
     }
   }
@@ -47,10 +45,7 @@ This document tracks suggested improvements for the moonbeam-tools repository to
 - [ ] Add consistent API cleanup on exit
 
 ## 4. Project Structure
-<<<<<<< HEAD
-=======
 
->>>>>>> main
 - [ ] Reorganize tools by category:
   ```
   src/tools/
@@ -68,10 +63,7 @@ This document tracks suggested improvements for the moonbeam-tools repository to
 - [ ] Move types to dedicated directory
 
 ## 5. Testing
-<<<<<<< HEAD
-=======
 
->>>>>>> main
 - [ ] Add test coverage reporting
 - [ ] Create unit tests for all utilities
 - [ ] Add integration tests for critical tools
@@ -79,10 +71,7 @@ This document tracks suggested improvements for the moonbeam-tools repository to
 - [ ] Add example test files as templates
 
 ## 6. Developer Experience
-<<<<<<< HEAD
-=======
 
->>>>>>> main
 - [ ] Implement proper CLI framework (e.g., commander.js)
 - [ ] Add tool discovery/registry system
 - [ ] Generate help documentation automatically
@@ -91,16 +80,6 @@ This document tracks suggested improvements for the moonbeam-tools repository to
 - [ ] Improve error messages with actionable solutions
 
 ## 7. Modernization
-<<<<<<< HEAD
-- [x] Use top-level await in tools
-- [x] Convert to full ES modules
-- [x] Implement proper async error boundaries
-- [x] Add structured logging (winston/pino)
-- [x] Use native Node.js features where possible
-- [x] Remove synchronous file operations
-
-## 8. Documentation
-=======
 
 - [ ] Use top-level await in tools
 - [ ] Convert to full ES modules
@@ -111,7 +90,6 @@ This document tracks suggested improvements for the moonbeam-tools repository to
 
 ## 8. Documentation
 
->>>>>>> main
 - [ ] Add JSDoc comments to all exported functions
 - [ ] Create API documentation (typedoc)
 - [ ] Add examples for each tool
@@ -120,10 +98,7 @@ This document tracks suggested improvements for the moonbeam-tools repository to
 - [ ] Add inline help for all CLI tools
 
 ## 9. Additional Improvements
-<<<<<<< HEAD
-=======
 
->>>>>>> main
 - [ ] Add GitHub Actions for automated testing
 - [ ] Set up semantic versioning
 - [ ] Create changelog automation
@@ -132,19 +107,13 @@ This document tracks suggested improvements for the moonbeam-tools repository to
 - [ ] Add Docker support for tools
 
 ## Priority Order
-<<<<<<< HEAD
-=======
 
->>>>>>> main
 1. **High Priority**: Code quality (ESLint, TypeScript strict, error handling)
 2. **Medium Priority**: Project structure, testing, modernization
 3. **Low Priority**: Documentation, additional improvements
 
 ## Getting Started
-<<<<<<< HEAD
-=======
 
->>>>>>> main
 To begin implementing these improvements:
 
 1. Start with ESLint setup and fixing linting issues
@@ -154,9 +123,5 @@ To begin implementing these improvements:
 5. Gradually migrate other tools
 
 ## Progress Tracking
-<<<<<<< HEAD
-Track progress by checking off completed items. Consider creating GitHub issues for major items to enable collaboration and detailed discussion.
-=======
 
 Track progress by checking off completed items. Consider creating GitHub issues for major items to enable collaboration and detailed discussion.
->>>>>>> main

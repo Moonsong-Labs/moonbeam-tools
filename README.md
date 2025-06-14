@@ -44,7 +44,7 @@ Options:
 <html>
   <head>
     <title>Monitoring</title>
-    <link rel="modulepreload" href="https://unpkg.com/moonbeam-tools@0.1.3/dist/index.js" charset="UTF-8" integrity="sha384-J5uQSGnadTUjTPo1vMrVA0Ot9kThfv0uF+LLfslCFq4HZrluUv4pxvpECadnnAzS" crossorigin="anonymous"></script>
+    <link rel="modulepreload" href="https://unpkg.com/moonbeam-tools@0.1.3/dist/index.js" charset="UTF-8" integrity="sha384-w411vTo2lQ13q/DdMn22kXID2ccvd/0VSdVEkNzmMuSSYQa0x/dYEVgz8t/Y3BAu" crossorigin="anonymous"></script>
     <style>
       body {
         padding: 2rem;
