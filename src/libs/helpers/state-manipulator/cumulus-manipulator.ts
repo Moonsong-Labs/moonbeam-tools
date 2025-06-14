@@ -26,8 +26,7 @@ export class CumulusManipulator implements StateManipulator {
 
   processRead = (_) => {};
 
-  prepareWrite = () => {
-  };
+  prepareWrite = () => {};
 
   processWrite = ({ key, value }) => {
     if (key.startsWith(this.slotInfoKey)) {
@@ -43,7 +42,7 @@ export class CumulusManipulator implements StateManipulator {
         ],
       };
     }
-    
+
     // Add the SlotInfo key when we encounter totalIssuance
     if (key === this.totalIssuanceKey && !this.slotInfoProcessed) {
       this.slotInfoProcessed = true;

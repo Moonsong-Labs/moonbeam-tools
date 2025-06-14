@@ -13,7 +13,7 @@ const argv = yargs(process.argv.slice(2))
 
 const capitalize = (s) => {
   return String(s[0]).toUpperCase() + String(s).slice(1);
-}
+};
 const main = async () => {
   const api = await getApiFor(argv);
 
