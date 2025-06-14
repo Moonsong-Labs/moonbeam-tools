@@ -21,8 +21,8 @@
     "@polkadot/apps-config": "0.142.1",
     "@polkadot/rpc-core": "15.10.2",
     "@polkadot/types": "15.10.2",
-    "@polkadot/util": "13.1.1",
-    "@polkadot/util-crypto": "13.1.1",
+    "@polkadot/util": "13.5.1",
+    "@polkadot/util-crypto": "13.5.1",
     "chalk": "^4.1.2",
     "cli-progress": "^3.12.0",
     "debug": "^4.4.1",
@@ -85,6 +85,8 @@
     "@polkadot/types-codec": "15.10.2",
     "@polkadot/types": "15.10.2",
     "@polkadot/types-known": "15.10.2",
+    "@polkadot/util": "13.5.1",
+    "@polkadot/util-crypto": "13.5.1",
     "ws@3": "8"
   },
   "scripts": {
