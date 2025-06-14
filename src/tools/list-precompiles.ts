@@ -5,10 +5,10 @@ import { encodeFunctionData } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import yargs from "yargs";
 
-import { getViemAccountFor, getViemFor, NETWORK_YARGS_OPTIONS } from "../utils/networks.ts";
+import { getViemAccountFor, getViemFor, NETWORK_YARGS_OPTIONS } from "../utils/networks";
 
 import debugPkg from "debug";
-const debug = debugPkg("main");
+const _debug = debugPkg("main");
 
 const argv = yargs(process.argv.slice(2))
   .usage("Usage: $0")
@@ -35,13 +35,13 @@ const getAddress = (addressNumber: number): `0x${string}` => {
 };
 
 const getPrecompileStorageKey = (addressNumber: number) => {
-  const address = getAddress(addressNumber);
+  const _address = getAddress(addressNumber);
   return `0x${Buffer.from(
     u8aConcat(
       xxhashAsU8a("EVM", 128),
       xxhashAsU8a("AccountCodes", 128),
-      blake2AsU8a(address, 128),
-      address,
+      blake2AsU8a(_address, 128),
+      _address,
     ),
   ).toString("hex")}`;
 };
@@ -196,7 +196,7 @@ const main = async () => {
 
   const precompileCodes: { [key: string]: boolean } = {};
   for (const addressNumber of addresses) {
-    const name = KNOWN_PRECOMPILES.find((p) => p.index == addressNumber)?.name || "";
+    const name = KNOWN_PRECOMPILES.find((p) => p.index === addressNumber)?.name || "";
     const storageKey = getPrecompileStorageKey(addressNumber);
     const code = await viem.getBytecode({ address: getAddress(addressNumber) });
     const hasCode = !!code;
@@ -242,7 +242,7 @@ const main = async () => {
               console.log(`Updating precompile ${addressNumber}: ${hash}...`);
               return { addressNumber, hash };
             } catch (err) {
-              debug(err);
+              _debug(err);
               console.log(
                 `Failed to update precompile ${addressNumber}: ${
                   err.details || err.message || err

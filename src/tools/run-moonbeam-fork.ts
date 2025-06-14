@@ -15,9 +15,9 @@ import {
   downloadExportedState,
   NetworkName,
   neutralizeExportedState,
-} from "../libs/helpers/state-manipulator/index.ts";
-import { ALITH_PRIVATE_KEY } from "../utils/constants.ts";
-import { runTask, spawnTask } from "../utils/runner.ts";
+} from "../libs/helpers/state-manipulator/index";
+import { ALITH_PRIVATE_KEY } from "../utils/constants";
+import { runTask, spawnTask } from "../utils/runner";
 
 const argv = yargs(process.argv.slice(2))
   .usage("Usage: $0")
@@ -193,7 +193,7 @@ const main = async () => {
                 .filter((release) => release.tag_name.includes("v" + argv["polkadot-binary"]))
                 .find((release) => release.assets.find((asset) => asset.name === "polkadot"));
 
-        if (release == null) {
+        if (release === null) {
           throw new Error(`Release not found for ${argv["polkadot-binary"]}`);
         }
         process.stdout.write(
@@ -262,7 +262,7 @@ const main = async () => {
           : moonbeamReleases
               .filter((release) => release.tag_name.includes("v" + argv["moonbeam-binary"]))
               .find((release) => release.assets.find((asset) => asset.name === "moonbeam"));
-      if (release == null) {
+      if (release === null) {
         throw new Error(`Release not found for ${argv["moonbeam-binary"]}`);
       }
       process.stdout.write(
@@ -386,7 +386,7 @@ const main = async () => {
     hasChanged = true;
     process.stdout.write(` ${chalk.yellow(`extracting`)}...`);
     const grepLine = await runTask(
-      `grep -m 1 '"0x3a636f6465"' ${stateFile} | head -1 | sed 's/[ \",]//g' | cut -d ':' -f 2 | tr -d '\n' | tee ${codeFile} | wc -c`,
+      `grep -m 1 '"0x3a636f6465"' ${stateFile} | head -1 | sed 's/[ ",]//g' | cut -d ':' -f 2 | tr -d '\n' | tee ${codeFile} | wc -c`,
     );
     process.stdout.write(` ${prettyBytes(parseInt(grepLine) / 2)} ✓\n`);
     process.stdout.write(`\t - ${chalk.yellow(`Saving`)} wasm code...`);
@@ -435,7 +435,7 @@ const main = async () => {
       process.stdout.write(` ✓\n`);
 
       process.stdout.write(`\t\t - Including parachain ${paraId} in relaychain plain specs...`);
-      let relayChainSpec = JSON.parse((await fs.readFile(relayPlainSpecFile)).toString());
+      const relayChainSpec = JSON.parse((await fs.readFile(relayPlainSpecFile)).toString());
       relayChainSpec.bootNodes = bootNodes;
       const paras = [
         [
@@ -451,15 +451,17 @@ const main = async () => {
       ];
       if (
         relayChainSpec.genesis?.runtimeGenesis &&
-        "patch" in relayChainSpec.genesis?.runtimeGenesis
+        relayChainSpec.genesis?.runtimeGenesis &&
+        "patch" in relayChainSpec.genesis.runtimeGenesis
       ) {
         relayChainSpec.genesis.runtimeGenesis.patch.paras = paras;
       } else if (
         relayChainSpec.genesis?.runtime &&
-        "runtime_genesis_config" in relayChainSpec.genesis?.runtime
+        relayChainSpec.genesis?.runtime &&
+        "runtime_genesis_config" in relayChainSpec.genesis.runtime
       ) {
         relayChainSpec.genesis.runtime.runtime_genesis_config.paras = paras;
-      } else if (relayChainSpec.genesis?.runtime && "paras" in relayChainSpec.genesis?.runtime) {
+      } else if (relayChainSpec.genesis?.runtime && "paras" in relayChainSpec.genesis.runtime) {
         relayChainSpec.genesis.runtime.paras = paras;
       } else {
         process.stdout.write(` X - Could not find parachain format in relay genesis file.\n`);
@@ -608,7 +610,9 @@ const main = async () => {
       process.on("exit", () => {
         try {
           alithProcess.kill();
-        } catch (e) {}
+        } catch (e) {
+          // Process might already be dead
+        }
       });
     }),
   ];
@@ -625,7 +629,9 @@ const main = async () => {
         process.on("exit", () => {
           try {
             aliceProcess.kill();
-          } catch (e) {}
+          } catch (e) {
+            // Process might already be dead
+          }
         });
       }),
       new Promise<void>((resolve) => {
@@ -638,7 +644,9 @@ const main = async () => {
         process.on("exit", () => {
           try {
             bobProcess.kill();
-          } catch (e) {}
+          } catch (e) {
+            // Process might already be dead
+          }
         });
       }),
     );

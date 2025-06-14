@@ -9,12 +9,12 @@ import "@moonbeam-network/api-augment";
 import "@polkadot/api-augment";
 
 import { Keyring } from "@polkadot/api";
-import { KeyringPair } from "@polkadot/keyring/types";
+import { KeyringPair as _KeyringPair } from "@polkadot/keyring/types";
 import yargs from "yargs";
 
-import { ALITH_PRIVATE_KEY } from "../utils/constants.ts";
-import { monitorSubmittedExtrinsic, waitForAllMonitoredExtrinsics } from "../utils/monitoring.ts";
-import { getApiFor, NETWORK_YARGS_OPTIONS } from "../utils/networks.ts";
+import { ALITH_PRIVATE_KEY } from "../utils/constants";
+import { monitorSubmittedExtrinsic, waitForAllMonitoredExtrinsics } from "../utils/monitoring";
+import { getApiFor, NETWORK_YARGS_OPTIONS } from "../utils/networks";
 
 const argv = yargs(process.argv.slice(2))
   .usage("Usage: $0")
@@ -57,14 +57,14 @@ async function main() {
     const max_assets = argv["max-assets"];
     const entries_to_remove = argv["limit"];
 
-    let account: KeyringPair;
-    let nonce;
+    let nonce: bigint;
     const privKey = argv["alith"] ? ALITH_PRIVATE_KEY : argv["account-priv-key"];
-    if (privKey) {
-      account = keyring.addFromUri(privKey, null, "ethereum");
-      const { nonce: rawNonce, data: balance } = await api.query.system.account(account.address);
-      nonce = BigInt(rawNonce.toString());
+    if (!privKey) {
+      throw new Error("No private key provided");
     }
+    const account = keyring.addFromUri(privKey, undefined, "ethereum");
+    const { nonce: rawNonce, data: _balance } = await api.query.system.account(account.address);
+    nonce = BigInt(rawNonce.toString());
 
     const isMigrationCompleted = (
       await api.query["moonbeamLazyMigrations"].localAssetsMigrationCompleted()

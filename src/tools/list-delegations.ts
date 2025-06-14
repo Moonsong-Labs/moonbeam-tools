@@ -7,7 +7,7 @@ import {
   getAccountIdentity,
   getApiFor,
   NETWORK_YARGS_OPTIONS,
-} from "../index.ts";
+} from "../index";
 
 const argv = yargs(process.argv.slice(2))
   .usage("Usage: $0")
@@ -73,7 +73,7 @@ const main = async () => {
   const data = delegations
     .map((delegation, i) => {
       const request = delegatorRequests[delegator.toLocaleLowerCase()]?.find(
-        (req) => req.collatorId == delegation.owner.toHex(),
+        (req) => req.collatorId === delegation.owner.toHex(),
       );
       total += delegation.amount.toBigInt();
       revokable += request ? request.amount / 10n ** 18n : 0n;
@@ -104,10 +104,10 @@ const main = async () => {
   console.log(
     table(tableData, {
       drawHorizontalLine: (lineIndex: number) =>
-        lineIndex == 0 ||
-        lineIndex == 1 ||
-        lineIndex == tableData.length - 1 ||
-        lineIndex == tableData.length,
+        lineIndex === 0 ||
+        lineIndex === 1 ||
+        lineIndex === tableData.length - 1 ||
+        lineIndex === tableData.length,
       columns: [
         { alignment: "left" },
         { alignment: "left" },

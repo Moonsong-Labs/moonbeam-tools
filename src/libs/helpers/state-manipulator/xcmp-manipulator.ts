@@ -1,8 +1,8 @@
 import Debug from "debug";
 
-import { Action, encodeStorageKey, StateManipulator } from "./genesis-parser.ts";
+import { Action, encodeStorageKey, StateManipulator } from "./genesis-parser";
 
-const debug = Debug("helper:xcmp-manipulator");
+const _debug = Debug("helper:xcmp-manipulator");
 
 export class XCMPManipulator implements StateManipulator {
   private readonly inboundXcmpMessagesKey: string;
@@ -29,31 +29,31 @@ export class XCMPManipulator implements StateManipulator {
 
   processWrite = ({ key, value }) => {
     if (key.startsWith(this.inboundXcmpMessagesKey)) {
-      debug(`Clearing InboundXcmpMessages: ${value}`);
+      _debug(`Clearing InboundXcmpMessages: ${value}`);
       return { action: "remove" as Action };
     }
     if (key.startsWith(this.inboundXcmpStatusKey)) {
-      debug(`Clearing InboundXcmpStatus: ${value}`);
+      _debug(`Clearing InboundXcmpStatus: ${value}`);
       return { action: "remove" as Action };
     }
     if (key.startsWith(this.outboundXcmpMessagesKey)) {
-      debug(`Clearing OutboundXcmpMessages: ${value}`);
+      _debug(`Clearing OutboundXcmpMessages: ${value}`);
       return { action: "remove" as Action };
     }
     if (key.startsWith(this.outboundXcmpStatusKey)) {
-      debug(`Clearing OutboundXcmpStatus: ${value}`);
+      _debug(`Clearing OutboundXcmpStatus: ${value}`);
       return { action: "remove" as Action };
     }
     if (key.startsWith(this.overweightKey)) {
-      debug(`Clearing Overweight: ${value}`);
+      _debug(`Clearing Overweight: ${value}`);
       return { action: "remove" as Action };
     }
     if (key.startsWith(this.overweightCountKey)) {
-      debug(`Clearing OverweightCount: ${value}`);
+      _debug(`Clearing OverweightCount: ${value}`);
       return { action: "remove" as Action };
     }
     if (key.startsWith(this.signalMessagesKey)) {
-      debug(`Clearing SignalMessages: ${value}`);
+      _debug(`Clearing SignalMessages: ${value}`);
       return { action: "remove" as Action };
     }
   };

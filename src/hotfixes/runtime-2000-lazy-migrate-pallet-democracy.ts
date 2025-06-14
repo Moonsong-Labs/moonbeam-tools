@@ -11,7 +11,7 @@ import yargs from "yargs";
 import { Keyring, ApiPromise } from "@polkadot/api";
 import "@moonbeam-network/api-augment";
 import { xxhashAsHex } from "@polkadot/util-crypto";
-import { getApiFor, NETWORK_YARGS_OPTIONS } from "../index.ts";
+import { getApiFor, NETWORK_YARGS_OPTIONS } from "../index";
 
 const argv = yargs(process.argv.slice(2))
   .usage("Usage: $0")
@@ -45,12 +45,12 @@ const main = async () => {
   // XX128("Democracy") || XX128("Preimages")
   const preimagePrefix = xxhashAsHex("Democracy", 128) + xxhashAsHex("Preimages", 128).slice(2);
 
-  async function getAllKeys(api: ApiPromise, prefix: string, startKey?: string) {
+  async function getAllKeys(api: ApiPromise, prefix: string, startKey?: string): Promise<string[]> {
     const keys = (
       await api.rpc.state.getKeysPaged(prefix, 1000, startKey || prefix, atBlockHash)
-    ).map((d) => d.toHex());
+    ).map((d) => d.toHex()) as string[];
 
-    if (keys.length == 0) {
+    if (keys.length === 0) {
       return [];
     }
     return keys.concat(await getAllKeys(api, prefix, keys[keys.length - 1]));
@@ -64,19 +64,19 @@ const main = async () => {
 
   if (argv["account-priv-key"]) {
     const keyring = new Keyring({ type: "ethereum" });
-    const account = await keyring.addFromUri(argv["account-priv-key"], null, "ethereum");
-    const { nonce: rawNonce, data: balance } = (await api.query.system.account(
+    const account = await keyring.addFromUri(argv["account-priv-key"], undefined, "ethereum");
+    const { nonce: rawNonce, data: _balance } = (await api.query.system.account(
       account.address,
     )) as any;
     let nonce = BigInt(rawNonce.toString());
 
     for (const key of preimageKeys) {
       // We slice and take only the proposal hash part.
-      let proposal = "0x" + key.slice(preimagePrefix.length);
+      const proposal = "0x" + key.slice(preimagePrefix.length);
       console.log("Found proposal %s to migrate", proposal);
       // We take the storage size to bound it. This will probably be more than
       // what we need, but never less
-      let storageSize = await api.rpc.state.getStorageSize(key, atBlockHash);
+      const storageSize = await api.rpc.state.getStorageSize(key, atBlockHash);
 
       // We do a batch remarking migrated proposals and migrating all
       // proposals

@@ -11,8 +11,8 @@ import { ethereumEncode } from "@polkadot/util-crypto";
 import chalk from "chalk";
 import Debug from "debug";
 
-import { promiseConcurrent } from "./functions.ts";
-import { mapExtrinsics, TxWithEventAndFee } from "./types.ts";
+import { promiseConcurrent } from "./functions";
+import { mapExtrinsics, TxWithEventAndFee } from "./types";
 
 import type { ApiPromise } from "@polkadot/api";
 import type { Extrinsic, BlockHash, EventRecord } from "@polkadot/types/interfaces";
@@ -64,7 +64,7 @@ export const getAccountIdentities = async (
   accounts: string[],
   at?: BlockHash | string,
 ): Promise<string[]> => {
-  if (!accounts || accounts.length == 0) {
+  if (!accounts || accounts.length === 0) {
     return [];
   }
   const missingAccounts = accounts.filter(
@@ -117,7 +117,7 @@ export const getAccountIdentities = async (
               : [];
           let index = 0;
           return superOfs.map((superOf) => {
-            if (!!superOf) {
+            if (superOf) {
               const superIdentityOpt = superIdentityOpts[index++];
               return {
                 identity:
@@ -224,12 +224,12 @@ export const getAccountFromNimbusKey = async (
 export const extractAuthorNimbusKey = (block: Block): string => {
   const authorId =
     block.extrinsics
-      .find((tx) => tx.method.section == "authorInherent" && tx.method.method == "setAuthor")
+      .find((tx) => tx.method.section === "authorInherent" && tx.method.method === "setAuthor")
       ?.args[0]?.toString() ||
     block.header.digest.logs
       .find(
         (l) =>
-          l.isPreRuntime && l.asPreRuntime.length > 0 && l.asPreRuntime[0].toString() == "nmbs",
+          l.isPreRuntime && l.asPreRuntime.length > 0 && l.asPreRuntime[0].toString() === "nmbs",
       )
       ?.asPreRuntime[1]?.toString();
 
@@ -301,7 +301,7 @@ export const getBlockDetails = async (api: ApiPromise, blockHash: BlockHash | st
   );
 
   const [blockWeight, ethWeight] = txWithEvents.reduce(
-    (stats, tx, index) => {
+    (stats, tx) => {
       // TODO: support weight v1/2
       if (!tx.dispatchInfo) {
         return stats;
@@ -311,7 +311,7 @@ export const getBlockDetails = async (api: ApiPromise, blockHash: BlockHash | st
         : tx.dispatchInfo.weight.refTime?.toBigInt();
       return [
         stats[0] + refTime,
-        stats[1] + (tx.extrinsic.method.section == "ethereum" ? refTime : 0n),
+        stats[1] + (tx.extrinsic.method.section === "ethereum" ? refTime : 0n),
       ];
     },
     [0n, 0n],
@@ -326,12 +326,12 @@ export const getBlockDetails = async (api: ApiPromise, blockHash: BlockHash | st
   const gasByRefTime = ethWeight / WEIGHT_TO_GAS_RATIO;
   // console.log(`[${block.header.number.toNumber()} ${blockWeight}/${ethWeight}: ${gasByRefTime}/${gasUsed}`);
   const storageUsed =
-    gasByRefTime != gasUsed ? Number(gasByRefTime / GAS_LIMIT_STORAGE_GROWTH_RATIO) : 0; // in bytes
+    gasByRefTime !== gasUsed ? Number(gasByRefTime / GAS_LIMIT_STORAGE_GROWTH_RATIO) : 0; // in bytes
 
   return {
     block,
     isAuthorOrbiter:
-      (collatorId as any).unwrapOr(null)?.toString() !=
+      (collatorId as any).unwrapOr(null)?.toString() !==
       (await getAccountFromNimbusKey(apiAt, nmbsKey))?.toString(),
     authorName,
     blockTime: blockTime.toNumber(),
@@ -521,7 +521,7 @@ export function generateBlockDetailsLog(
           : ext;
 
   const ethTxs = blockDetails.block.extrinsics.filter(
-    (tx) => tx.method.section == "ethereum" && tx.method.method == "transact",
+    (tx) => tx.method.section === "ethereum" && tx.method.method === "transact",
   ).length;
   const eths = ethTxs.toString().padStart(3, " ");
   const evmText =
@@ -535,17 +535,17 @@ export function generateBlockDetailsLog(
 
   const fees = blockDetails.txWithEvents
     .filter(({ dispatchInfo }) => !dispatchInfo.class.isMandatory)
-    .reduce((p, { dispatchInfo, extrinsic, events, fees }) => {
-      if (extrinsic.method.section == "ethereum") {
+    .reduce((p, { dispatchInfo, extrinsic, fees }) => {
+      if (extrinsic.method.section === "ethereum") {
         const payload = extrinsic.method.args[0] as any;
-        let gasPrice = payload.isLegacy
+        const gasPrice = payload.isLegacy
           ? payload.asLegacy?.gasPrice.toBigInt()
           : payload.isEip2930
             ? payload.asEip2930?.gasPrice.toBigInt()
             : payload.isEip1559
               ? // If gasPrice is not indicated, we should use the base fee defined in that block
                 payload.asEip1559?.maxFeePerGas.toBigInt() || 0n
-              : (payload as any as LegacyTransaction).gasPrice?.toBigInt();
+              : (payload as LegacyTransaction).gasPrice?.toBigInt();
 
         const refTime = (dispatchInfo.weight as any).toBn
           ? (dispatchInfo.weight as any).toBigInt()
@@ -567,19 +567,19 @@ export function generateBlockDetailsLog(
 
   const transferred = blockDetails.txWithEvents
     .map((tx) => {
-      if (tx.extrinsic.method.section == "ethereum" && tx.extrinsic.method.method == "transact") {
+      if (tx.extrinsic.method.section === "ethereum" && tx.extrinsic.method.method === "transact") {
         const payload = tx.extrinsic.method.args[0] as any;
-        let gasPrice = payload.isLegacy
+        const _gasPrice = payload.isLegacy
           ? payload.asLegacy?.gasPrice.toBigInt()
           : payload.isEip2930
             ? payload.asEip2930?.gasPrice.toBigInt()
             : payload.isEip1559
               ? // If gasPrice is not indicated, we should use the base fee defined in that block
                 payload.asEip1559?.maxFeePerGas.toBigInt() || 0n
-              : (payload as any as LegacyTransaction).gasPrice?.toBigInt();
+              : (payload as LegacyTransaction).gasPrice?.toBigInt();
       }
       return tx.events.reduce((total, event) => {
-        if (event.section == "balances" && event.method == "Transfer") {
+        if (event.section === "balances" && event.method === "Transfer") {
           return total + (event.data[2] as any).toBigInt();
         }
         return total;
@@ -657,7 +657,7 @@ export function monitorSubmittedExtrinsic(
         if (error?.isModule) {
           const { docs, name, section } = api.registry.findMetaError(error.asModule);
           console.log(`${formattedId} \t`, `${chalk.red(`${section}.${name}`)}`, `${docs}`);
-        } else if (section == "system" && method == "ExtrinsicSuccess") {
+        } else if (section === "system" && method === "ExtrinsicSuccess") {
           console.log(`${formattedId} \t`, chalk.green(`${section}.${method}`), data.toString());
         } else {
           if (verbose) {

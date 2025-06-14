@@ -1,12 +1,12 @@
 // This script is expected to run against a parachain network (using launch.ts script)
 import yargs from "yargs";
 
-import { promiseConcurrent } from "../utils/functions.ts";
-import { getAccountIdentity } from "../utils/monitoring.ts";
-import { getApiFor, NETWORK_YARGS_OPTIONS } from "../utils/networks.ts";
+import { promiseConcurrent } from "../utils/functions";
+import { getAccountIdentity } from "../utils/monitoring";
+import { getApiFor, NETWORK_YARGS_OPTIONS } from "../utils/networks";
 
 import debugPkg from "debug";
-const debug = debugPkg("check:finality");
+const _debug = debugPkg("check:finality");
 
 const argv = yargs(process.argv.slice(2))
   .usage("Usage: $0")
@@ -27,8 +27,8 @@ const main = async () => {
   const endNumber = (await api.rpc.chain.getHeader(endHash)).number.toNumber();
 
   const batchSize = 20000;
-  let i = argv.start;
-  debug(`Checking from ${i} to ${endNumber}...`);
+  const i = argv.start;
+  _debug(`Checking from ${i} to ${endNumber}...`);
   for (let i = argv.start; i < endNumber; i += batchSize) {
     await promiseConcurrent(
       10,
@@ -53,14 +53,14 @@ const main = async () => {
       },
       new Array(batchSize).fill(0),
     ).catch(async (err) => {
-      debug(`Failed ${i} retrying`, err);
+      _debug(`Failed ${i} retrying`, err);
       i -= batchSize;
       await new Promise((resolve) => {
         setTimeout(resolve, 1000);
       });
     });
 
-    debug(`${i}...`);
+    _debug(`${i}...`);
   }
   console.log(`Analyzed from ${argv.start} to ${endNumber}`);
   api.disconnect();

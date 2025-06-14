@@ -8,21 +8,19 @@
 //    --account-priv-key <key>
 import "@moonbeam-network/api-augment";
 import "@polkadot/api-augment";
-import { fileURLToPath } from "url";
-import path from "path";
-
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
+import * as path from "path";
 
 import { ApiPromise, Keyring } from "@polkadot/api";
-import { KeyringPair } from "@polkadot/keyring/types";
-import { Raw } from "@polkadot/types-codec";
+import { KeyringPair as _KeyringPair } from "@polkadot/keyring/types";
+// @ts-ignore - Raw type exists at runtime
+import type { Raw } from "@polkadot/types-codec";
 import { blake2AsHex, xxhashAsHex } from "@polkadot/util-crypto";
-import fs from "fs";
+import * as fs from "fs";
 import yargs from "yargs";
 
-import { ALITH_PRIVATE_KEY } from "../utils/constants.ts";
-import { monitorSubmittedExtrinsic, waitForAllMonitoredExtrinsics } from "../utils/monitoring.ts";
-import { getApiFor, NETWORK_YARGS_OPTIONS } from "../utils/networks.ts";
+import { ALITH_PRIVATE_KEY } from "../utils/constants";
+import { monitorSubmittedExtrinsic, waitForAllMonitoredExtrinsics } from "../utils/monitoring";
+import { getApiFor, NETWORK_YARGS_OPTIONS } from "../utils/networks";
 
 const argv = yargs(process.argv.slice(2))
   .usage("Usage: $0")
@@ -77,8 +75,8 @@ async function main() {
   try {
     const chain = (await api.rpc.system.chain()).toString().toLowerCase().replaceAll(/\s/g, "-");
     const TEMPORADY_DB_FILE = path.resolve(
-      __dirname,
-      `003-clear-suicided-contracts-${chain}-db.json`,
+      process.cwd(),
+      `src/lazy-migrations/003-clear-suicided-contracts-${chain}-db.json`,
     );
 
     let db = {
@@ -93,14 +91,14 @@ async function main() {
     }
     db.at_block ||= (await api.query.system.parentHash()).toHex();
 
-    let account: KeyringPair;
-    let nonce;
+    let nonce: bigint;
     const privKey = argv["alith"] ? ALITH_PRIVATE_KEY : argv["account-priv-key"];
-    if (privKey) {
-      account = keyring.addFromUri(privKey, null, "ethereum");
-      const { nonce: rawNonce } = await api.query.system.account(account.address);
-      nonce = BigInt(rawNonce.toString());
+    if (!privKey) {
+      throw new Error("No private key provided");
     }
+    const account = keyring.addFromUri(privKey, undefined, "ethereum");
+    const { nonce: rawNonce } = await api.query.system.account(account.address);
+    nonce = BigInt(rawNonce.toString());
 
     let removedSuicidedContracts = await suicidedContractsRemoved(api);
     console.log(`Contracts already removed before this run: `, removedSuicidedContracts);
@@ -112,7 +110,7 @@ async function main() {
       xxhashAsHex("EVM", 128) + xxhashAsHex("AccountStorages", 128).slice(2);
 
     const ITEMS_PER_PAGE = 1000;
-    while (db.cursor != undefined) {
+    while (db.cursor !== undefined) {
       const keys = await api.rpc.state.getKeysPaged(
         systemAccountPrefix,
         ITEMS_PER_PAGE,
@@ -122,25 +120,25 @@ async function main() {
       db.cursor = keys.length > 0 ? keys[keys.length - 1].toHex() : undefined;
       console.log(db.cursor, keys.length);
 
-      let contract_suicided_keys = {};
-      for (let key of keys) {
+      const contract_suicided_keys = {};
+      for (const key of keys) {
         const SKIP_BYTES =
           16 /* pallet prefix */ + 16 /* storage prefix */ + 16; /* address prefix */
-        const address = key
+        const _address = key
           .toHex()
           .slice(2)
           .slice(SKIP_BYTES * 2);
-        const address_blake2_hash = blake2AsHex("0x" + address, 128).slice(2);
+        const address_blake2_hash = blake2AsHex("0x" + _address, 128).slice(2);
 
-        const contract_suicided_key = evmIsSuicidedPrefix + address_blake2_hash + address;
-        contract_suicided_keys[contract_suicided_key] = address;
+        const contract_suicided_key = evmIsSuicidedPrefix + address_blake2_hash + _address;
+        contract_suicided_keys[contract_suicided_key] = _address;
       }
 
       let keys_vec = Object.keys(contract_suicided_keys);
       const is_suicided_result = (await api.rpc.state.queryStorageAt(
         keys_vec,
         db.at_block,
-      )) as unknown as Raw[];
+      )) as Raw[];
 
       const not_suicided_contracts = is_suicided_result.reduce((s, v, idx) => {
         if (v.isEmpty) {
@@ -149,8 +147,8 @@ async function main() {
         return s;
       }, []);
 
-      let contract_code_keys = {};
-      for (let address of not_suicided_contracts) {
+      const contract_code_keys = {};
+      for (const address of not_suicided_contracts) {
         const address_blake2_hash = blake2AsHex("0x" + address, 128).slice(2);
 
         const contract_code_key = evmHasCodePrefix + address_blake2_hash + address;
@@ -158,10 +156,7 @@ async function main() {
       }
 
       keys_vec = Object.keys(contract_code_keys);
-      const has_code_result = (await api.rpc.state.queryStorageAt(
-        keys_vec,
-        db.at_block,
-      )) as unknown as Raw[];
+      const has_code_result = (await api.rpc.state.queryStorageAt(keys_vec, db.at_block)) as Raw[];
 
       const codeless_contracts = has_code_result.reduce((s, v, idx) => {
         if (v.isEmpty) {
@@ -170,7 +165,7 @@ async function main() {
         return s;
       }, []);
 
-      for (let address of codeless_contracts) {
+      for (const address of codeless_contracts) {
         const address_blake2_hash = blake2AsHex("0x" + address, 128).slice(2);
 
         const contract_storage_key = evmHasStoragesPrefix + address_blake2_hash + address;

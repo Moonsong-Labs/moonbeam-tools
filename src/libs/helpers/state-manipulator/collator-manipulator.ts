@@ -6,9 +6,9 @@ import {
   encodeStorageKey,
   StateLine,
   StateManipulator,
-} from "./genesis-parser.ts";
+} from "./genesis-parser";
 
-const debug = Debug("helper:collator-manipulator");
+const _debug = Debug("helper:collator-manipulator");
 
 export class CollatorManipulator implements StateManipulator {
   private readonly newCollator: string;
@@ -53,7 +53,7 @@ export class CollatorManipulator implements StateManipulator {
         // beginning so we parse from the end;
         this.collators.push(`0x${value.slice(i - 40, i)}`);
       }
-      debug(`Found candidates: ${this.collators.length}`);
+      _debug(`Found candidates: ${this.collators.length}`);
     }
     if (key.startsWith(this.orbiterCollatorsPoolKey)) {
       this.orbiters.push(`0x${key.slice(-40)}`);
@@ -81,15 +81,15 @@ export class CollatorManipulator implements StateManipulator {
 
   processWrite = ({ key, value }) => {
     if (key.startsWith(this.newAuthorMappingKey)) {
-      debug(`Found new collator already existing session key: ${value}`);
+      _debug(`Found new collator already existing session key: ${value}`);
       return { action: "remove" as Action };
     }
     if (key.startsWith(this.newAuthorMappingKey)) {
-      debug(`Found new collator already existing session key: ${value}`);
+      _debug(`Found new collator already existing session key: ${value}`);
       return { action: "remove" as Action };
     }
     if (key.startsWith(this.replacedAuthorMappingCollatorKey)) {
-      debug(`Found replaced collator mapping key: ${value}`);
+      _debug(`Found replaced collator mapping key: ${value}`);
       return {
         action: "remove" as Action,
         extraLines: [
@@ -105,7 +105,7 @@ export class CollatorManipulator implements StateManipulator {
       };
     }
     if (key.startsWith(this.replacedNimbusLookupKey)) {
-      debug(`Found nimbus lookup for replaced collator: ${value}`);
+      _debug(`Found nimbus lookup for replaced collator: ${value}`);
       return {
         action: "remove" as Action,
         extraLines: [

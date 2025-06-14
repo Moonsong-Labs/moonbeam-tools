@@ -9,9 +9,9 @@ import {
   PalletRankedCollectiveTally,
   PalletReferendaCurve,
   PalletReferendaReferendumInfo,
-  PalletReferendaReferendumInfoConvictionVotingTally,
-  PalletReferendaReferendumInfoRankedCollectiveTally,
-  PalletReferendaReferendumStatusConvictionVotingTally,
+  PalletReferendaReferendumInfoConvictionVotingTally as _PalletReferendaReferendumInfoConvictionVotingTally,
+  PalletReferendaReferendumInfoRankedCollectiveTally as _PalletReferendaReferendumInfoRankedCollectiveTally,
+  PalletReferendaReferendumStatusConvictionVotingTally as _PalletReferendaReferendumStatusConvictionVotingTally,
   PalletReferendaTrackInfo,
 } from "@polkadot/types/lookup";
 import {
@@ -27,12 +27,12 @@ import {
 import { HexString } from "@polkadot/util/types";
 import Debug from "debug";
 
-import { promiseConcurrent } from "./functions.ts";
+import { promiseConcurrent } from "./functions";
 
 import type { Bytes } from "@polkadot/types";
 import type { Call, Hash } from "@polkadot/types/interfaces";
 import { PalletReferendaReferendumStatus } from "@polkadot/types/lookup";
-const debug = Debug("tools:referenda");
+const _debug = Debug("tools:referenda");
 
 export interface Referendum {
   decidingEnd?: BN;
@@ -57,7 +57,7 @@ export interface TrackInfo {
   text?: string;
 }
 
-function getTrackName({ name }: PalletReferendaTrackInfo): string {
+function _getTrackName({ name: _name }: PalletReferendaTrackInfo): string {
   return;
 }
 
@@ -213,7 +213,7 @@ async function getImageProposal(api: ApiPromise | ApiDecoration<"promise">, hash
     const preImage = await api.query.preimage.preimageFor([h256Hash, len]);
     return parseImage(api, [status, (preImage as any).unwrap()]);
   } catch (e) {
-    debug(e);
+    _debug(e);
   }
   return null;
 }
@@ -249,7 +249,7 @@ async function getReferendumOnGoing(
   }
   const blockNumber = getReferendumConclusionBlock(info);
 
-  debug(`Ref: ${id} - retrieving past OnGoingfrom block #${blockNumber - 1}`);
+  _debug(`Ref: ${id} - retrieving past OnGoingfrom block #${blockNumber - 1}`);
   const apiAt = await api.at(await api.rpc.chain.getBlockHash(blockNumber - 1));
   const referendumInfo = await apiAt.query.referenda.referendumInfoFor(id);
 

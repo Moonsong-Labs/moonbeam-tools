@@ -4,8 +4,8 @@ import { table } from "table";
 import Web3 from "web3";
 import yargs from "yargs";
 
-import { getApiFor, NETWORK_YARGS_OPTIONS } from "../index.ts";
-import { getAccountIdentity } from "../utils/monitoring.ts";
+import { getApiFor, NETWORK_YARGS_OPTIONS } from "../index";
+import { getAccountIdentity } from "../utils/monitoring";
 
 const argv = yargs(process.argv.slice(2))
   .usage("Usage: $0")
@@ -37,7 +37,7 @@ const main = async () => {
   const affectedAccounts = [];
   systemAccounts.map(async ({ data: { free, reserved, frozen } }, idx) => {
     if (free.lt(frozen)) {
-      const transferableNew = free.add(reserved).sub(bnMax(reserved, frozen));
+      const _transferableNew = free.add(reserved).sub(bnMax(reserved, frozen));
       affectedAccounts.push([
         addressesToCheck[idx],
         identities[idx],
@@ -59,7 +59,7 @@ const main = async () => {
   console.log(
     table(tableData, {
       drawHorizontalLine: (lineIndex: number) =>
-        lineIndex == 0 || lineIndex == 1 || lineIndex == tableData.length,
+        lineIndex === 0 || lineIndex === 1 || lineIndex === tableData.length,
       columns: [
         { alignment: "left" },
         { alignment: "left" },

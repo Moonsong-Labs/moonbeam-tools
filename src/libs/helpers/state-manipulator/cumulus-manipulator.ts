@@ -1,12 +1,6 @@
 import Debug from "debug";
 
-import {
-  Action,
-  encodeStorageBlake128MapKey,
-  encodeStorageKey,
-  StateLine,
-  StateManipulator,
-} from "./genesis-parser.ts";
+import { Action, encodeStorageKey, StateManipulator } from "./genesis-parser";
 import { nToHex } from "@polkadot/util";
 
 const debug = Debug("helper:cumulus-manipulator");
@@ -24,7 +18,7 @@ export class CumulusManipulator implements StateManipulator {
     this.totalIssuanceKey = encodeStorageKey("Balances", "TotalIssuance");
   }
 
-  processRead = (_) => {};
+  processRead = (_: any) => {};
 
   prepareWrite = () => {};
 

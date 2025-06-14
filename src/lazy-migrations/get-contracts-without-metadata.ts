@@ -1,14 +1,12 @@
 import yargs from "yargs";
-import fs from "fs";
-import path from "path";
-import { fileURLToPath } from "url";
-
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
+import * as fs from "fs";
+import * as path from "path";
 import "@polkadot/api-augment";
 import "@moonbeam-network/api-augment";
 import { blake2AsHex, xxhashAsHex } from "@polkadot/util-crypto";
-import { getApiFor, NETWORK_YARGS_OPTIONS } from "../utils/networks.ts";
-import { Raw } from "@polkadot/types";
+import { getApiFor, NETWORK_YARGS_OPTIONS } from "../utils/networks";
+// @ts-ignore - Raw type exists at runtime
+import type { Raw } from "@polkadot/types-codec";
 
 const argv = yargs(process.argv.slice(2))
   .usage("Usage: $0")
@@ -34,8 +32,8 @@ async function main() {
     const chain = (await api.rpc.system.chain()).toString().toLowerCase().replace(/\s/g, "-");
 
     const TEMPORARY_DB_FILE = path.resolve(
-      __dirname,
-      `contracts-without-metadata-addresses-${chain}-db.json`,
+      process.cwd(),
+      `src/lazy-migrations/contracts-without-metadata-addresses-${chain}-db.json`,
     );
 
     let db = {

@@ -8,17 +8,14 @@ Ex: ./node_modules/.bin/ts-node src/lazy-migrations/004-create-contract-metadata
 */
 import yargs from "yargs";
 import "@polkadot/api-augment";
-import { fileURLToPath } from "url";
-import path from "path";
-
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
+import * as path from "path";
 import "@moonbeam-network/api-augment";
 import { Keyring } from "@polkadot/api";
 import { KeyringPair } from "@polkadot/keyring/types";
 import { getApiFor, NETWORK_YARGS_OPTIONS } from "../utils/networks.ts";
 import { monitorSubmittedExtrinsic, waitForAllMonitoredExtrinsics } from "../utils/monitoring.ts";
 import { ALITH_PRIVATE_KEY } from "../utils/constants.ts";
-import fs from "fs";
+import * as fs from "fs";
 
 const argv = yargs(process.argv.slice(2))
   .usage("Usage: $0")
@@ -60,12 +57,12 @@ async function main() {
 
   const chain = (await api.rpc.system.chain()).toString().toLowerCase().replace(/\s/g, "-");
   const INPUT_FILE = path.resolve(
-    __dirname,
-    `contracts-without-metadata-addresses-${chain}-db.json`,
+    process.cwd(),
+    `src/lazy-migrations/contracts-without-metadata-addresses-${chain}-db.json`,
   );
   const PROGRESS_FILE = path.resolve(
-    __dirname,
-    `contract-without-metadata-migration-progress--${chain}.json`,
+    process.cwd(),
+    `src/lazy-migrations/contract-without-metadata-migration-progress--${chain}.json`,
   );
 
   // Initialize or load progress DB
@@ -90,16 +87,16 @@ async function main() {
     }
 
     const limit = argv["limit"];
-    let account: KeyringPair;
-    let nonce;
+    let nonce: bigint;
 
     // Setup account
     const privKey = argv["alith"] ? ALITH_PRIVATE_KEY : argv["account-priv-key"];
-    if (privKey) {
-      account = keyring.addFromUri(privKey, null, "ethereum");
-      const { nonce: rawNonce } = await api.query.system.account(account.address);
-      nonce = BigInt(rawNonce.toString());
+    if (!privKey) {
+      throw new Error("No private key provided");
     }
+    const account: KeyringPair = keyring.addFromUri(privKey, undefined, "ethereum");
+    const { nonce: rawNonce } = await api.query.system.account(account.address);
+    nonce = BigInt(rawNonce.toString());
 
     // Get contracts to process in this run
     const contractsToProcess = db.pending_contracts.slice(0, limit);

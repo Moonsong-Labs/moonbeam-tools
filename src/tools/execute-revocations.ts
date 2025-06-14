@@ -5,8 +5,8 @@ import chalk from "chalk";
 import yargs from "yargs";
 
 import { Web3 } from "web3";
-import { getApiFor, NETWORK_YARGS_OPTIONS } from "../index.ts";
-import { promiseConcurrent } from "../utils/functions.ts";
+import { getApiFor, NETWORK_YARGS_OPTIONS } from "../index";
+import { promiseConcurrent } from "../utils/functions";
 
 const argv = yargs(process.argv.slice(2))
   .usage("Usage: $0")
@@ -62,7 +62,7 @@ const main = async () => {
 
   const chainId = (await api.query.ethereumChainId.chainId()).toNumber();
   let nonce = await web3.eth.getTransactionCount(revoker.address);
-  let balance = await web3.eth.getBalance(revoker.address);
+  const balance = await web3.eth.getBalance(revoker.address);
   console.log(`Using ${revoker.address}: nonce ${nonce}, balance ${balance}`);
   console.log(`Listing revocations for ${formattedCollators.join(", ")}`);
 
@@ -113,7 +113,7 @@ const main = async () => {
             ? request.action.asDecrease.toBigInt()
             : request.action.asRevoke.toBigInt();
           if (
-            delegatorId == request.delegator.toHex() &&
+            delegatorId === request.delegator.toHex() &&
             request.whenExecutable.toNumber() <= roundInfo.current.toNumber() &&
             (!argv.threshold || amount / 10n ** 18n > argv.threshold)
           ) {

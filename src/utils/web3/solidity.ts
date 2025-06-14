@@ -1,12 +1,12 @@
 import solc from "solc";
 
-import { SolidityContractBundle } from "./contracts.ts";
+import { SolidityContractBundle } from "./contracts";
 
 export function compileSolidity(
   contractContent: string,
   contractName: string = "Test",
 ): SolidityContractBundle {
-  let result = JSON.parse(
+  const _result = JSON.parse(
     solc.compile(
       JSON.stringify({
         language: "Solidity",
@@ -26,5 +26,5 @@ export function compileSolidity(
     ),
   );
 
-  return result.contracts["main.sol"][contractName] as SolidityContractBundle;
+  return _result.contracts["main.sol"][contractName] as SolidityContractBundle;
 }

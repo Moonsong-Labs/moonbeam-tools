@@ -5,7 +5,7 @@ import chalk from "chalk";
 import { table } from "table";
 import yargs from "yargs";
 
-import { getApiFor, NETWORK_YARGS_OPTIONS } from "../index.ts";
+import { getApiFor, NETWORK_YARGS_OPTIONS } from "../index";
 
 const argv = yargs(process.argv.slice(2))
   .usage("Usage: $0")
@@ -36,13 +36,13 @@ const main = async () => {
     apiAt.query.hrmp.hrmpChannels.entries(),
   ]);
 
-  const filterPara = ([key, data]) => {
+  const filterPara = ([key, _data]) => {
     const senderKey = api.registry.createType("ParaId", key.toU8a().slice(-8, -4));
     const receiverKey = api.registry.createType("ParaId", key.toU8a().slice(-4));
     if (!argv.para) {
       return true;
     }
-    return senderKey.toNumber() == argv.para || receiverKey.toNumber() == argv.para;
+    return senderKey.toNumber() === argv.para || receiverKey.toNumber() === argv.para;
   };
 
   const filteredChannels = channels.filter(filterPara);
@@ -51,7 +51,7 @@ const main = async () => {
   const tableData = (
     [["Sender", "Receiver", "Status", "Messages", "Capacity", "Head"]] as any[]
   ).concat(
-    filteredChannels.filter(filterPara).map(([key, data], index) => {
+    filteredChannels.filter(filterPara).map(([key, data], _index) => {
       const channel = (data as any).unwrap();
       const senderKey = api.registry.createType("ParaId", key.toU8a().slice(-8, -4));
       const receiverKey = api.registry.createType("ParaId", key.toU8a().slice(-4));
@@ -64,7 +64,7 @@ const main = async () => {
         channel.mqcHead,
       ];
     }),
-    filteredChannelRequests.filter(filterPara).map(([key, data], index) => {
+    filteredChannelRequests.filter(filterPara).map(([key, data], _index) => {
       const request = (data as any).unwrap();
       const senderKey = api.registry.createType("ParaId", key.toU8a().slice(-8, -4));
       const receiverKey = api.registry.createType("ParaId", key.toU8a().slice(-4));
@@ -75,10 +75,10 @@ const main = async () => {
   console.log(
     table(tableData, {
       drawHorizontalLine: (lineIndex: number) =>
-        lineIndex == 0 ||
-        lineIndex == 1 ||
-        lineIndex == tableData.length ||
-        lineIndex == filteredChannels.length + 1,
+        lineIndex === 0 ||
+        lineIndex === 1 ||
+        lineIndex === tableData.length ||
+        lineIndex === filteredChannels.length + 1,
     }),
   );
   await api.disconnect();

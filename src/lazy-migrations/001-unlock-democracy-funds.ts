@@ -12,8 +12,8 @@ import "@moonbeam-network/api-augment";
 import { Keyring } from "@polkadot/api";
 import yargs from "yargs";
 
-import { getApiFor, NETWORK_YARGS_OPTIONS } from "../index.ts";
-import { monitorSubmittedExtrinsic, waitForAllMonitoredExtrinsics } from "../utils/monitoring.ts";
+import { getApiFor, NETWORK_YARGS_OPTIONS } from "../index";
+import { monitorSubmittedExtrinsic, waitForAllMonitoredExtrinsics } from "../utils/monitoring";
 
 const argv = yargs(process.argv.slice(2))
   .usage("Usage: $0")
@@ -39,7 +39,7 @@ const main = async () => {
   );
 
   const keyring = new Keyring({ type: "ethereum" });
-  const account = await keyring.addFromUri(argv["account-priv-key"], null, "ethereum");
+  const account = await keyring.addFromUri(argv["account-priv-key"], undefined, "ethereum");
   const { nonce: rawNonce } = (await api.query.system.account(account.address)) as any;
   let nonce = BigInt(rawNonce.toString());
 
