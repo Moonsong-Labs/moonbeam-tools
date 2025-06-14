@@ -4,7 +4,7 @@ describe("Monitor Integration Tests", () => {
   it("should validate that monitor script accepts correct arguments", () => {
     // Test valid network names
     const validNetworks = ["moonbeam", "moonriver", "moonbase"];
-    
+
     validNetworks.forEach((network) => {
       expect(validNetworks).toContain(network);
     });
@@ -74,7 +74,8 @@ describe("Monitor Integration Tests", () => {
       finalized: false,
     };
 
-    const isValidNetworks = !!(validConfigNetworks as any).url || !!(validConfigNetworks as any).networks;
+    const isValidNetworks =
+      !!(validConfigNetworks as any).url || !!(validConfigNetworks as any).networks;
     expect(isValidNetworks).toBe(true);
   });
 });

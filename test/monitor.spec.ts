@@ -159,14 +159,14 @@ describe("Monitor Script", () => {
 
   it("should display block production output correctly", async () => {
     let capturedOutput = "";
-    
+
     // Mock printBlockDetails to capture what would be displayed
     vi.mocked(printBlockDetails).mockImplementation((blockDetails, options, previousBlock) => {
       // Simulate the actual output format
       const blockNumber = blockDetails.block.header.number.toString();
       const author = blockDetails.authorName;
       const weight = blockDetails.weightPercentage.toFixed(1);
-      
+
       capturedOutput = `#${blockNumber} [${weight}%] by ${author}`;
       console.log(capturedOutput);
     });
