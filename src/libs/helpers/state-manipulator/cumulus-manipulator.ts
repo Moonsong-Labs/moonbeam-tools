@@ -1,12 +1,6 @@
 import Debug from "debug";
 
-import {
-  Action,
-  encodeStorageBlake128MapKey as _encodeStorageBlake128MapKey,
-  encodeStorageKey,
-  StateLine as _StateLine,
-  StateManipulator,
-} from "./genesis-parser";
+import { Action, encodeStorageKey, StateManipulator } from "./genesis-parser";
 import { nToHex } from "@polkadot/util";
 
 const _debug = Debug("helper:cumulus-manipulator");

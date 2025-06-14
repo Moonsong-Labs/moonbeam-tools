@@ -60,6 +60,7 @@ const main = async () => {
       console.log(`  Nested Args: ${JSON.stringify(nestedDecodedArgs, null, 2)}`);
     }
     console.log(`${ex.method.method.toString() === "setValidationData" ? "..." : ex.toHex()}`);
+
   });
 
   await api.disconnect();
