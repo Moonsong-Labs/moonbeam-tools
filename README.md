@@ -7,7 +7,7 @@ Tools related to Moonbeam blockchains.
 * bun v1+
 
 ## Actions
-__Installation__: `npm install`  
+__Installation__: `bun install`  
 __Test__: `bun run test`  
 __Build__: `bun run build`  
 __Publish__: `bun publish`  
@@ -23,7 +23,7 @@ You can use `DEBUG=helper:*` for logs on the state manipation
 Allows to monitor a Moonbeam network. To do so, run the following command:
 
 ```  
-bunx moonbeam-tools --networks moonbeam moonriver
+bunx moonbeam-monitor --networks moonbeam moonriver
 ```
 
 ```
@@ -32,8 +32,9 @@ Options:
   --version    Show version number                                     [boolean]
   --url        WebSocket url                                            [string]
   --networks   Known networks
-             [array] [choices: "stagenet", "alphanet", "moonsama", "moonsilver",
-                                                                    "moonriver"]
+             [array] [choices: "stagenet", "alphanet", "betanet", "moonsama",
+                            "moonlama", "moonsilver", "moonriver", "moonbeam",
+                                                           "kusama", "polkadot"]
   --finalized  listen to finalized only               [boolean] [default: false]
   ```
 
