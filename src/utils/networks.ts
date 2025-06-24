@@ -1,6 +1,6 @@
 import { ApiPromise, HttpProvider, WsProvider } from "@polkadot/api";
+import "@moonbeam-network/api-augment";
 import chalk from "chalk";
-import { typesBundlePre900 } from "moonbeam-types-bundle";
 import {
   Chain,
   createPublicClient,
@@ -145,7 +145,6 @@ export const getApiFor = async (argv: Argv) => {
   return await ApiPromise.create({
     noInitWarn: true,
     provider: wsProvider,
-    typesBundle: typesBundlePre900 as any,
   });
 };
 
@@ -179,7 +178,6 @@ export const getMonitoredApiFor = async (argv: Argv) => {
   const api = await ApiPromise.create({
     noInitWarn: true,
     provider: wsProvider,
-    typesBundle: typesBundlePre900 as any,
   });
   const networkName = argv.url
     ? NETWORK_CHAIN_MAPPING[(await api.rpc.system.chain()).toString()]

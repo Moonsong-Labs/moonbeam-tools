@@ -92,7 +92,6 @@ describe("Monitor Script", () => {
     expect(ApiPromise.create).toHaveBeenCalledWith({
       noInitWarn: true,
       provider: expect.any(Object),
-      typesBundle: expect.any(Object),
     });
 
     // Wait for the block callback to be executed
