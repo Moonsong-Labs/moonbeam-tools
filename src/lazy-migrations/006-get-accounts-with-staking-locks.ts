@@ -34,10 +34,6 @@ interface AccountInfo {
     id: string;
     amount: string;
   }[];
-  freezes: {
-    id: string;
-    amount: string;
-  }[];
 }
 
 interface OutputData {
@@ -79,58 +75,57 @@ async function main() {
     const delegatorAddresses: string[] = [];
     const candidateAddresses: string[] = [];
     const detailedInfo: AccountInfo[] = [];
-    const PAGE_SIZE = 50; // Balance between efficiency and RPC timeout risk
+    const PAGE_SIZE = 300; // Balance between efficiency and RPC timeout risk
 
     // Get all delegators from parachain staking with pagination
     console.log("Querying delegators with pagination...");
-    let delegatorCount = 0;
-    let lastDelegatorKey: any = null;
+    let processed = 0;
+    let lastKey: any = null;
 
     for (;;) {
-      const delegatorBatch = await api.query.parachainStaking.delegatorState.entriesPaged({
+      const locksBatch = await api.query.balances.locks.entriesPaged({
         args: [],
         pageSize: PAGE_SIZE,
-        startKey: lastDelegatorKey,
+        startKey: lastKey,
       });
 
-      console.log(
-        `  Loaded ${delegatorBatch.length} delegators (batch ${Math.floor(delegatorCount / PAGE_SIZE) + 1})...`,
-      );
+      console.log(`  Loaded ${locksBatch.length} locks (batch ${processed / PAGE_SIZE + 1})...`);
 
-      for (const [key, value] of delegatorBatch) {
+      for (const [key, value] of locksBatch) {
         if (value.isEmpty) continue;
 
         // Extract account ID from storage key using args
         const accountId = key.args[0];
         const accountIdStr = accountId.toString();
 
-        // Check if this delegator has been migrated
-        const isMigrated = await api.query.parachainStaking.migratedDelegators(accountId);
+        const lockData = value.toJSON() as any[];
 
-        if (!isMigrated.toHuman()) {
-          // Not migrated yet, get lock and freeze info
-          const locks = await api.query.balances.locks(accountId);
-          const freezes = await api.query.balances.freezes(accountId);
+        const stkngdelLocks = lockData.filter(
+          (lock: any) => lock.id === "0x73746b6e6764656c", // stkngdel
+        );
 
-          const lockData = locks.toJSON() as any[];
-          const freezeData = freezes.toJSON() as any[];
-
-          const stakingLocks = lockData.filter(
-            (lock: any) => lock.id === "stkngdel" || lock.id === "0x73746b6e6764656c",
-          );
-
-          if (stakingLocks.length > 0) {
-            delegatorAddresses.push(accountIdStr);
-            detailedInfo.push({
-              address: accountIdStr,
-              locks: stakingLocks,
-              freezes: freezeData,
-            });
-          }
+        if (stkngdelLocks.length > 0) {
+          delegatorAddresses.push(accountIdStr);
+          detailedInfo.push({
+            address: accountIdStr,
+            locks: stkngdelLocks,
+          });
         }
 
-        delegatorCount++;
-        lastDelegatorKey = key;
+        const stkngcolLocks = lockData.filter(
+          (lock: any) => lock.id === "0x73746b6e67636f6c", // stkngcol
+        );
+
+        if (stkngcolLocks.length > 0) {
+          candidateAddresses.push(accountIdStr);
+          detailedInfo.push({
+            address: accountIdStr,
+            locks: stkngcolLocks,
+          });
+        }
+
+        processed++;
+        lastKey = key;
       }
 
       // Save progress after each batch
@@ -144,83 +139,13 @@ async function main() {
         `  Progress saved: ${delegatorAddresses.length} delegators, ${candidateAddresses.length} candidates`,
       );
 
-      if (delegatorBatch.length < PAGE_SIZE) {
-        console.log(`\nTotal delegators processed: ${delegatorCount}`);
+      if (locksBatch.length < PAGE_SIZE) {
+        console.log(`\nTotal locks processed: ${processed}`);
         break;
       }
     }
 
     console.log(`Delegators needing migration: ${delegatorAddresses.length}\n`);
-
-    // Get all collator candidates with pagination
-    console.log("Querying candidates with pagination...");
-    let candidateCount = 0;
-    let lastCandidateKey: any = null;
-
-    for (;;) {
-      const candidateBatch = await api.query.parachainStaking.candidateInfo.entriesPaged({
-        args: [],
-        pageSize: PAGE_SIZE,
-        startKey: lastCandidateKey,
-      });
-
-      console.log(
-        `  Loaded ${candidateBatch.length} candidates (batch ${Math.floor(candidateCount / PAGE_SIZE) + 1})...`,
-      );
-
-      for (const [key, value] of candidateBatch) {
-        if (value.isEmpty) continue;
-
-        // Extract account ID from storage key using args
-        const accountId = key.args[0];
-        const accountIdStr = accountId.toString();
-
-        // Check if this candidate has been migrated
-        const isMigrated = await api.query.parachainStaking.migratedCandidates(accountId);
-
-        if (!isMigrated.toHuman()) {
-          // Not migrated yet, get lock and freeze info
-          const locks = await api.query.balances.locks(accountId);
-          const freezes = await api.query.balances.freezes(accountId);
-
-          const lockData = locks.toJSON() as any[];
-          const freezeData = freezes.toJSON() as any[];
-
-          const stakingLocks = lockData.filter(
-            (lock: any) => lock.id === "stkngcol" || lock.id === "0x73746b6e67636f6c",
-          );
-
-          if (stakingLocks.length > 0) {
-            candidateAddresses.push(accountIdStr);
-            detailedInfo.push({
-              address: accountIdStr,
-              locks: stakingLocks,
-              freezes: freezeData,
-            });
-          }
-        }
-
-        candidateCount++;
-        lastCandidateKey = key;
-      }
-
-      // Save progress after each batch
-      const outputData: OutputData = {
-        delegators: delegatorAddresses,
-        candidates: candidateAddresses,
-      };
-      fs.writeFileSync(OUTPUT_FILE, JSON.stringify(outputData, null, 2));
-      fs.writeFileSync(DETAILED_OUTPUT_FILE, JSON.stringify(detailedInfo, null, 2));
-      console.log(
-        `  Progress saved: ${delegatorAddresses.length} delegators, ${candidateAddresses.length} candidates`,
-      );
-
-      if (candidateBatch.length < PAGE_SIZE) {
-        console.log(`\nTotal candidates processed: ${candidateCount}`);
-        break;
-      }
-    }
-
     console.log(`Candidates needing migration: ${candidateAddresses.length}\n`);
 
     const totalAccounts = delegatorAddresses.length + candidateAddresses.length;
@@ -242,8 +167,7 @@ async function main() {
     console.log("\n" + "=".repeat(50));
     console.log("Summary:");
     console.log("=".repeat(50));
-    console.log(`Total delegators checked: ${delegatorCount}`);
-    console.log(`Total candidates checked: ${candidateCount}`);
+    console.log(`Total locks checked: ${processed}`);
     console.log(`Accounts needing migration: ${totalAccounts}`);
     console.log(`  - Delegators: ${delegatorAddresses.length}`);
     console.log(`  - Candidates: ${candidateAddresses.length}`);
