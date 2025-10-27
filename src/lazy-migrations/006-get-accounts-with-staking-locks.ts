@@ -64,10 +64,7 @@ async function main() {
   const chain = (await api.rpc.system.chain()).toString().toLowerCase().replace(/\s/g, "-");
   const OUTPUT_FILE =
     argv["output-file"] ||
-    path.resolve(
-      process.cwd(),
-      `src/lazy-migrations/accounts-with-staking-locks--${chain}.json`,
-    );
+    path.resolve(process.cwd(), `src/lazy-migrations/accounts-with-staking-locks--${chain}.json`);
   const DETAILED_OUTPUT_FILE =
     argv["output-file"] ||
     path.resolve(
@@ -96,7 +93,9 @@ async function main() {
         startKey: lastDelegatorKey,
       });
 
-      console.log(`  Loaded ${delegatorBatch.length} delegators (batch ${Math.floor(delegatorCount / PAGE_SIZE) + 1})...`);
+      console.log(
+        `  Loaded ${delegatorBatch.length} delegators (batch ${Math.floor(delegatorCount / PAGE_SIZE) + 1})...`,
+      );
 
       for (const [key, value] of delegatorBatch) {
         if (value.isEmpty) continue;
@@ -165,7 +164,9 @@ async function main() {
         startKey: lastCandidateKey,
       });
 
-      console.log(`  Loaded ${candidateBatch.length} candidates (batch ${Math.floor(candidateCount / PAGE_SIZE) + 1})...`);
+      console.log(
+        `  Loaded ${candidateBatch.length} candidates (batch ${Math.floor(candidateCount / PAGE_SIZE) + 1})...`,
+      );
 
       for (const [key, value] of candidateBatch) {
         if (value.isEmpty) continue;

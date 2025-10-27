@@ -37,6 +37,7 @@ npx tsx src/lazy-migrations/get-accounts-with-staking-locks.ts --url wss://wss.a
 #### Output
 
 Creates two files:
+
 1. `accounts-with-staking-locks--{chain}.json` - Simple array of account addresses
 2. `accounts-with-staking-locks--{chain}.info.json` - Detailed information with locks and freezes
 
@@ -70,6 +71,7 @@ bun src/lazy-migrations/006-migrate-locks-to-freezes.ts \
 The script creates a progress file: `locks-to-freezes-migration-progress--{chain}.json`
 
 This file tracks:
+
 - `pending_accounts`: Accounts still to be migrated
 - `migrated_accounts`: Successfully migrated accounts
 - `failed_accounts`: Failed migrations with error messages
@@ -79,5 +81,6 @@ You can safely interrupt and restart the script - it will resume from where it l
 #### Verification
 
 After each batch transaction, the script verifies migration by:
+
 1. Checking `Balances.Freezes` for the account
 2. Confirming presence of `StakingCollator` or `StakingDelegator` freeze reason

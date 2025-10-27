@@ -141,7 +141,9 @@ async function main() {
     // Load existing progress first
     if (fs.existsSync(PROGRESS_FILE)) {
       db = JSON.parse(fs.readFileSync(PROGRESS_FILE, "utf8"));
-      console.log(`Loaded existing progress: ${db.migrated_accounts.length} migrated, ${db.pending_accounts.length} pending, ${Object.keys(db.failed_accounts).length} failed`);
+      console.log(
+        `Loaded existing progress: ${db.migrated_accounts.length} migrated, ${db.pending_accounts.length} pending, ${Object.keys(db.failed_accounts).length} failed`,
+      );
     }
 
     // Handle --retry-failed mode
@@ -170,7 +172,9 @@ async function main() {
             db.migrated_accounts.push(accountId);
             delete db.failed_accounts[accountId];
             reverified++;
-            console.log(`✅ ${accountId} - Successfully migrated (was incorrectly marked as failed)`);
+            console.log(
+              `✅ ${accountId} - Successfully migrated (was incorrectly marked as failed)`,
+            );
           } else {
             stillFailed++;
             console.log(`❌ ${accountId} - Still no staking freeze found`);
@@ -212,11 +216,11 @@ async function main() {
       // New format: object with separate delegator and candidate lists
       const delegators = fileData.delegators.map((addr: string) => ({
         address: addr,
-        isCandidate: false
+        isCandidate: false,
       }));
       const candidates = fileData.candidates.map((addr: string) => ({
         address: addr,
-        isCandidate: true
+        isCandidate: true,
       }));
       accountsToMigrate = [...delegators, ...candidates];
     } else {
@@ -268,7 +272,8 @@ async function main() {
         console.error(`Failed to submit batch transaction:`, error);
         // Mark all accounts in this batch as failed
         batch.forEach((entry) => {
-          db.failed_accounts[entry.address] = error.message || "Batch transaction submission failed";
+          db.failed_accounts[entry.address] =
+            error.message || "Batch transaction submission failed";
           db.pending_accounts = db.pending_accounts.filter((e) => e.address !== entry.address);
         });
         // Save progress and continue
@@ -291,7 +296,8 @@ async function main() {
             console.log(`✅ Verified migration for ${entry.address}`);
           } else {
             console.log(`❌ Migration verification failed for ${entry.address}`);
-            db.failed_accounts[entry.address] = "Migration verification failed - no staking freeze found";
+            db.failed_accounts[entry.address] =
+              "Migration verification failed - no staking freeze found";
             db.pending_accounts = db.pending_accounts.filter((e) => e.address !== entry.address);
           }
         } catch (error) {
