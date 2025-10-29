@@ -26,7 +26,7 @@ Queries the chain for accounts that still have staking locks and haven't been mi
 #### Usage
 
 ```bash
-npx tsx src/lazy-migrations/get-accounts-with-staking-locks.ts --url wss://wss.api.moonbeam.network
+npx tsx src/lazy-migrations/006-get-accounts-with-staking-locks.ts --url wss://wss.api.moonbeam.network
 ```
 
 #### Options
