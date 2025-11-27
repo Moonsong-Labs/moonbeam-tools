@@ -51,7 +51,7 @@ Performs the actual migration by calling `parachainStaking.migrateLocksToFreezes
 
 ```bash
 # Using pre-generated account list
-bun src/lazy-migrations/006-migrate-locks-to-freezes.ts \
+npx tsx src/lazy-migrations/006-migrate-locks-to-freezes.ts \
   --url wss://wss.api.moonbeam.network \
   --account-priv-key <private-key> \
   --input-file src/lazy-migrations/accounts-with-staking-locks--moonbeam.json \

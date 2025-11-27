@@ -265,7 +265,10 @@ async function main() {
         await tx.signAndSend(
           account,
           { nonce: nonce++ },
-          monitorSubmittedExtrinsic(api, { id: `migrate-locks-to-freezes-batch-${batch.length}` }),
+          monitorSubmittedExtrinsic(api, {
+            id: `migrate-locks-to-freezes-batch-${batch.length}`,
+            verbose: true,
+          }),
         );
         console.log(`Submitted transaction for batch of ${batch.length} accounts`);
       } catch (error) {
