@@ -164,22 +164,13 @@ const main = async () => {
     }
 
     const colWidths = headers.map((h, i) =>
-      Math.max(
-        h.length,
-        ...rows.map((r) => (r[i] ? r[i].length : 0)),
-      ),
+      Math.max(h.length, ...rows.map((r) => (r[i] ? r[i].length : 0))),
     );
 
     const formatRow = (cols: string[]) =>
-      cols
-        .map((c, i) => c.padEnd(colWidths[i], " "))
-        .join(" | ");
+      cols.map((c, i) => c.padEnd(colWidths[i], " ")).join(" | ");
 
-    console.log(
-      chalk.cyan(
-        "Pallet versions from runtime storage (aggregated across networks):\n",
-      ),
-    );
+    console.log(chalk.cyan("Pallet versions from runtime storage (aggregated across networks):\n"));
 
     console.log(formatRow(headers));
     console.log(colWidths.map((w) => "-".repeat(w)).join("-+-"));
@@ -202,5 +193,3 @@ async function start() {
 }
 
 start();
-
-
