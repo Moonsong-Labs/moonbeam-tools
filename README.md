@@ -204,3 +204,56 @@ bun src/tools/list-precompiles.ts --network moonbeam --update-dummy-code --priva
 ```
 
 This will update each missing precompile (or you can use `--address 9` to upgrade only contract at address 9)
+
+## Leaving Staking (unstake as staker and collator)
+
+Schedules, executes or cancels leaving parachain staking. It auto-detects, from
+the target account's on-chain state, every role it holds — **staker
+(delegator)**, **collator (candidate)** and/or **orbiter** — and acts on all of
+them:
+
+- staker: revokes every delegation (`scheduleRevokeDelegation` → `executeDelegationRequest`)
+- collator: leaves the candidate set (`scheduleLeaveCandidates` → `executeLeaveCandidates`)
+- orbiter: leaves every collator pool then unregisters (`orbiterLeaveCollatorPool` → `orbiterUnregister`)
+
+Staking (delegator/collator) leaving is a two-phase process: you first
+`schedule` the exit, then `execute` it once the exit delay (several rounds,
+shown when you run the tool) has passed. `cancel` reverts a previously
+scheduled exit.
+
+Orbiter leaving is **immediate** (no round delay): it is performed on both
+`schedule` and `execute` based on the current state (idempotent), and cannot be
+reverted by `cancel`.
+
+Schedule the exit (add `--dry-run` first to preview the exact calls):
+
+```bash
+bun src/tools/leave-staking.ts --network moonbeam --account-priv-key $PRIVATE_KEY --action schedule
+```
+
+Execute it later, once the delay has elapsed:
+
+```bash
+bun src/tools/leave-staking.ts --network moonbeam --account-priv-key $PRIVATE_KEY --action execute
+```
+
+### Through a proxy
+
+Pass `--proxy <staker/collator address>` and sign with the **proxy account's**
+key. The staking state is read from the proxied account and every call is
+wrapped in `proxy.proxy`:
+
+```bash
+bun src/tools/leave-staking.ts \
+  --network moonbeam \
+  --account-priv-key $PROXY_PRIVATE_KEY \
+  --proxy 0xStakerOrCollatorAddress \
+  --proxy-type Staking \
+  --action schedule
+```
+
+Options:
+- `--action schedule|execute|cancel` (default: `schedule`)
+- `--proxy <address>` / `--proxy-type <Any|Staking|...>` to act via a proxy
+- `--dry-run` to print the calls without submitting them
+- `--alith` to sign with the well-known Alith development key instead of `--account-priv-key`
